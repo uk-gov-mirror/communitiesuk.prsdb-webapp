@@ -37,7 +37,12 @@ WHERE local_authority_id != 2
 GROUP BY is_manager;
 
 -- Passcodes generated
+-- Exclude Bath (local_authority_id = 2) for data about the "level of involvement" as this is not real data
+-- Use total values to count overall transactions as cost per transaction?
 SELECT
-    COUNT(*) FILTER (WHERE created_date >= :reference_date - INTERVAL '14 DAYS' AND created_date < :reference_date) AS new_passcodes_last_2_weeks
+    COUNT(*) FILTER (WHERE created_date < :reference_date) AS total_passcodes_generated_on_db,
+    COUNT(*) FILTER (WHERE created_date < :reference_date AND local_authority_id != 2) AS total_passcodes_not_bath,
+    COUNT(*) FILTER (WHERE created_date >= :reference_date - INTERVAL '14 DAYS' AND created_date < :reference_date) AS new_passcodes_on_db_last_2_weeks,
+    COUNT(*) FILTER (WHERE created_date >= :reference_date - INTERVAL '14 DAYS' AND created_date < :reference_date AND local_authority_id != 2) AS new_passcodes_on_db_last_2_weeks_not_bath
 FROM
     passcode;
