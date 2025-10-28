@@ -23,7 +23,7 @@ class Address() : ModifiableAuditableEntity() {
     var uprn: Long? = null
         private set
 
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false, length = SINGLE_LINE_ADDRESS_LENGTH)
     lateinit var singleLineAddress: String
         private set
 
@@ -77,4 +77,8 @@ class Address() : ModifiableAuditableEntity() {
     }
 
     fun getSelectedAddress(): String = if (uprn == null) MANUAL_ADDRESS_CHOSEN else singleLineAddress
+
+    companion object {
+        const val SINGLE_LINE_ADDRESS_LENGTH = 1000
+    }
 }
