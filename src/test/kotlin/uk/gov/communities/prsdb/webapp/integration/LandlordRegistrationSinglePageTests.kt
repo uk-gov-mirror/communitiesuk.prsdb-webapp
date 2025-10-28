@@ -281,7 +281,7 @@ class LandlordRegistrationSinglePageTests : IntegrationTestWithImmutableData("da
             val noAddressFoundPage = assertPageIs(page, NoAddressFoundFormPageLandlordRegistration::class)
             BaseComponent
                 .assertThat(noAddressFoundPage.heading)
-                .containsText("No matching address found for $postcode and $houseNumber")
+                .containsText("No matching address in England or Wales found for $postcode and $houseNumber")
 
             // Search Again
             noAddressFoundPage.searchAgain.clickAndWait()
