@@ -163,7 +163,6 @@ class PropertyRegistrationJourney(
             addressService = addressService,
             journeyDataService = journeyDataService,
             saveAfterSubmit = false,
-            restrictToEngland = true,
         )
 
     private fun selectAddressStep() =
@@ -219,7 +218,6 @@ class PropertyRegistrationJourney(
                     content =
                         mapOf(
                             "title" to "registerProperty.title",
-                            "restrictToEngland" to true,
                             "postcode" to getHouseNameOrNumberAndPostcode().second,
                             "houseNameOrNumber" to getHouseNameOrNumberAndPostcode().first,
                             "searchAgainUrl" to RegisterPropertyStepId.LookupAddress.urlPathSegment,
