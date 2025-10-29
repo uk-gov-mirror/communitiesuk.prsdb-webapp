@@ -258,11 +258,11 @@ class SearchRegisterTests : IntegrationTestWithImmutableData("data-search.sql") 
         @Test
         fun `Fuzzy search produces table of matching results`(page: Page) {
             val searchPropertyRegisterPage = navigator.goToPropertySearchPage()
-            searchPropertyRegisterPage.searchBar.search("Way")
+            searchPropertyRegisterPage.searchBar.search("Fake Way")
             val resultTable = searchPropertyRegisterPage.resultTable
 
             assertThat(resultTable.getCell(0, PROPERTY_COL_INDEX)).containsText("3 Fake Way")
-            assertThat(resultTable.getCell(1, PROPERTY_COL_INDEX)).containsText("5 Pretend Crescent Way")
+            assertThat(resultTable.getCell(1, PROPERTY_COL_INDEX)).containsText("5 Fake Crescent Way")
         }
 
         @Test
