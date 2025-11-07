@@ -73,6 +73,13 @@ class JourneyBuilder<TState : JourneyState>(
         unreachableStepDestination = { Destination(getStep()) }
     }
 
+    fun unreachableStepDestination(getDestination: () -> Destination) {
+        if (unreachableStepDestination != null) {
+            throw JourneyInitialisationException("unreachableStepDestination has already been set")
+        }
+        unreachableStepDestination = getDestination
+    }
+
     private fun checkForUninitialisedParents(stepInitialiser: StepInitialiser<*, *, *>) {
         val uninitialisedParents =
             stepInitialiser.potentialParents.filter {

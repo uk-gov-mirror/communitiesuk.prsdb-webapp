@@ -36,14 +36,19 @@ class FooExampleJourneyFactory(
         val state = stateFactory.getObject()
         state.validateStateMatchesPropertyId(propertyId)
 
-        return journey(stateFactory.getObject()) {
+        return journey(state) {
             unreachableStepStep { journey.taskListStep }
             step("task-list", journey.taskListStep) {
                 nextUrl { "task-list" }
             }
             task(journey.occupationTask) {
                 parents { journey.taskListStep.always() }
-                redirectToStep { journey.fooCheckYourAnswersStep }
+                redirectToStep {
+                    when (state.subJourney) {
+                        null -> journey.epcTask.firstStepInTask(state)
+                        else -> journey.fooCheckYourAnswersStep
+                    }
+                }
             }
             task(journey.epcTask) {
                 parents { journey.occupationTask.isComplete() }
@@ -99,6 +104,12 @@ class FooJourneyState(
         return journeyId
     }
 
+    final val subJourney: FooSubJourney?
+        get() =
+            journeyStateService.journeyMetadata.subJourneyName?.let {
+                FooSubJourney.valueOf(it)
+            }
+
     final fun validateStateMatchesPropertyId(currentPropertyId: Long) {
         if (currentPropertyId != propertyId) {
             throw NoSuchJourneyException()
@@ -114,4 +125,9 @@ class FooJourneyState(
                 .and(0x7FFFFFFFu)
                 .toString(36)
     }
+}
+
+enum class FooSubJourney {
+    CHANGE_OCCUPATION_SUB_JOURNEY,
+    CHANGE_EPC_SUB_JOURNEY,
 }

@@ -3,6 +3,7 @@ package uk.gov.communities.prsdb.webapp.journeys.example.steps
 import org.springframework.context.annotation.Scope
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbWebComponent
 import uk.gov.communities.prsdb.webapp.journeys.AbstractGenericStepConfig
+import uk.gov.communities.prsdb.webapp.journeys.JourneyStateService
 import uk.gov.communities.prsdb.webapp.journeys.JourneyStep.VisitableStep
 import uk.gov.communities.prsdb.webapp.journeys.example.FooJourneyState
 import uk.gov.communities.prsdb.webapp.journeys.example.OccupiedJourneyState
@@ -14,6 +15,7 @@ import uk.gov.communities.prsdb.webapp.services.EpcCertificateUrlProvider
 @PrsdbWebComponent
 class FooCheckAnswersStepConfig(
     private val epcCertificateUrlProvider: EpcCertificateUrlProvider,
+    private val journeyStateService: JourneyStateService,
 ) : AbstractGenericStepConfig<Complete, NoInputFormModel, FooJourneyState>() {
     override val formModelClass = NoInputFormModel::class
 
@@ -27,26 +29,32 @@ class FooCheckAnswersStepConfig(
             "summaryListData" to getOccupationRows(state) + getEpcStatusRow(state),
         )
 
+    override fun beforeGetStepContent(state: FooJourneyState) = setUpCyaJourneys(state)
+
+    private fun setUpCyaJourneys(state: FooJourneyState) {
+        journeyStateService.initialiseSubJourney("1${state.journeyId}", "CHANGE_OCCUPATION_SUB_JOURNEY")
+    }
+
     private fun getOccupationRows(state: OccupiedJourneyState): List<SummaryListRowViewModel> {
         val occupiedStep = state.occupied
-        return if (occupiedStep?.formModel?.occupied == true) {
+        return if (occupiedStep.formModel?.occupied == true) {
             val householdsStep = state.households
             val tenantsStep = state.tenants
             listOf(
                 SummaryListRowViewModel.forCheckYourAnswersPage(
                     "forms.occupancy.fieldSetHeading",
                     true,
-                    occupiedStep.routeSegment,
+                    JourneyStateService.urlWithJourneyState(occupiedStep.routeSegment, "1${state.journeyId}"),
                 ),
                 SummaryListRowViewModel.forCheckYourAnswersPage(
                     "forms.numberOfHouseholds.fieldSetHeading",
-                    householdsStep?.formModel?.numberOfHouseholds,
-                    householdsStep?.routeSegment,
+                    householdsStep.formModel?.numberOfHouseholds,
+                    JourneyStateService.urlWithJourneyState(householdsStep.routeSegment, "1${state.journeyId}"),
                 ),
                 SummaryListRowViewModel.forCheckYourAnswersPage(
                     "forms.numberOfPeople.fieldSetHeading",
-                    tenantsStep?.formModel?.numberOfPeople,
-                    tenantsStep?.routeSegment,
+                    tenantsStep.formModel?.numberOfPeople,
+                    JourneyStateService.urlWithJourneyState(tenantsStep.routeSegment, "1${state.journeyId}"),
                 ),
             )
         } else {
@@ -54,7 +62,7 @@ class FooCheckAnswersStepConfig(
                 SummaryListRowViewModel.forCheckYourAnswersPage(
                     "forms.occupancy.fieldSetHeading",
                     false,
-                    occupiedStep?.routeSegment,
+                    JourneyStateService.urlWithJourneyState(occupiedStep.routeSegment, "1${state.journeyId}"),
                 ),
             )
         }

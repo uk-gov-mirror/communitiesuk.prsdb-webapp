@@ -17,7 +17,6 @@ import uk.gov.communities.prsdb.webapp.journeys.NoSuchJourneyException
 @RequestMapping("new-journey")
 class FooJourneyController(
     val journeyFactory: FooExampleJourneyFactory,
-    val journeyStateService: JourneyStateService,
 ) {
     @GetMapping("{propertyId}/{stepName}")
     fun getStep(
