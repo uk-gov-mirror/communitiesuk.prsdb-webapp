@@ -7,6 +7,7 @@ import uk.gov.communities.prsdb.webapp.controllers.CancelLettingAgentDelegationC
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.PropertyDetailsPageLandlordView
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.cancelLettingAgentDelegationJourneyPages.AreYouSurePageCancelLettingAgentDelegation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.cancelLettingAgentDelegationJourneyPages.ConfirmationPageCancelLettingAgentDelegation
 import kotlin.test.assertEquals
 
@@ -17,11 +18,11 @@ class CancelLettingAgentDelegationJourneyTests : IntegrationTestWithImmutableDat
     fun `a landlord can walk the remove letting agent journey and reach the confirmation page`(page: Page) {
         featureFlagManager.enable(DELEGATE_TO_LETTING_AGENT)
 
-        // TODO PDJB-1412: enter the journey via the letting agent panel button on the property record,
-        //  once the MOJ ticket panel has been added, instead of navigating directly
+        val propertyDetailsPage = navigator.goToPropertyDetailsLandlordView(propertyOwnershipId)
+        propertyDetailsPage.removeLettingAgentLink.clickAndWait()
 
         // "Are you sure" page
-        val areYouSurePage = navigator.goToCancelLettingAgentDelegationAreYouSurePage(propertyOwnershipId)
+        val areYouSurePage = assertPageIs(page, AreYouSurePageCancelLettingAgentDelegation::class)
         // TODO PDJB-1413: assert the real "are you sure" page content and the yes/no decision
         areYouSurePage.continueButton.clickAndWait()
 

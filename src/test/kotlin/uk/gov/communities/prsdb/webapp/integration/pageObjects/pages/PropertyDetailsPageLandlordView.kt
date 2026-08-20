@@ -22,6 +22,7 @@ class PropertyDetailsPageLandlordView(
     ) {
     val deregisterPropertyLink = Link.byText(page, "Deregister property")
     val delegateToLettingAgentLink = Link.byText(page, "Allow your letting agent or property manager to update details")
+    val removeLettingAgentLink = Link.byText(page, "Remove your letting agent or property manager")
     val inviteJointLandlordLink = Link.byText(page, "invite them to join the property")
     val inviteJointLandlordButton = Button.byText(page, "Invite a joint landlord")
 
