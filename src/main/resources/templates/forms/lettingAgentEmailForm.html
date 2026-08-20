@@ -1,0 +1,45 @@
+<!--/*@thymesVar id="formModel" type="uk.gov.communities.prsdb.webapp.models.requestModels.formModels.AllowLettingAgentEmailFormModel"*/-->
+<!--/*@thymesVar id="backUrl" type="java.lang.String"*/-->
+<!--/*@thymesVar id="sectionHeaderInfo" type="uk.gov.communities.prsdb.webapp.models.viewModels.SectionHeaderViewModel"*/-->
+<!DOCTYPE html>
+<html id="form-content" th:replace="~{fragments/forms/questionPage :: questionPage(#{registerProperty.title}, ${formModel}, ~{::#form-content/content()}, ${backUrl}, ${sectionHeaderInfo})}">
+    <h1 class="govuk-heading-l" th:text="#{registerProperty.lettingAgentEmail.heading}">
+        registerProperty.lettingAgentEmail.heading
+    </h1>
+
+    <h2 class="govuk-heading-m" th:text="#{registerProperty.lettingAgentEmail.howItWorks.heading}">
+        registerProperty.lettingAgentEmail.howItWorks.heading
+    </h2>
+
+    <ol class="govuk-list govuk-list--number">
+        <li th:text="#{registerProperty.lettingAgentEmail.howItWorks.step1}">registerProperty.lettingAgentEmail.howItWorks.step1</li>
+        <li th:text="#{registerProperty.lettingAgentEmail.howItWorks.step2}">registerProperty.lettingAgentEmail.howItWorks.step2</li>
+        <li th:text="#{registerProperty.lettingAgentEmail.howItWorks.step3}">registerProperty.lettingAgentEmail.howItWorks.step3</li>
+    </ol>
+
+    <p class="govuk-body" th:text="#{registerProperty.lettingAgentEmail.canRemove}">
+        registerProperty.lettingAgentEmail.canRemove
+    </p>
+
+    <h2 class="govuk-heading-m" th:text="#{registerProperty.lettingAgentEmail.responsible.heading}">
+        registerProperty.lettingAgentEmail.responsible.heading
+    </h2>
+
+    <p class="govuk-body" th:text="#{registerProperty.lettingAgentEmail.responsible.body}">
+        registerProperty.lettingAgentEmail.responsible.body
+    </p>
+
+    <div class="govuk-inset-text" th:text="#{registerProperty.lettingAgentEmail.insetText}">
+        registerProperty.lettingAgentEmail.insetText
+    </div>
+
+    <div th:replace="~{fragments/forms/minorFieldSet :: minorFieldSet(content=~{::#email-input/content()}, fieldName='emailAddress', fieldSetHeading=#{registerProperty.lettingAgentEmail.emailLabel}, fieldSetHint=#{registerProperty.lettingAgentEmail.emailHint})}">
+        <th:block id="email-input">
+            <div th:replace="~{fragments/forms/emailInput :: emailInput(null, 'emailAddress', null)}"></div>
+        </th:block>
+    </div>
+
+    <input type="hidden" th:field="*{landlordEmail}">
+
+    <button th:replace="~{fragments/buttons/transactionSubmitButton :: transactionSubmitButton(#{registerProperty.lettingAgentEmail.submitButton})}"></button>
+</html>

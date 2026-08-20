@@ -174,3 +174,18 @@ whoProvidesRentalDetails:
         label: Me
       lettingAgent:
         label: Letting agent
+lettingAgentEmail:
+  heading: Allow your letting agent or property manager to provide details
+  howItWorks:
+    heading: How it works
+    step1: "You’ll enter your letting agent or property manager’s email address, then skip to paying for this property."
+    step2: "We’ll ask your letting agent or property manager to provide the licensing, compliance certificates and tenancy details."
+    step3: They can keep these details up to date for you.
+  canRemove: You can remove your letting agent or property manager at any time.
+  responsible:
+    heading: You remain responsible for this registration
+    body: "You should always check that your registration is correct. We’ll email you whenever your letting agent or property manager makes an update."
+  insetText: "You must check that all your property’s details are provided within 28 days. We’ll email you if no one has added these details after 14 days."
+  emailLabel: "What is your letting agent or property manager’s email address?"
+  emailHint: "We’ll email them a link to provide this property’s remaining details"
+  submitButton: Save and continue
