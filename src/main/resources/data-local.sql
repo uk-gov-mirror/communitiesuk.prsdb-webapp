@@ -157,7 +157,8 @@ VALUES (1, '09/13/24', 2001001001, 1),
        (80, '01/15/25', 1502423342, 0),
        (81, '07/23/26', 1502423343, 1),
        (82, '07/23/26', 1502423344, 0),
-       (83, '07/23/26', 1502423345, 0);
+       (83, '07/23/26', 1502423345, 0),
+       (84, '08/19/26', 1502423346, 0);
 
 SELECT setval(pg_get_serial_sequence('registration_number', 'id'), (SELECT MAX(id) FROM registration_number));
 
@@ -219,7 +220,8 @@ VALUES (41, '09/13/24', '09/13/24', 1038, 'Registered House, PRSDB Road, AA3 1AB
        (44, '09/13/24', '09/13/24', 1041, 'Grate House, PRSDB Road, AA3 1AB ', 1, 'AA3 1AB ', 'Grate House', 'PRSDB Road'),
        (45, '09/13/24', '09/13/24', 1042, 'Slate House, PRSDB Road, AA3 1AB ', 1, 'AA3 1AB ', 'Slate House', 'PRSDB Road'),
        (55, '07/23/26', '07/23/26', 5009, 'Org Landlord House, PRSDB Road, OL1 1AA', 1, 'OL1 1AA', 'Org Landlord House', 'PRSDB Road'),
-       (56, '07/23/26', '07/23/26', 5010, 'Joint Org House, PRSDB Road, JO1 1AA', 1, 'JO1 1AA', 'Joint Org House', 'PRSDB Road');
+       (56, '07/23/26', '07/23/26', 5010, 'Joint Org House, PRSDB Road, JO1 1AA', 1, 'JO1 1AA', 'Joint Org House', 'PRSDB Road'),
+       (57, '08/19/26', '08/19/26', 5011, 'Letting Agent House, PRSDB Road, EG1 2AZ', 1, 'EG1 2AZ', 'Letting Agent House', 'PRSDB Road');
 
 SELECT setval(pg_get_serial_sequence('address', 'id'), (SELECT MAX(id) FROM address));
 
@@ -405,7 +407,9 @@ VALUES (39, true, 1, 0, 0, 79, 47, current_date - INTERVAL '7 days', current_dat
        (47, true, 1, 0, 0, 82, 55, '07/23/26', '07/23/26', null, 1,
         null, null, null, null, null, null, null, null, false, false, null, false, false),
        (48, true, 1, 0, 0, 83, 56, '07/23/26', '07/23/26', null, 1,
-        null, null, null, null, null, null, null, null, true, false, null, false, false);
+        null, null, null, null, null, null, null, null, true, false, null, false, false),
+       (49, true, 1, 1, 2, 84, 57, '08/19/26', '08/19/26', null, 1,
+        1, null, null, 2, 1, null, 123.12, null, false, true, null, false, false);
 
 SELECT setval(pg_get_serial_sequence('property_ownership', 'id'), (SELECT MAX(id) FROM property_ownership));
 
@@ -466,7 +470,8 @@ VALUES (1, 1, '2025-01-15'),
        (2, 4, '2025-01-15'),
        (36, 47, '2025-07-23'),
        (1, 48, '2025-07-23'),
-       (36, 48, '2025-07-23')
+       (36, 48, '2025-07-23'),
+       (1, 49, '2026-08-19')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO system_operator (id, created_date, last_modified_date, subject_identifier)
@@ -551,7 +556,9 @@ VALUES (42, 39, '01/01/25', '01/01/25', null, true, null, null, null, null,
         null, 'c', null, null, true, true, true, true, false, false),
        (46, 40, '01/01/25', '01/01/25', current_date - 30, true, current_date + 730, null,
         'https://find-energy-certificate-staging.digital.communities.gov.uk/energy-certificate/0000-0000-0000-0961-0832', current_date + 730,
-        null, 'c', null, null, true, true, true, false, false, false) ON CONFLICT DO NOTHING;
+        null, 'c', null, null, true, true, true, false, false, false),
+       (49, 49, '08/19/26', '08/19/26', null, false, null, null, null, null,
+        null, null, null, null, true, true, true, false, false, false) ON CONFLICT DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('property_compliance', 'id'), (SELECT MAX(id) FROM property_compliance));
 
@@ -603,4 +610,5 @@ VALUES ('jl.pending.one@example.com', 8, '2234abcd-5678-abcd-1234-567abcd2222a',
 
 INSERT INTO letting_agent_access (invited_email, property_ownership_id, token, created_date)
 VALUES ('letting.agent.one@example.com', 1, '3334abcd-5678-abcd-1234-567abcd1111a', current_date),
-       ('letting.agent.two@example.com', 5, '3334abcd-5678-abcd-1234-567abcd1111b', current_date - 10);
+       ('letting.agent.two@example.com', 5, '3334abcd-5678-abcd-1234-567abcd1111b', current_date - 10),
+       ('letting-agent@example.com', 49, '3334abcd-5678-abcd-1234-567abcd1111c', current_date);
