@@ -58,6 +58,8 @@ class SavePropertyRegistrationDataStepConfig(
         //  tenancy or compliance details, so those tasks are skipped. Persist placeholder "provide later" values
         //  until the real delegated-details flow is implemented.
         val isDelegatedToLettingAgent = state.isDelegatedToLettingAgent(featureFlagManager)
+        // TODO PDJB-1587: when isDelegatedToLettingAgent is true, persist the letting agent delegation details
+        //  (e.g. the letting agent's email address from the WhoProvidesDetailsTask).
         val shouldRequireTenancyDetails = isOccupied && !state.provideTenancyDetailsLater && !isDelegatedToLettingAgent
         val billsIncludedDataModel = state.rentIncludesBillsTask.getBillsIncludedOrNull()
         val jointLandlordsTask = state.ownershipAndLandlordsTask.jointLandlordsTask
