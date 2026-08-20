@@ -2,8 +2,10 @@ package uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRe
 
 import com.microsoft.playwright.Page
 import uk.gov.communities.prsdb.webapp.controllers.RegisterPropertyController
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.Button
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.Form
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.Heading
-import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.PostForm
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.TextInput
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.LettingAgentEmailStep
 
@@ -14,9 +16,17 @@ class LettingAgentEmailPagePropertyRegistration(
         "${RegisterPropertyController.PROPERTY_REGISTRATION_ROUTE}/${LettingAgentEmailStep.ROUTE_SEGMENT}",
     ) {
     val heading = Heading(page.locator("h1"))
-    val form = PostForm(page)
+    val form = LettingAgentEmailForm(page)
+    val submitButton = Button.byText(page, "Save and continue")
 
-    fun submitContinue() {
-        form.submit()
+    fun submitEmail(email: String) {
+        form.emailInput.fill(email)
+        submitButton.clickAndWait()
+    }
+
+    class LettingAgentEmailForm(
+        page: Page,
+    ) : Form(page) {
+        val emailInput = TextInput.emailByFieldName(locator, "emailAddress")
     }
 }

@@ -2008,7 +2008,7 @@ class PropertyRegistrationJourneyTests : IntegrationTestWithMutableData("data-lo
             whoProvidesRentalDetailsPage.submitLettingAgentProvidesDetails()
 
             val lettingAgentEmailPage = assertPageIs(page, LettingAgentEmailPagePropertyRegistration::class)
-            lettingAgentEmailPage.submitContinue()
+            lettingAgentEmailPage.submitEmail("agent@example.com")
 
             assertPageIs(page, CheckAnswersPagePropertyRegistration::class)
         }
