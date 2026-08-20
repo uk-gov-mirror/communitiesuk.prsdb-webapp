@@ -98,13 +98,26 @@ class PropertyDetailsController(
         modelAndView.addObject("deregisterPropertyLink", deregisterPropertyLink)
         modelAndView.addObject("isLandlordView", true)
         if (featureFlagManager.checkFeature(DELEGATE_TO_LETTING_AGENT)) {
-            modelAndView.addObject(
-                "delegateToLettingAgentLink",
-                TicketPanelLinkViewModel(
-                    text = "propertyDetails.delegateToLettingAgent.link",
-                    url = getDelegateToLettingAgentPath(propertyOwnershipId),
-                ),
-            )
+            modelAndView.addObject("showLettingAgentPanel", true)
+            modelAndView.addObject("delegatesToLettingAgent", propertyOwnership.delegatesToLettingAgent)
+            if (propertyOwnership.delegatesToLettingAgent) {
+                modelAndView.addObject("lettingAgentEmail", propertyOwnership.lettingAgentAccess!!.invitedEmail)
+                modelAndView.addObject(
+                    "lettingAgentPanelLink",
+                    TicketPanelLinkViewModel(
+                        text = "propertyDetails.lettingAgentPanel.cancelDelegation.link",
+                        url = CancelLettingAgentDelegationController.getRemoveLettingAgentPath(propertyOwnershipId),
+                    ),
+                )
+            } else {
+                modelAndView.addObject(
+                    "lettingAgentPanelLink",
+                    TicketPanelLinkViewModel(
+                        text = "propertyDetails.lettingAgentPanel.delegateToLettingAgent.link",
+                        url = getDelegateToLettingAgentPath(propertyOwnershipId),
+                    ),
+                )
+            }
         }
         if (propertyOwnership.markedJointLandlord && propertyOwnership.landlords.size == 1) {
             modelAndView.addObject(

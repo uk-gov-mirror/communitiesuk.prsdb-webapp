@@ -49,19 +49,25 @@
             <p class="govuk-body">
                 <div th:replace="~{fragments/tag :: tag(messageKey = ${propertyDetails.isOccupiedKey()}, tagColour = ${propertyDetails.isOccupied() ? 'turquoise' : 'grey'})}"></div>
             </p>
-            <div th:if="${delegateToLettingAgentLink != null}" class="govuk-!-width-two-thirds">
-                <article id="delegate-to-letting-agent-ticket-panel"
-                         th:replace="~{fragments/ticketPanel ::
-                         ticketPanel('propertyDetails.delegateToLettingAgent.heading',
-                         ~{::#delegate-to-letting-agent-ticket-panel/content()}, ${delegateToLettingAgentLink})}">
-                    <p class="govuk-body" th:text="#{propertyDetails.delegateToLettingAgent.body}">
-                        propertyDetails.delegateToLettingAgent.body
-                    </p>
-                </article>
+            <div th:if="${showLettingAgentPanel}">
+                <div th:if="${!delegatesToLettingAgent}" class="govuk-!-width-two-thirds">
+                    <article id="delegate-to-letting-agent-ticket-panel"
+                             th:replace="~{fragments/ticketPanel ::
+                             ticketPanel('propertyDetails.lettingAgentPanel.delegateToLettingAgent.heading',
+                             ~{::#delegate-to-letting-agent-ticket-panel/content()}, ${lettingAgentPanelLink})}">
+                        <p class="govuk-body" th:text="#{propertyDetails.lettingAgentPanel.delegateToLettingAgent.body}">
+                            propertyDetails.lettingAgentPanel.delegateToLettingAgent.body
+                        </p>
+                    </article>
+                </div>
+                <div th:if="${delegatesToLettingAgent}" class="govuk-!-width-two-thirds">
+                    <article id="letting-agent-panel"
+                             th:replace="~{fragments/ticketPanel :: ticketPanel('propertyDetails.lettingAgentPanel.cancelDelegation.heading', ~{::#letting-agent-panel/content()}, ${lettingAgentPanelLink})}">
+                        <p class="govuk-heading-m" th:text="${lettingAgentEmail}">lettingAgentEmail</p>
+                        <p class="govuk-body" th:text="#{propertyDetails.lettingAgentPanel.cancelDelegation.body}">propertyDetails.lettingAgentPanel.cancelDelegation.body</p>
+                    </article>
+                </div>
             </div>
-            <!-- TODO PDJB-1412: add the letting agent / property manager MOJ ticket panel here (flag-gated on
-                 DELEGATE_TO_LETTING_AGENT), including the "Remove your letting agent or property manager" button
-                 linking to CancelLettingAgentDelegationController.getRemoveLettingAgentPath(propertyOwnershipId) -->
             <div id="tabs" th:replace="~{fragments/tabs/tabs :: tabs(~{::#tabs/content()})}">
                 <ul id="tab-headings" th:replace="~{fragments/tabs/tabsHeadingList :: tabsHeadingList(~{::#tab-headings/content()})}">
                     <li th:replace="~{fragments/tabs/tabsListItem :: tabsListItem('property-details', #{propertyDetails.propertyRecord.heading})}"></li>
