@@ -323,6 +323,31 @@ class EmailTemplateModelsTests {
                     ),
                     "/emails/SwapToIndividualNudge.md",
                 ),
+                EmailTemplateTestData(
+                    CancelDelegationLandlordConfirmationEmail(
+                        landlordName = "Alice",
+                        propertyAddress = "Flat 1\n11 Elm Street\nLondon\nNW1 1AA",
+                        lettingAgentEmail = "agent@example.com",
+                        propertyRecordUrl = "https://example.com/property",
+                    ),
+                    "/emails/CancelDelegationLandlordConfirmation.md",
+                ),
+                EmailTemplateTestData(
+                    CancelDelegationJointLandlordNotificationEmail(
+                        jointLandlordName = "Bob",
+                        propertyAddress = "Flat 1\n11 Elm Street\nLondon\nNW1 1AA",
+                        lettingAgentEmail = "agent@example.com",
+                        propertyRecordUrl = "https://example.com/property",
+                    ),
+                    "/emails/CancelDelegationJointLandlordNotification.md",
+                ),
+                EmailTemplateTestData(
+                    CancelDelegationLettingAgentNotificationEmail(
+                        propertyAddress = "Flat 1\n11 Elm Street\nLondon\nNW1 1AA",
+                        singleLineAddress = "Flat 1, 11 Elm Street, London, NW1 1AA",
+                    ),
+                    "/emails/CancelDelegationLettingAgentNotification.md",
+                ),
             )
     }
 
