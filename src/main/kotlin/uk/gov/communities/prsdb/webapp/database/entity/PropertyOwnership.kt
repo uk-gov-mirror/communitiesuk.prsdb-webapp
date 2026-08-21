@@ -50,6 +50,8 @@ class PropertyOwnership() : ModifiableAuditableEntity() {
 
     val landlords: Set<Landlord> get() = ownershipLinks.map { it.landlord }.toSet()
 
+    fun otherLandlordsTo(landlord: Landlord): Set<Landlord> = landlords.filter { it.id != landlord.id }.toSet()
+
     @Column(nullable = false)
     lateinit var propertyBuildType: PropertyType
 
