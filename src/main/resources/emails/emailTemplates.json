@@ -287,5 +287,26 @@
     "enumName": "ORGANISATIONAL_LANDLORD_DEREGISTRATION_CONFIRMATION_EMAIL",
     "subject": "Your organisation has been removed from Register your rental property",
     "bodyLocation": "/emails/OrganisationalLandlordDeregistrationConfirmation.md"
+  },
+  {
+    "test_id": "370f632f-b5ac-4b0d-ae2d-c2b21b57728a",
+    "prod_id": "3e210af5-5e77-4dad-9895-fedac9853869",
+    "enumName": "LETTING_AGENT_CANCEL_DELEGATION_LANDLORD_CONFIRMATION_EMAIL",
+    "subject": "You updated a property record",
+    "bodyLocation": "/emails/CancelDelegationLandlordConfirmation.md"
+  },
+  {
+    "test_id": "7231d6d5-6c11-4168-b0eb-73da82422fdb",
+    "prod_id": "b1468499-c6c7-4d6c-9b00-fd99e335adab",
+    "enumName": "LETTING_AGENT_CANCEL_DELEGATION_JOINT_LANDLORD_NOTIFICATION_EMAIL",
+    "subject": "A joint landlord made an update to a property record",
+    "bodyLocation": "/emails/CancelDelegationJointLandlordNotification.md"
+  },
+  {
+    "test_id": "9aaed08b-f62d-4104-a88a-3458ec06c939",
+    "prod_id": "3920bfb3-d46f-4b67-a45b-fceba5f34b48",
+    "enumName": "LETTING_AGENT_CANCEL_DELEGATION_LETTING_AGENT_NOTIFICATION_EMAIL",
+    "subject": "You can no longer update ((single line address))",
+    "bodyLocation": "/emails/CancelDelegationLettingAgentNotification.md"
   }
 ]
