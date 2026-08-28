@@ -240,7 +240,7 @@ class JourneyStepTests {
     }
 
     @Test
-    fun `submitFormData saves bindingResult target as form data in journey state for a VisitableStep`() {
+    fun `submitFormData stores data returned by enrichDataBeforeSave`() {
         // Arrange
         val stepConfig = mock<AbstractRequestableStepConfig<TestEnum, TestFormModel, JourneyState>>()
         val step = JourneyStep.RequestableStep(stepConfig)
@@ -257,15 +257,17 @@ class JourneyStepTests {
             { Destination.ExternalUrl("unreachable") },
             false,
         )
-        val formModel = TestFormModel().apply { field = "submittedValue" }
+        val formModel = TestFormModel().apply { field = "secret" }
+        val sanitisedData = mapOf("complete" to true)
         val bindingResult: BindingResult = mock()
         whenever(bindingResult.target).thenReturn(formModel)
+        whenever(stepConfig.enrichDataBeforeSave(state, formModel.toPageData())).thenReturn(sanitisedData)
 
         // Act
         step.submitFormData(bindingResult)
 
         // Assert
-        verify(state).addStepData("stepId", formModel.toPageData())
+        verify(state).addStepData("stepId", sanitisedData)
     }
 
     @Test
@@ -287,8 +289,10 @@ class JourneyStepTests {
             false,
         )
         val formModel = TestFormModel().apply { field = "submittedValue" }
+        val sanitisedData = mapOf("complete" to true)
         val bindingResult: BindingResult = mock()
         whenever(bindingResult.target).thenReturn(formModel)
+        whenever(stepConfig.enrichDataBeforeSave(state, formModel.toPageData())).thenReturn(sanitisedData)
 
         // Act
         step.submitFormData(bindingResult)
@@ -296,7 +300,8 @@ class JourneyStepTests {
         // Assert
         val inOrder = org.mockito.kotlin.inOrder(stepConfig, state)
         inOrder.verify(stepConfig).beforeStepDataIsAdded(state, formModel.toPageData())
-        inOrder.verify(state).addStepData("stepId", formModel.toPageData())
+        inOrder.verify(stepConfig).enrichDataBeforeSave(state, formModel.toPageData())
+        inOrder.verify(state).addStepData("stepId", sanitisedData)
         inOrder.verify(stepConfig).afterStepDataIsAdded(state)
     }
 

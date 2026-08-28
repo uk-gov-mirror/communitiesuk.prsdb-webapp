@@ -2,7 +2,10 @@ package uk.gov.communities.prsdb.webapp.integration
 
 import com.microsoft.playwright.Page
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.crypto.password.PasswordEncoder
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
+import uk.gov.communities.prsdb.webapp.database.repository.LettingAgentAccessRepository
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.EnterPasswordPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.HasPasswordPage
@@ -12,6 +15,12 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgen
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.ValidateTokenPage
 
 class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-local.sql") {
+    @Autowired
+    private lateinit var lettingAgentAccessRepository: LettingAgentAccessRepository
+
+    @Autowired
+    private lateinit var passwordEncoder: PasswordEncoder
+
     private val validToken = "3334abcd-5678-abcd-1234-567abcd1111a"
 
     @Test
@@ -28,8 +37,9 @@ class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-
         hasPasswordPage.submitNoPassword()
 
         // TODO PDJB-1566: Update when set password page is implemented
+        val rawPassword = "password1"
         val setPasswordPage = assertPageIs(page, SetPasswordPage::class)
-        setPasswordPage.form.submit()
+        setPasswordPage.submitPassword(rawPassword)
 
         // TODO PDJB-1567: Update when password creation confirmation page is implemented
         val confirmationPage = assertPageIs(page, PasswordCreationConfirmationPage::class)
