@@ -6,4 +6,8 @@ hasPassword:
     noPassword: No password set
     error:
       missing: Select whether this account has a password set
- 
+setPassword:
+  heading: Set a password
+  password:
+    label: Password
+  submit: Save and continue
