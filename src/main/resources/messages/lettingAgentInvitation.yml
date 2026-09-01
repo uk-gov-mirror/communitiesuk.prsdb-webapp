@@ -1,4 +1,5 @@
 title: Set up your letting agent account
+caption: Provide details for a landlord’s rental property
 hasPassword:
   fieldSetHeading: "TODO: PDJB-1658: Check password set step"
   radios:
@@ -7,7 +8,19 @@ hasPassword:
     error:
       missing: Select whether this account has a password set
 setPassword:
-  heading: Set a password
+  heading: Set your password for this property
+  intro: "A landlord has given you access to provide details for this rental property:"
+  explanation: To continue, create a password. You’ll use this password when you come back and update the property’s registration.
+  warning: You cannot change this password later.
   password:
-    label: Password
+    label: Enter a password
+    hint: Must be at least 8 characters and include letters and numbers
+    error:
+      missing: Enter a password
+      invalid: Password must be at least 8 characters and include letters and numbers
+  confirmPassword:
+    label: Re-type password
+    error:
+      missing: Re-type your password
+      mismatch: Enter the same password in both fields
   submit: Save and continue

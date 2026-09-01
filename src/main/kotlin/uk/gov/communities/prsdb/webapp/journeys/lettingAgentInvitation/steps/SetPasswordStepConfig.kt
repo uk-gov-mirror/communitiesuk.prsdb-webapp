@@ -1,5 +1,6 @@
 package uk.gov.communities.prsdb.webapp.journeys.lettingAgentInvitation.steps
 
+import org.springframework.validation.BindingResult
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.JourneyFrameworkComponent
 import uk.gov.communities.prsdb.webapp.exceptions.PrsdbWebException
 import uk.gov.communities.prsdb.webapp.journeys.AbstractRequestableStepConfig
@@ -19,16 +20,34 @@ class SetPasswordStepConfig(
 ) : AbstractRequestableStepConfig<Complete, SetPasswordFormModel, LettingAgentInvitationJourneyState>() {
     override val formModelClass = SetPasswordFormModel::class
 
-    override fun getStepSpecificContent(state: LettingAgentInvitationJourneyState): Map<String, Any?> =
-        mapOf(
-            "heading" to "lettingAgentInvitation.setPassword.heading",
-            "passwordLabel" to "lettingAgentInvitation.setPassword.password.label",
-            "submitButtonText" to "lettingAgentInvitation.setPassword.submit",
-        )
+    override fun getStepSpecificContent(state: LettingAgentInvitationJourneyState): Map<String, Any?> {
+        val invitation = getInvitation(state)
+        val addressLines = invitation.propertyOwnership.address.toMultiLineAddress().split("\n")
+        return mapOf("addressLines" to addressLines)
+    }
 
     override fun chooseTemplate(state: LettingAgentInvitationJourneyState): String = "forms/setPasswordForm"
 
     override fun mode(state: LettingAgentInvitationJourneyState): Complete? = if (state.hasSetPassword == true) Complete.COMPLETE else null
+
+    override fun afterPrimaryValidation(
+        state: LettingAgentInvitationJourneyState,
+        bindingResult: BindingResult,
+    ) {
+        if (!bindingResult.hasErrors()) {
+            val formModel = bindingResult.getFormModel()
+            if (formModel.password != formModel.confirmPassword) {
+                bindingResult.rejectValueWithMessageKey(
+                    SetPasswordFormModel::password.name,
+                    "lettingAgentInvitation.setPassword.confirmPassword.error.mismatch",
+                )
+                bindingResult.rejectValueWithMessageKey(
+                    SetPasswordFormModel::confirmPassword.name,
+                    "_",
+                )
+            }
+        }
+    }
 
     override fun afterStepIsReached(state: LettingAgentInvitationJourneyState) {
         val invitation = getInvitation(state)

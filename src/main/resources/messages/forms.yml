@@ -2,6 +2,8 @@ errorSummary:
   heading: There is a problem
 errorMessage:
   prefix: 'Error: '
+passwordInput:
+  showPassword: Show
 buttons:
   startNow: Start now
   saveAndContinue: Save and continue
