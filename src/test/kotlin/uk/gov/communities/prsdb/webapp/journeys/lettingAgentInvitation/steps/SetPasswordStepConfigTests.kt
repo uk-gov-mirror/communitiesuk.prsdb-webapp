@@ -9,6 +9,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.whenever
+import uk.gov.communities.prsdb.webapp.database.entity.LettingAgentAccess
 import uk.gov.communities.prsdb.webapp.exceptions.PrsdbWebException
 import uk.gov.communities.prsdb.webapp.journeys.lettingAgentInvitation.LettingAgentInvitationJourneyState
 import uk.gov.communities.prsdb.webapp.journeys.shared.Complete
@@ -139,7 +140,7 @@ class SetPasswordStepConfigTests {
             it.urlPath = SetPasswordStep.ROUTE_SEGMENT
         }
 
-    private fun setupInvitation(invitation: uk.gov.communities.prsdb.webapp.database.entity.LettingAgentAccess) {
+    private fun setupInvitation(invitation: LettingAgentAccess) {
         whenever(state.invitationToken).thenReturn(token.toString())
         whenever(lettingAgentAccessService.getInvitationByToken(token)).thenReturn(invitation)
     }
