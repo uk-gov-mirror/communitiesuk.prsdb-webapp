@@ -47,4 +47,6 @@ class LettingAgentPasswordService(
                 ?: throw PrsdbWebException("No password has been set for letting agent access ${lettingAgentAccess.id}")
         return passwordEncoder.matches(rawPassword, stored)
     }
+
+    fun hasPasswordBeenSet(lettingAgentAccess: LettingAgentAccess): Boolean = lettingAgentAccess.encodedPassword != null
 }

@@ -16,7 +16,7 @@ class ValidateTokenStepConfig(
     override val formModelClass = NoInputFormModel::class
 
     override fun getStepSpecificContent(state: LettingAgentInvitationJourneyState): Map<String, Any?> =
-        mapOf("todoComment" to "TODO: PDJB-1658: Validate token step")
+        mapOf("todoComment" to "TODO: PDJB-1660: Validate token step")
 
     override fun chooseTemplate(state: LettingAgentInvitationJourneyState): String = "forms/todo"
 

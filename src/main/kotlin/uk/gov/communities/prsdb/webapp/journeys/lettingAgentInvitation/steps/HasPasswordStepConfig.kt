@@ -1,11 +1,12 @@
 package uk.gov.communities.prsdb.webapp.journeys.lettingAgentInvitation.steps
 
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.JourneyFrameworkComponent
-import uk.gov.communities.prsdb.webapp.journeys.AbstractRequestableStepConfig
-import uk.gov.communities.prsdb.webapp.journeys.JourneyState
-import uk.gov.communities.prsdb.webapp.journeys.JourneyStep.RequestableStep
-import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.HasPasswordFormModel
-import uk.gov.communities.prsdb.webapp.models.viewModels.formModels.RadiosViewModel
+import uk.gov.communities.prsdb.webapp.journeys.AbstractInternalStepConfig
+import uk.gov.communities.prsdb.webapp.journeys.JourneyStep.InternalStep
+import uk.gov.communities.prsdb.webapp.journeys.lettingAgentInvitation.LettingAgentInvitationJourneyState
+import uk.gov.communities.prsdb.webapp.services.LettingAgentAccessService
+import uk.gov.communities.prsdb.webapp.services.LettingAgentPasswordService
+import java.util.UUID
 
 enum class PasswordStatus {
     HAS_PASSWORD,
@@ -13,33 +14,22 @@ enum class PasswordStatus {
 }
 
 @JourneyFrameworkComponent
-class HasPasswordStepConfig : AbstractRequestableStepConfig<PasswordStatus, HasPasswordFormModel, JourneyState>() {
-    override val formModelClass = HasPasswordFormModel::class
-
-    override fun getStepSpecificContent(state: JourneyState): Map<String, Any?> =
-        mapOf(
-            "fieldName" to HasPasswordFormModel::hasPassword.name,
-            "fieldSetHeading" to "lettingAgentInvitation.hasPassword.fieldSetHeading",
-            "radioOptions" to
-                RadiosViewModel.yesOrNoRadios(
-                    yesLabel = "lettingAgentInvitation.hasPassword.radios.hasPassword",
-                    noLabel = "lettingAgentInvitation.hasPassword.radios.noPassword",
-                ),
-        )
-
-    override fun chooseTemplate(state: JourneyState): String = "forms/todoWithRadios"
-
-    override fun mode(state: JourneyState): PasswordStatus? =
-        getFormModelFromStateOrNull(state)?.hasPassword?.let {
-            if (it) PasswordStatus.HAS_PASSWORD else PasswordStatus.NO_PASSWORD
+class HasPasswordStepConfig(
+    private val lettingAgentAccessService: LettingAgentAccessService,
+    private val lettingAgentPasswordService: LettingAgentPasswordService,
+) : AbstractInternalStepConfig<PasswordStatus, LettingAgentInvitationJourneyState>() {
+    override fun mode(state: LettingAgentInvitationJourneyState): PasswordStatus {
+        val token = UUID.fromString(requireNotNull(state.invitationToken) { "Invitation token is missing from the journey state" })
+        val invitation = lettingAgentAccessService.getInvitationByToken(token)
+        return if (lettingAgentPasswordService.hasPasswordBeenSet(invitation)) {
+            PasswordStatus.HAS_PASSWORD
+        } else {
+            PasswordStatus.NO_PASSWORD
         }
+    }
 }
 
 @JourneyFrameworkComponent
 final class HasPasswordStep(
     stepConfig: HasPasswordStepConfig,
-) : RequestableStep<PasswordStatus, HasPasswordFormModel, JourneyState>(stepConfig) {
-    companion object {
-        const val ROUTE_SEGMENT = "has-password"
-    }
-}
+) : InternalStep<PasswordStatus, LettingAgentInvitationJourneyState>(stepConfig)

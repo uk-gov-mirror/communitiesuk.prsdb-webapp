@@ -45,7 +45,6 @@ class LettingAgentInvitationJourneyFactory(
                 nextStep { journey.hasPasswordStep }
             }
             step(journey.hasPasswordStep) {
-                routeSegment(HasPasswordStep.ROUTE_SEGMENT)
                 parents { journey.validateTokenStep.isComplete() }
                 nextStep { status ->
                     when (status) {

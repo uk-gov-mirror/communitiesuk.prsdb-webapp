@@ -113,4 +113,18 @@ class LettingAgentPasswordServiceTests {
             lettingAgentPasswordService.isPasswordCorrect(access, "candidate")
         }
     }
+
+    @Test
+    fun `hasPasswordBeenSet returns true when the encoded password is present`() {
+        val access = MockLettingAgentData.createLettingAgentAccess(encodedPassword = "{bcrypt}stored")
+
+        assertTrue(lettingAgentPasswordService.hasPasswordBeenSet(access))
+    }
+
+    @Test
+    fun `hasPasswordBeenSet returns false when no password has been set`() {
+        val access = MockLettingAgentData.createLettingAgentAccessWithoutPassword()
+
+        assertFalse(lettingAgentPasswordService.hasPasswordBeenSet(access))
+    }
 }

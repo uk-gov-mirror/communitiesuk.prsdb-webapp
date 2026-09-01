@@ -1,9 +1,2 @@
 title: Set up your letting agent account
-hasPassword:
-  fieldSetHeading: "TODO: PDJB-1658: Check password set step"
-  radios:
-    hasPassword: Has password set
-    noPassword: No password set
-    error:
-      missing: Select whether this account has a password set
  
