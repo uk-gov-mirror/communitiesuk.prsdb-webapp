@@ -97,11 +97,11 @@ class SetPasswordStepConfigTests {
     }
 
     @Test
-    fun `enrichDataBeforeSave returns empty map so raw password is not stored in session`() {
+    fun `enrichStepDataBeforeItIsAdded returns empty map so raw password is not stored in session`() {
         val stepConfig = createStepConfig()
 
         val dataToStore =
-            stepConfig.enrichDataBeforeSave(
+            stepConfig.enrichStepDataBeforeItIsAdded(
                 state,
                 mapOf(SetPasswordFormModel::password.name to "password1"),
             )

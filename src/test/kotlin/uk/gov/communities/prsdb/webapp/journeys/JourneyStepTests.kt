@@ -240,7 +240,7 @@ class JourneyStepTests {
     }
 
     @Test
-    fun `submitFormData stores data returned by enrichDataBeforeSave`() {
+    fun `submitFormData stores data returned by enrichStepDataBeforeItIsAdded`() {
         // Arrange
         val stepConfig = mock<AbstractRequestableStepConfig<TestEnum, TestFormModel, JourneyState>>()
         val step = JourneyStep.RequestableStep(stepConfig)
@@ -261,7 +261,7 @@ class JourneyStepTests {
         val sanitisedData = mapOf("complete" to true)
         val bindingResult: BindingResult = mock()
         whenever(bindingResult.target).thenReturn(formModel)
-        whenever(stepConfig.enrichDataBeforeSave(state, formModel.toPageData())).thenReturn(sanitisedData)
+        whenever(stepConfig.enrichStepDataBeforeItIsAdded(state, formModel.toPageData())).thenReturn(sanitisedData)
 
         // Act
         step.submitFormData(bindingResult)
@@ -292,7 +292,7 @@ class JourneyStepTests {
         val sanitisedData = mapOf("complete" to true)
         val bindingResult: BindingResult = mock()
         whenever(bindingResult.target).thenReturn(formModel)
-        whenever(stepConfig.enrichDataBeforeSave(state, formModel.toPageData())).thenReturn(sanitisedData)
+        whenever(stepConfig.enrichStepDataBeforeItIsAdded(state, formModel.toPageData())).thenReturn(sanitisedData)
 
         // Act
         step.submitFormData(bindingResult)
@@ -300,7 +300,7 @@ class JourneyStepTests {
         // Assert
         val inOrder = org.mockito.kotlin.inOrder(stepConfig, state)
         inOrder.verify(stepConfig).beforeStepDataIsAdded(state, formModel.toPageData())
-        inOrder.verify(stepConfig).enrichDataBeforeSave(state, formModel.toPageData())
+        inOrder.verify(stepConfig).enrichStepDataBeforeItIsAdded(state, formModel.toPageData())
         inOrder.verify(state).addStepData("stepId", sanitisedData)
         inOrder.verify(stepConfig).afterStepDataIsAdded(state)
     }

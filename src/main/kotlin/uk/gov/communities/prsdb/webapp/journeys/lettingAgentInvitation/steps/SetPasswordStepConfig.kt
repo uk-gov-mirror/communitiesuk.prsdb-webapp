@@ -45,7 +45,7 @@ class SetPasswordStepConfig(
     }
 
     // Make sure that the raw password in the form model is not saved to the state
-    override fun enrichDataBeforeSave(
+    override fun enrichStepDataBeforeItIsAdded(
         state: LettingAgentInvitationJourneyState,
         data: FormData,
     ): FormData = emptyMap()
