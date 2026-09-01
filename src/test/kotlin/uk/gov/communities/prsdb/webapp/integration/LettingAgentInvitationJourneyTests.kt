@@ -36,10 +36,9 @@ class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-
         // TODO PDJB-1658: Remove this step from the journey test
         hasPasswordPage.submitNoPassword()
 
-        // TODO PDJB-1566: Update when set password page is implemented
         val rawPassword = "password1"
         val setPasswordPage = assertPageIs(page, SetPasswordPage::class)
-        setPasswordPage.submitPassword(rawPassword)
+        setPasswordPage.submitPasswords(rawPassword, rawPassword)
 
         // TODO PDJB-1567: Update when password creation confirmation page is implemented
         val confirmationPage = assertPageIs(page, PasswordCreationConfirmationPage::class)

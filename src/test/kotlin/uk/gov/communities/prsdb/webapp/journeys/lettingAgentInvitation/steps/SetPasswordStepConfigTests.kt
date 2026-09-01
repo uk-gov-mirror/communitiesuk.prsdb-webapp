@@ -8,7 +8,9 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.springframework.validation.BindingResult
 import uk.gov.communities.prsdb.webapp.database.entity.LettingAgentAccess
 import uk.gov.communities.prsdb.webapp.exceptions.PrsdbWebException
 import uk.gov.communities.prsdb.webapp.journeys.lettingAgentInvitation.LettingAgentInvitationJourneyState
@@ -47,16 +49,70 @@ class SetPasswordStepConfigTests {
     }
 
     @Test
-    fun `getStepSpecificContent returns minimal page content`() {
+    fun `getStepSpecificContent returns address lines`() {
         val stepConfig = createStepConfig()
+        val invitation = MockLettingAgentData.createLettingAgentAccessWithoutPassword(token = token)
+        setupInvitation(invitation)
+        val expectedAddressLines = invitation.propertyOwnership.address.toMultiLineAddress().split("\n")
 
-        assertEquals(
-            mapOf(
-                "heading" to "lettingAgentInvitation.setPassword.heading",
-                "passwordLabel" to "lettingAgentInvitation.setPassword.password.label",
-                "submitButtonText" to "lettingAgentInvitation.setPassword.submit",
-            ),
-            stepConfig.getStepSpecificContent(state),
+        val content = stepConfig.getStepSpecificContent(state)
+
+        assertEquals(mapOf("addressLines" to expectedAddressLines), content)
+    }
+
+    @Test
+    fun `afterPrimaryValidation rejects when passwords do not match`() {
+        val stepConfig = createStepConfig()
+        val formModel =
+            SetPasswordFormModel().apply {
+                password = "password1"
+                confirmPassword = "different1"
+            }
+        val bindingResult: BindingResult = mock()
+        whenever(bindingResult.hasErrors()).thenReturn(false)
+        whenever(bindingResult.target).thenReturn(formModel)
+
+        stepConfig.afterPrimaryValidation(state, bindingResult)
+
+        verify(
+            bindingResult,
+        ).rejectValue("password", "RejectValueWithMessageKey", "lettingAgentInvitation.setPassword.confirmPassword.error.mismatch")
+        verify(bindingResult).rejectValue("confirmPassword", "RejectValueWithMessageKey", "_")
+    }
+
+    @Test
+    fun `afterPrimaryValidation does not reject when passwords match`() {
+        val stepConfig = createStepConfig()
+        val formModel =
+            SetPasswordFormModel().apply {
+                password = "password1"
+                confirmPassword = "password1"
+            }
+        val bindingResult: BindingResult = mock()
+        whenever(bindingResult.hasErrors()).thenReturn(false)
+        whenever(bindingResult.target).thenReturn(formModel)
+
+        stepConfig.afterPrimaryValidation(state, bindingResult)
+
+        org.mockito.kotlin.verify(bindingResult, org.mockito.Mockito.never()).rejectValue(
+            org.mockito.kotlin.any(),
+            org.mockito.kotlin.any(),
+            org.mockito.kotlin.any(),
+        )
+    }
+
+    @Test
+    fun `afterPrimaryValidation skips mismatch check when primary validation has errors`() {
+        val stepConfig = createStepConfig()
+        val bindingResult: BindingResult = mock()
+        whenever(bindingResult.hasErrors()).thenReturn(true)
+
+        stepConfig.afterPrimaryValidation(state, bindingResult)
+
+        org.mockito.kotlin.verify(bindingResult, org.mockito.Mockito.never()).rejectValue(
+            org.mockito.kotlin.any(),
+            org.mockito.kotlin.any(),
+            org.mockito.kotlin.any(),
         )
     }
 
@@ -85,7 +141,7 @@ class SetPasswordStepConfigTests {
     @Test
     fun `beforeStepDataIsAdded persists password via service`() {
         val stepConfig = createStepConfig()
-        val invitation = MockLettingAgentData.createLettingAgentAccess(token = token)
+        val invitation = MockLettingAgentData.createLettingAgentAccessWithoutPassword(token = token)
         setupInvitation(invitation)
         val rawPassword = "password1"
 
