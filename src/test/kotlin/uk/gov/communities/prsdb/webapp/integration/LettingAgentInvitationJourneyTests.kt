@@ -33,6 +33,7 @@ class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-
         BaseComponent
             .assertThat(confirmationPage.confirmationBanner)
             .containsText("Property password created")
+        assertThat(confirmationPage.backLink.locator).hasCount(0)
         assertThat(confirmationPage.insetText).containsText("Check you have a copy of this link")
         // TODO PDJB-1661: Update the expected update link once the real invitation link is wired in
         assertThat(confirmationPage.updateLink.locator).hasAttribute("href", "https://example.com")

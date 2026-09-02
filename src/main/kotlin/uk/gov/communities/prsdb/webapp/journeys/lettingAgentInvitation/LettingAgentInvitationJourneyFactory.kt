@@ -61,6 +61,7 @@ class LettingAgentInvitationJourneyFactory(
             step(journey.confirmationStep) {
                 routeSegment(ConfirmationStep.ROUTE_SEGMENT)
                 parents { journey.setPasswordStep.isComplete() }
+                backUrl { null }
                 nextStep { journey.storeAccessStep }
             }
             step(journey.enterPasswordStep) {
