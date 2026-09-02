@@ -614,6 +614,7 @@ VALUES ('jl.pending.one@example.com', 8, '2234abcd-5678-abcd-1234-567abcd2222a',
 
 INSERT INTO letting_agent_access (invited_email, property_ownership_id, token, encoded_password, created_date)
 VALUES ('letting.agent.one@example.com', 1, '11111111-1111-4111-8111-111111111111', NULL, current_date),
+       -- encoded_password is a randomly-salted argon2id hash (for local testing only); the password 'Password123!' verifies against it
        ('letting.agent.two@example.com', 5, '22222222-2222-4222-8222-222222222222',
-        'example-encoded-password-for-local-testing-only', current_date - 10),
+        '$argon2id$v=19$m=16384,t=2,p=1$6q7zmXD5tXZGyg9Ir8+TDQ$sbyg7lcP/hX+6CBQrqDbmnOOp1LtNEs5YhKKer8U9K4', current_date - 10),
        ('letting-agent@example.com', 49, '3334abcd-5678-abcd-1234-567abcd1111c', NULL, current_date);
