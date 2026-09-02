@@ -22,6 +22,11 @@ class LettingAgentInvitationStateSessionBuilder : JourneyStateSessionBuilder<Let
         return self()
     }
 
+    fun withHasPasswordCompletedAsHasPassword(): LettingAgentInvitationStateSessionBuilder {
+        withSubmittedValue(HasPasswordStep.ROUTE_SEGMENT, HasPasswordFormModel(hasPassword = true))
+        return self()
+    }
+
     fun withInvitationToken(token: String): LettingAgentInvitationStateSessionBuilder {
         withAdditionalData("invitationToken", "\"$token\"")
         return self()
@@ -33,6 +38,13 @@ class LettingAgentInvitationStateSessionBuilder : JourneyStateSessionBuilder<Let
                 .withStartCompleted()
                 .withValidateTokenCompleted()
                 .withHasPasswordCompletedAsNoPassword()
+                .withInvitationToken(token)
+
+        fun beforeEnterPassword(token: String): LettingAgentInvitationStateSessionBuilder =
+            LettingAgentInvitationStateSessionBuilder()
+                .withStartCompleted()
+                .withValidateTokenCompleted()
+                .withHasPasswordCompletedAsHasPassword()
                 .withInvitationToken(token)
     }
 }

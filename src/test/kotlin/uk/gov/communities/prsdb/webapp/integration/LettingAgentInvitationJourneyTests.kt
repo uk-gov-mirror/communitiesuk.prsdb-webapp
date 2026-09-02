@@ -1,7 +1,6 @@
 package uk.gov.communities.prsdb.webapp.integration
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -70,32 +69,6 @@ class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-
         storeAccessPage.form.submit()
 
         // TODO PDJB-1570: Assert redirect to letting agent property record page
-    }
-
-    @Test
-    fun `submitting no password shows a missing password error`(page: Page) {
-        featureFlagManager.enable(DELEGATE_TO_LETTING_AGENT)
-        setPasswordForInvitation("password1")
-
-        val enterPasswordPage = goToEnterPasswordPage(page)
-        enterPasswordPage.submitPassword("")
-
-        assertPageIs(page, EnterPasswordPage::class)
-        assertThat(enterPasswordPage.form.getErrorMessage("password")).containsText("Enter your password")
-    }
-
-    @Test
-    fun `submitting an incorrect password shows an incorrect password error`(page: Page) {
-        featureFlagManager.enable(DELEGATE_TO_LETTING_AGENT)
-        setPasswordForInvitation("password1")
-
-        val enterPasswordPage = goToEnterPasswordPage(page)
-        enterPasswordPage.submitPassword("wrongPassword")
-
-        assertPageIs(page, EnterPasswordPage::class)
-        assertThat(enterPasswordPage.form.getErrorMessage("password"))
-            .containsText("The password you entered is not correct")
-        assertThat(enterPasswordPage.passwordInput).hasValue("")
     }
 
     @Test
