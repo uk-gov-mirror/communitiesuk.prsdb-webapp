@@ -101,6 +101,7 @@ class LettingAgentInvitationJourney(
 ) : AbstractJourneyState(journeyStateService),
     LettingAgentInvitationJourneyState {
     override var invitationToken: String? by delegateProvider.nullableDelegate("invitationToken")
+    override var hasPassword: Boolean? by delegateProvider.nullableDelegate("hasPassword")
 
     override fun generateJourneyId(seed: Any?): String {
         val token = seed as? UUID
@@ -119,4 +120,5 @@ interface LettingAgentInvitationJourneyState : JourneyState {
     val enterPasswordStep: EnterPasswordStep
     val storeAccessStep: StoreAccessStep
     var invitationToken: String?
+    var hasPassword: Boolean?
 }

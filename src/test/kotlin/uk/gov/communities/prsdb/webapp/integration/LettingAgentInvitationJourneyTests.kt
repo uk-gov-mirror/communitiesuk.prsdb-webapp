@@ -11,8 +11,8 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgen
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.ValidateTokenPage
 
 class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-local.sql") {
-    private val tokenWithoutPassword = "11111111-1111-1111-1111-111111111111"
-    private val tokenWithPassword = "22222222-2222-2222-2222-222222222222"
+    private val tokenWithoutPassword = "11111111-1111-4111-8111-111111111111"
+    private val tokenWithPassword = "22222222-2222-4222-8222-222222222222"
 
     @Test
     fun `user who does not have a password can walk the set password journey`(page: Page) {

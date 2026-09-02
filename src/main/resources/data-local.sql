@@ -613,7 +613,7 @@ VALUES ('jl.pending.one@example.com', 8, '2234abcd-5678-abcd-1234-567abcd2222a',
        ('jl.pending.org@example.com', 48, '2234abcd-5678-abcd-1234-567abcd5555a', 'Local Organisation Landlord', current_date);
 
 INSERT INTO letting_agent_access (invited_email, property_ownership_id, token, encoded_password, created_date)
-VALUES ('letting.agent.one@example.com', 1, '11111111-1111-1111-1111-111111111111', NULL, current_date),
-       ('letting.agent.two@example.com', 5, '22222222-2222-2222-2222-222222222222',
+VALUES ('letting.agent.one@example.com', 1, '11111111-1111-4111-8111-111111111111', NULL, current_date),
+       ('letting.agent.two@example.com', 5, '22222222-2222-4222-8222-222222222222',
         'example-encoded-password-for-local-testing-only', current_date - 10),
        ('letting-agent@example.com', 49, '3334abcd-5678-abcd-1234-567abcd1111c', NULL, current_date);
