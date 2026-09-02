@@ -1,10 +1,13 @@
 package uk.gov.communities.prsdb.webapp.integration
 
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.password.PasswordEncoder
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
+import uk.gov.communities.prsdb.webapp.controllers.LettingAgentInvitationController
 import uk.gov.communities.prsdb.webapp.database.repository.LettingAgentAccessRepository
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.EnterPasswordPage
@@ -13,6 +16,8 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgen
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.SetPasswordPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.StoreAccessPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.ValidateTokenPage
+import uk.gov.communities.prsdb.webapp.journeys.lettingAgentInvitation.steps.StoreAccessStep
+import java.util.UUID
 
 class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-local.sql") {
     @Autowired
@@ -36,7 +41,7 @@ class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-
         // TODO PDJB-1658: Remove this step from the journey test
         hasPasswordPage.submitNoPassword()
 
-        val rawPassword = "password1"
+        val rawPassword = "password1" // pragma: allowlist secret
         val setPasswordPage = assertPageIs(page, SetPasswordPage::class)
         setPasswordPage.submitPasswords(rawPassword, rawPassword)
 
@@ -54,7 +59,67 @@ class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-
     @Test
     fun `user who has a password can walk the enter password journey`(page: Page) {
         featureFlagManager.enable(DELEGATE_TO_LETTING_AGENT)
+        val rawPassword = "password1" // pragma: allowlist secret
+        setPasswordForInvitation(rawPassword)
 
+        val enterPasswordPage = goToEnterPasswordPage(page)
+        enterPasswordPage.submitPassword(rawPassword)
+
+        // TODO PDJB-1659: Remove this step from the journey test
+        val storeAccessPage = assertPageIs(page, StoreAccessPage::class)
+        storeAccessPage.form.submit()
+
+        // TODO PDJB-1570: Assert redirect to letting agent property record page
+    }
+
+    @Test
+    fun `submitting no password shows a missing password error`(page: Page) {
+        featureFlagManager.enable(DELEGATE_TO_LETTING_AGENT)
+        setPasswordForInvitation("password1")
+
+        val enterPasswordPage = goToEnterPasswordPage(page)
+        enterPasswordPage.submitPassword("")
+
+        assertPageIs(page, EnterPasswordPage::class)
+        assertThat(enterPasswordPage.form.getErrorMessage("password")).containsText("Enter your password")
+    }
+
+    @Test
+    fun `submitting an incorrect password shows an incorrect password error`(page: Page) {
+        featureFlagManager.enable(DELEGATE_TO_LETTING_AGENT)
+        setPasswordForInvitation("password1")
+
+        val enterPasswordPage = goToEnterPasswordPage(page)
+        enterPasswordPage.submitPassword("wrongPassword")
+
+        assertPageIs(page, EnterPasswordPage::class)
+        assertThat(enterPasswordPage.form.getErrorMessage("password"))
+            .containsText("The password you entered is not correct")
+        assertThat(enterPasswordPage.passwordInput).hasValue("")
+    }
+
+    @Test
+    fun `navigating directly to store access without entering the password does not grant access`(page: Page) {
+        featureFlagManager.enable(DELEGATE_TO_LETTING_AGENT)
+        setPasswordForInvitation("password1")
+
+        goToEnterPasswordPage(page)
+        val journeyId = page.url().substringAfter("journeyId=")
+
+        navigator.navigate(
+            "${LettingAgentInvitationController.LETTING_AGENT_INVITATION_ROUTE}/${StoreAccessStep.ROUTE_SEGMENT}" +
+                "?journeyId=$journeyId",
+        )
+
+        assertFalse(page.url().contains(StoreAccessStep.ROUTE_SEGMENT))
+    }
+
+    private fun setPasswordForInvitation(rawPassword: String) {
+        val invitation = lettingAgentAccessRepository.findByToken(UUID.fromString(validToken))!!
+        lettingAgentAccessRepository.setEncodedPasswordIfAbsent(invitation.id, passwordEncoder.encode(rawPassword))
+    }
+
+    private fun goToEnterPasswordPage(page: Page): EnterPasswordPage {
         val validateTokenPage = navigator.goToLettingAgentInvitationJourney(validToken)
         // TODO PDJB-1658: Update when validate token step is implemented
         assertPageIs(page, ValidateTokenPage::class)
@@ -64,14 +129,6 @@ class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-
         // TODO PDJB-1658: Remove this step from the journey test
         hasPasswordPage.submitHasPassword()
 
-        // TODO PDJB-1568: Update when enter password page is implemented
-        val enterPasswordPage = assertPageIs(page, EnterPasswordPage::class)
-        enterPasswordPage.form.submit()
-
-        // TODO PDJB-1659: Remove this step from the journey test
-        val storeAccessPage = assertPageIs(page, StoreAccessPage::class)
-        storeAccessPage.form.submit()
-
-        // TODO PDJB-1570: Assert redirect to letting agent property record page
+        return assertPageIs(page, EnterPasswordPage::class)
     }
 }

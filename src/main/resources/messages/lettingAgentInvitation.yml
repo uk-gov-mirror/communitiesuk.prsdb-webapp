@@ -3,8 +3,8 @@ caption: Provide details for a landlord’s rental property
 hasPassword:
   fieldSetHeading: "TODO: PDJB-1658: Check password set step"
   radios:
-    hasPassword: Has password set
-    noPassword: No password set
+    hasPassword: Has password set # pragma: allowlist secret
+    noPassword: No password set # pragma: allowlist secret
     error:
       missing: Select whether this account has a password set
 setPassword:
@@ -24,3 +24,31 @@ setPassword:
     error:
       missing: Re-type your password
   submit: Save and continue
+enterPassword:
+  heading: Enter the password for this property
+  password:
+    label: Password
+    error:
+      missing: Enter your password
+      incorrect: The password you entered is not correct
+  submit: Continue
+  details:
+    summary: I do not know this password
+    intro: To set a new password, ask the landlord to send you a new link.
+    heading: What the landlord needs to do
+    listIntro: "Ask a landlord to:"
+    step:
+      one: Sign into the Register your rental property service.
+      two: Go to this property’s record.
+      three:
+        textOne: "Under "
+        boldOne: Your letting agent or property manager can make updates
+        textTwo: " select to "
+        boldTwo: Remove your letting agent or property manager
+        textThree: ". Complete these steps."
+      four:
+        textOne: "Under "
+        boldOne: If you’re using a letting agent or property manager
+        textTwo: ", select "
+        boldTwo: Allow them to provide details
+        textThree: ". Complete these steps."
