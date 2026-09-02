@@ -12,11 +12,18 @@ class ConfirmationStepConfig : AbstractRequestableStepConfig<Complete, NoInputFo
     override val formModelClass = NoInputFormModel::class
 
     override fun getStepSpecificContent(state: JourneyState): Map<String, Any?> =
-        mapOf("todoComment" to "TODO: PDJB-1567: Password creation confirmation page")
+        // TODO PDJB-1567: This is the link the letting agent uses to return to their property. It is currently a
+        //  placeholder that mirrors the invitation link emailed to letting agents (also a placeholder, see PDJB-1661).
+        //  Both must be updated to the real invitation link once PDJB-1661 is done.
+        mapOf("updateLink" to PLACEHOLDER_UPDATE_LINK)
 
-    override fun chooseTemplate(state: JourneyState): String = "forms/todo"
+    override fun chooseTemplate(state: JourneyState): String = "forms/lettingAgentInvitationConfirmation"
 
     override fun mode(state: JourneyState): Complete = Complete.COMPLETE
+
+    companion object {
+        private const val PLACEHOLDER_UPDATE_LINK = "https://example.com"
+    }
 }
 
 @JourneyFrameworkComponent

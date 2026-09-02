@@ -27,7 +27,7 @@ class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-
         val setPasswordPage = assertPageIs(page, SetPasswordPage::class)
         setPasswordPage.form.submit()
 
-        // TODO PDJB-1567: Update when password creation confirmation page is implemented
+        // TODO PDJB-1567: Assert confirmation page content once the upstream stub steps provide real data
         val confirmationPage = assertPageIs(page, PasswordCreationConfirmationPage::class)
         confirmationPage.form.submit()
 

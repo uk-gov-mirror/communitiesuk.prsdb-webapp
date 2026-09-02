@@ -5,7 +5,8 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.Form
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage
 import uk.gov.communities.prsdb.webapp.journeys.lettingAgentInvitation.steps.ConfirmationStep
 
-// TODO PDJB-1567: Update when password creation confirmation page is implemented
+// TODO PDJB-1567: Page object is intentionally minimal for now. Extend with content assertions (banner,
+//  update link, password row) once the upstream stub steps can drive real data onto this page.
 class PasswordCreationConfirmationPage(
     page: Page,
 ) : BasePage(page, "/${ConfirmationStep.ROUTE_SEGMENT}") {

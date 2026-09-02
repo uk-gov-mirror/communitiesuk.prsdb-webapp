@@ -1,0 +1,49 @@
+<!--/*@thymesVar id="formModel" type="uk.gov.communities.prsdb.webapp.models.requestModels.formModels.NoInputFormModel"*/-->
+<!--/*@thymesVar id="backUrl" type="java.lang.String"*/-->
+<!--/*@thymesVar id="sectionHeaderInfo" type="uk.gov.communities.prsdb.webapp.models.viewModels.SectionHeaderViewModel"*/-->
+<!--/*@thymesVar id="updateLink" type="java.lang.String"*/-->
+<!DOCTYPE html>
+<html id="form-content"
+      th:replace="~{fragments/forms/questionPage :: questionPage(#{lettingAgentInvitation.title}, ${formModel}, ~{::#form-content/content()}, ${backUrl}, ${sectionHeaderInfo})}">
+
+    <div id="confirmation-banner"
+         th:replace="~{fragments/banners/confirmationPageBanner :: confirmationPageBanner(#{lettingAgentInvitation.confirmation.banner.heading}, null)}">
+    </div>
+
+    <p class="govuk-body" th:text="#{lettingAgentInvitation.confirmation.continueToProvideDetails}">
+        lettingAgentInvitation.confirmation.continueToProvideDetails
+    </p>
+
+    <h2 class="govuk-heading-m" th:text="#{lettingAgentInvitation.confirmation.updatingInFuture.heading}">
+        lettingAgentInvitation.confirmation.updatingInFuture.heading
+    </h2>
+
+    <p class="govuk-body" th:text="#{lettingAgentInvitation.confirmation.updatingInFuture.body}">
+        lettingAgentInvitation.confirmation.updatingInFuture.body
+    </p>
+
+    <dl class="govuk-summary-list">
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key" th:text="#{lettingAgentInvitation.confirmation.updateLink.key}">
+                lettingAgentInvitation.confirmation.updateLink.key
+            </dt>
+            <dd class="govuk-summary-list__value">
+                <a id="update-link" class="govuk-link" th:href="${updateLink}" th:text="${updateLink}">updateLink</a>
+            </dd>
+        </div>
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key" th:text="#{lettingAgentInvitation.confirmation.password.key}">
+                lettingAgentInvitation.confirmation.password.key
+            </dt>
+            <dd class="govuk-summary-list__value" th:text="#{lettingAgentInvitation.confirmation.password.value}">
+                lettingAgentInvitation.confirmation.password.value
+            </dd>
+        </div>
+    </dl>
+
+    <div class="govuk-inset-text" th:text="#{lettingAgentInvitation.confirmation.insetText}">
+        lettingAgentInvitation.confirmation.insetText
+    </div>
+
+    <button th:replace="~{fragments/buttons/primaryButton :: primaryButton(#{lettingAgentInvitation.confirmation.continueButton})}"></button>
+</html>

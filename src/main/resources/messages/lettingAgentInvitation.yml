@@ -1,2 +1,15 @@
 title: Set up your letting agent account
- 
+confirmation:
+  banner:
+    heading: Property password created
+  continueToProvideDetails: You can now continue to provide details about this property.
+  updatingInFuture:
+    heading: Updating this property in the future
+    body: "Use these details to access this property again:"
+  updateLink:
+    key: Update link
+  password:
+    key: Password
+    value: Password you just created
+  insetText: Check you have a copy of this link.
+  continueButton: Continue to provide details
