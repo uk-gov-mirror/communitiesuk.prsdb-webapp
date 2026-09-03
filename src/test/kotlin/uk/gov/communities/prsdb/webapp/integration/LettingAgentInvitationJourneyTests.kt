@@ -29,6 +29,10 @@ class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-
         val setPasswordPage = assertPageIs(page, SetPasswordPage::class)
         setPasswordPage.form.submit()
 
+        // TODO PDJB-1659: Remove this step from the journey test once store-access becomes a silent step
+        val storeAccessPage = assertPageIs(page, StoreAccessPage::class)
+        storeAccessPage.form.submit()
+
         val confirmationPage = assertPageIs(page, PasswordCreationConfirmationPage::class)
         BaseComponent
             .assertThat(confirmationPage.confirmationBanner)
@@ -38,10 +42,6 @@ class LettingAgentInvitationJourneyTests : IntegrationTestWithMutableData("data-
         assertThat(confirmationPage.updateLink.locator).hasAttribute("href", "https://example.com")
         assertThat(confirmationPage.updateLink.locator).hasText("https://example.com")
         confirmationPage.form.submit()
-
-        // TODO PDJB-1659: Remove this step from the journey test
-        val storeAccessPage = assertPageIs(page, StoreAccessPage::class)
-        storeAccessPage.form.submit()
 
         // TODO PDJB-1570: Assert redirect to letting agent property record page
     }
