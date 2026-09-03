@@ -1,6 +1,7 @@
 package uk.gov.communities.prsdb.webapp.integration
 
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -50,7 +51,7 @@ class LettingAgentInvitationSinglePageTests : IntegrationTestWithMutableData("da
             setPasswordPage.submitPasswords("password1", "password2")
 
             assertPageIs(page, SetPasswordPage::class)
-            BaseComponent.assertThat(setPasswordPage.errorSummary).containsText("Enter the same password in both fields")
+            assertThat(setPasswordPage.errorSummary.errorLinks("Enter the same password in both fields")).hasCount(1)
         }
 
         @Test
