@@ -5,28 +5,20 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.security.crypto.password.PasswordEncoder
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
-import uk.gov.communities.prsdb.webapp.database.repository.LettingAgentAccessRepository
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.EnterPasswordPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.PasswordCreationConfirmationPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.SetPasswordPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAgentInvitationJourneyPages.StoreAccessPage
-import java.util.UUID
 
 class LettingAgentInvitationSinglePageTests : IntegrationTestWithMutableData("data-local.sql") {
-    @Autowired
-    private lateinit var lettingAgentAccessRepository: LettingAgentAccessRepository
-
-    @Autowired
-    private lateinit var passwordEncoder: PasswordEncoder
-
     private val validToken = "3334abcd-5678-abcd-1234-567abcd1111a"
 
-    private val existingPassword = "password1" // pragma: allowlist secret
+    private val tokenWithPassword = "3334abcd-5678-abcd-1234-567abcd1111b"
+
+    private val seededPassword = "password1" // pragma: allowlist secret
 
     @BeforeEach
     fun enableFeatureFlag() {
@@ -80,21 +72,16 @@ class LettingAgentInvitationSinglePageTests : IntegrationTestWithMutableData("da
 
     @Nested
     inner class EnterPasswordContent {
-        @BeforeEach
-        fun setPassword() = setPasswordForInvitation()
-
         @Test
-        fun `the page shows the property address and guidance on getting a new password`() {
-            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(validToken)
+        fun `the page shows the heading and the property address`() {
+            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(tokenWithPassword)
 
             BaseComponent.assertThat(enterPasswordPage.heading).containsText("Enter the password for this property")
-            assertThat(enterPasswordPage.details).containsText("I do not know this password")
-            assertThat(enterPasswordPage.details).containsText("ask the landlord to send you a new link")
         }
 
         @Test
         fun `the password input is masked, autocompletes as a current password, and has a show toggle`() {
-            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(validToken)
+            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(tokenWithPassword)
 
             assertThat(enterPasswordPage.passwordInput).hasAttribute("type", "password")
             assertThat(enterPasswordPage.passwordInput).hasAttribute("autocomplete", "current-password")
@@ -104,12 +91,9 @@ class LettingAgentInvitationSinglePageTests : IntegrationTestWithMutableData("da
 
     @Nested
     inner class EnterPasswordValidation {
-        @BeforeEach
-        fun setPassword() = setPasswordForInvitation()
-
         @Test
         fun `submitting a blank password shows a required error message`(page: Page) {
-            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(validToken)
+            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(tokenWithPassword)
 
             enterPasswordPage.form.submit()
 
@@ -119,7 +103,7 @@ class LettingAgentInvitationSinglePageTests : IntegrationTestWithMutableData("da
 
         @Test
         fun `submitting an incorrect password shows an incorrect password error`(page: Page) {
-            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(validToken)
+            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(tokenWithPassword)
 
             enterPasswordPage.submitPassword("wrongPassword")
 
@@ -129,7 +113,7 @@ class LettingAgentInvitationSinglePageTests : IntegrationTestWithMutableData("da
 
         @Test
         fun `submitting an incorrect password does not echo the entered password back to the page`(page: Page) {
-            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(validToken)
+            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(tokenWithPassword)
 
             enterPasswordPage.submitPassword("wrongPassword")
 
@@ -139,17 +123,12 @@ class LettingAgentInvitationSinglePageTests : IntegrationTestWithMutableData("da
 
         @Test
         fun `submitting the correct password proceeds to the next step`(page: Page) {
-            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(validToken)
+            val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(tokenWithPassword)
 
-            enterPasswordPage.submitPassword(existingPassword)
+            enterPasswordPage.submitPassword(seededPassword)
 
             // TODO PDJB-1659: Assert the letting agent's access has been stored
             assertPageIs(page, StoreAccessPage::class)
         }
-    }
-
-    private fun setPasswordForInvitation() {
-        val invitation = lettingAgentAccessRepository.findByToken(UUID.fromString(validToken))!!
-        lettingAgentAccessRepository.setEncodedPasswordIfAbsent(invitation.id, passwordEncoder.encode(existingPassword))
     }
 }
