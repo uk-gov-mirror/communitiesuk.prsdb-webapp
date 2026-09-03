@@ -8,7 +8,9 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.whenever
 import org.springframework.validation.BindingResult
 import uk.gov.communities.prsdb.webapp.database.entity.LettingAgentAccess
@@ -94,10 +96,10 @@ class SetPasswordStepConfigTests {
 
         stepConfig.afterPrimaryValidation(state, bindingResult)
 
-        org.mockito.kotlin.verify(bindingResult, org.mockito.Mockito.never()).rejectValue(
-            org.mockito.kotlin.any(),
-            org.mockito.kotlin.any(),
-            org.mockito.kotlin.any(),
+        verify(bindingResult, never()).rejectValue(
+            any(),
+            any(),
+            any(),
         )
     }
 
@@ -109,10 +111,10 @@ class SetPasswordStepConfigTests {
 
         stepConfig.afterPrimaryValidation(state, bindingResult)
 
-        org.mockito.kotlin.verify(bindingResult, org.mockito.Mockito.never()).rejectValue(
-            org.mockito.kotlin.any(),
-            org.mockito.kotlin.any(),
-            org.mockito.kotlin.any(),
+        verify(bindingResult, never()).rejectValue(
+            any(),
+            any(),
+            any(),
         )
     }
 
