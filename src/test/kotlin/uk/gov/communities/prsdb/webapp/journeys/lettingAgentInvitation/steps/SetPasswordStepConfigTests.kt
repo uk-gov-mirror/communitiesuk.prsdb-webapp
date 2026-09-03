@@ -76,7 +76,7 @@ class SetPasswordStepConfigTests {
 
         verify(
             bindingResult,
-        ).rejectValue("password", "RejectValueWithMessageKey", "lettingAgentInvitation.setPassword.confirmPassword.error.mismatch")
+        ).rejectValue("password", "RejectValueWithMessageKey", "lettingAgentInvitation.setPassword.password.error.mismatch")
         verify(bindingResult).rejectValue("confirmPassword", "RejectValueWithMessageKey", "_")
     }
 

@@ -39,7 +39,7 @@ class SetPasswordStepConfig(
             if (formModel.password != formModel.confirmPassword) {
                 bindingResult.rejectValueWithMessageKey(
                     SetPasswordFormModel::password.name,
-                    "lettingAgentInvitation.setPassword.confirmPassword.error.mismatch",
+                    "lettingAgentInvitation.setPassword.password.error.mismatch",
                 )
                 bindingResult.rejectValueWithMessageKey(
                     SetPasswordFormModel::confirmPassword.name,

@@ -18,9 +18,9 @@ setPassword:
     error:
       missing: Enter a password
       invalid: Password must be at least 8 characters and include letters and numbers
+      mismatch: Enter the same password in both fields
   confirmPassword:
     label: Re-type password
     error:
       missing: Re-type your password
-      mismatch: Enter the same password in both fields
   submit: Save and continue
