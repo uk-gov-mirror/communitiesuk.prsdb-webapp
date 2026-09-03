@@ -93,10 +93,11 @@ class LettingAgentInvitationSinglePageTests : IntegrationTestWithMutableData("da
         }
 
         @Test
-        fun `the password input is masked and has a show toggle`() {
+        fun `the password input is masked, autocompletes as a current password, and has a show toggle`() {
             val enterPasswordPage = navigator.skipToLettingAgentInvitationEnterPasswordPage(validToken)
 
             assertThat(enterPasswordPage.passwordInput).hasAttribute("type", "password")
+            assertThat(enterPasswordPage.passwordInput).hasAttribute("autocomplete", "current-password")
             assertThat(enterPasswordPage.showPasswordButton).hasText("Show")
         }
     }
