@@ -116,6 +116,13 @@ Test classes follow the pattern: `{JourneyName}{SinglePageTests|JourneyTests}`
 - `SinglePageTests` — test individual page rendering and validation
 - `JourneyTests` — test end-to-end journey flows
 
+## Assertion Scope
+
+- For a normal page-rendering test, it's sufficient to assert on the page **heading** only — don't assert on every
+  piece of static content on the page.
+- Add assertions on more specific selectors only when the test is checking something **dynamic** (e.g. content that
+  varies based on data, conditional fields, or feature flags).
+
 ## Feature Flags in Integration Tests
 - Flags reset automatically after each test
 - Use `FeatureFlagManager` to enable/disable flags

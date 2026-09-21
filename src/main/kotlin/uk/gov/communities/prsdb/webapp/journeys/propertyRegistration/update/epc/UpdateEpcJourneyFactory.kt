@@ -59,8 +59,8 @@ class UpdateEpcJourneyFactory(
     private fun mainJourneyMap(
         state: UpdateEpcJourney,
         returnUrl: String,
-    ): Map<String, StepLifecycleOrchestrator> {
-        return journey(state) {
+    ): Map<String, StepLifecycleOrchestrator> =
+        journey(state) {
             unreachableStepUrl { returnUrl }
             task(journey.epcDetailsTask) {
                 withDependencies { journey }
@@ -86,17 +86,20 @@ class UpdateEpcJourneyFactory(
             }
             step(journey.completeEpcUpdateStep) {
                 parents { journey.updateCheckEpcAnswersStep.isComplete() }
-                nextUrl { returnUrl }
+                nextDestination {
+                    Destination
+                        .ExternalUrl(returnUrl)
+                        .withFlashAttribute("updateSuccessBanner", "propertyDetails.updateSuccessBanner.compliance")
+                }
             }
             replaceButtons()
         }
-    }
 
     private fun checkYourAnswersJourneyMap(
         state: UpdateEpcJourney,
         returnUrl: String,
-    ): Map<String, StepLifecycleOrchestrator> {
-        return journey(state) {
+    ): Map<String, StepLifecycleOrchestrator> =
+        journey(state) {
             unreachableStepUrl { returnUrl }
             configure {
                 withAdditionalContentProperties {
@@ -118,7 +121,6 @@ class UpdateEpcJourneyFactory(
             }
             replaceButtons()
         }
-    }
 
     private fun JourneyBuilder<UpdateEpcJourney>.replaceButtons() {
         configureStep(journey.epcDetailsTask.hasEpcStep) {

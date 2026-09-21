@@ -13,7 +13,7 @@ import java.util.Locale
 
 abstract class ComplianceViewModelFactoryBase(
     protected val messageSource: MessageSource,
-    private val featureFlagManager: FeatureFlagManager,
+    protected val featureFlagManager: FeatureFlagManager,
 ) {
     protected abstract val provideLaterUnoccupiedKey: String
     protected abstract val provideLaterNoDeadlineKey: String

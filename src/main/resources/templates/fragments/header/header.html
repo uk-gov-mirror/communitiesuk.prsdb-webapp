@@ -4,7 +4,7 @@
         <header th:replace="~{ fragments/header/authenticatedHeader :: loggedInHeader(${navLinks}) }"></header>
     </th:block>
     <th:block sec:authorize="isAnonymous()">
-        <header th:replace="~{ fragments/header/anonymousHeader :: anonymousHeader }"></header>
+        <th:block th:replace="~{ fragments/header/anonymousHeader :: anonymousHeader }"></th:block>
     </th:block>
 </th:block>
 </html>

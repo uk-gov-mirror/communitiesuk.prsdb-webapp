@@ -10,6 +10,7 @@
 <!--/*@thymesVar id="submitButtonText" type="java.lang.String"*/-->
 <!--/*@thymesVar id="showWarning" type="java.lang.Boolean"*/-->
 <!--/*@thymesVar id="backUrl" type="java.lang.String"*/-->
+<!--/*@thymesVar id="showCorrespondenceInset" type="java.lang.Boolean"*/-->
 <!DOCTYPE html>
 <html th:replace="~{fragments/forms/questionPage :: questionPage(#{${title}}, ${formModel}, ~{::#form-content}, ${backUrl}, ${sectionHeaderInfo})}">
 <th:block id="form-content">
@@ -21,6 +22,16 @@
         <div th:replace="~{fragments/forms/fixedWidthTextInput :: fixedWidthTextInput(#{${townOrCityLabel}}, 'townOrCity', null, 20)}"></div>
         <div th:replace="~{fragments/forms/fixedWidthTextInput :: fixedWidthTextInput(#{${countyLabel}}, 'county', null, 20)}"></div>
         <div th:replace="~{fragments/forms/fixedWidthTextInput :: fixedWidthTextInput(#{${postcodeLabel}}, 'postcode', null, 10)}"></div>
+    </th:block>
+    <th:block th:if="${showCorrespondenceInset}">
+        <h2 class="govuk-heading-m" th:text="#{addressForms.manualAddress.correspondence.preSubmitHeading}">addressForms.manualAddress.correspondence.preSubmitHeading</h2>
+        <div class="govuk-inset-text">
+            <p class="govuk-body" th:text="#{addressForms.manualAddress.correspondence.preSubmitInset.intro}">addressForms.manualAddress.correspondence.preSubmitInset.intro</p>
+            <ul class="govuk-list govuk-list--bullet">
+                <li th:text="#{addressForms.manualAddress.correspondence.preSubmitInset.bullet.one}">addressForms.manualAddress.correspondence.preSubmitInset.bullet.one</li>
+                <li th:text="#{addressForms.manualAddress.correspondence.preSubmitInset.bullet.two}">addressForms.manualAddress.correspondence.preSubmitInset.bullet.two</li>
+            </ul>
+        </div>
     </th:block>
     <th:block th:if="${showWarning}">
         <div th:replace="~{fragments/warningText :: warningText(#{forms.update.warning})}">forms.update.warning</div>

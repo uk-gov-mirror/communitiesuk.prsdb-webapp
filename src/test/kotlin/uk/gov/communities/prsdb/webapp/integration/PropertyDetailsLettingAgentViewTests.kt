@@ -5,6 +5,7 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
+import uk.gov.communities.prsdb.webapp.constants.LETTING_AGENT_PROPERTY_DETAILS_SURVEY_URL
 import uk.gov.communities.prsdb.webapp.controllers.LettingAgentPropertyDetailsController
 import uk.gov.communities.prsdb.webapp.controllers.LettingAgentUpdateEpcController
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
@@ -23,6 +24,22 @@ class PropertyDetailsLettingAgentViewTests : IntegrationTestWithImmutableData("d
     @BeforeEach
     fun enableFeatureFlag() {
         featureFlagManager.enable(DELEGATE_TO_LETTING_AGENT)
+    }
+
+    @Test
+    fun `the service navigation banner is shown with the service name`(page: Page) {
+        val detailsPage = navigator.goToPropertyDetailsLettingAgentView(allDetailsDelegatedToken)
+
+        assertThat(detailsPage.serviceNavigation).isVisible()
+        assertThat(detailsPage.serviceNavigation.serviceName).hasText("Register your rental property")
+    }
+
+    @Test
+    fun `the feedback survey link is shown with the configured URL`(page: Page) {
+        val detailsPage = navigator.goToPropertyDetailsLettingAgentView(allDetailsDelegatedToken)
+
+        assertThat(detailsPage.surveyLink).isVisible()
+        assertThat(detailsPage.surveyLink).hasAttribute("href", LETTING_AGENT_PROPERTY_DETAILS_SURVEY_URL)
     }
 
     @Test
@@ -49,9 +66,8 @@ class PropertyDetailsLettingAgentViewTests : IntegrationTestWithImmutableData("d
         assertThat(detailsPage.provideDetailsInset).containsText("Provide all details")
         assertThat(detailsPage.summaryList.licensingRow.value).containsText("Provide this later")
         assertThat(detailsPage.summaryList.tenancyRow.value).containsText("Provide this later")
-        // TODO PDJB-1722: the "Does the property have a gas supply..." row should be removed for gas "provide this
-        //  later"; update/remove the hasGasSupply placeholder assertions here when that row is hidden.
-        assertThat(detailsPage.gasSafetyCard.summaryList.hasCertRow.value).containsText("Provide this later")
+        assertThat(detailsPage.gasSafetyCard.summaryList.hasGasSupplyRow.value).containsText("Provide this later")
+        assertThat(detailsPage.gasSafetyCard.summaryList.hasCertRow).isHidden()
         assertThat(detailsPage.electricalSafetyCard).containsText("Provide this later")
         assertThat(detailsPage.epcCard).containsText("Provide this later")
         assertThat(detailsPage.epcCard.getAction("Change").link).hasAttribute(

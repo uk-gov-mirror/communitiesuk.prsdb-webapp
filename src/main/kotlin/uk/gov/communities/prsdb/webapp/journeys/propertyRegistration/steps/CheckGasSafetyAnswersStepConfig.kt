@@ -30,14 +30,6 @@ class CheckGasSafetyAnswersStepConfig(
     override fun mode(state: GasSafetyState) = getFormModelFromStateOrNull(state)?.let { Complete.COMPLETE }
 }
 
-enum class GasSafetyScenario {
-    UPLOADED_CERTIFICATE,
-    NO_GAS_SUPPLY,
-    PROVIDE_LATER,
-    NO_CERT,
-    CERT_EXPIRED,
-}
-
 @JourneyFrameworkComponent
 final class CheckGasSafetyAnswersStep(
     stepConfig: CheckGasSafetyAnswersStepConfig,

@@ -4,6 +4,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: deploy-integration
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy-integration:
     name: Build and Deploy

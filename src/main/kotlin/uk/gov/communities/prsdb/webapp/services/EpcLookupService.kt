@@ -62,6 +62,16 @@ class EpcLookupService(
             }
         }
 
+        fun setErrorCode(
+            jsonObject: JSONObject,
+            code: String,
+        ) {
+            val errors = jsonObject.getJSONArray("errors")
+            if (errors.count() == 1) {
+                errors.getJSONObject(0).put("code", code)
+            }
+        }
+
         fun getErrorMessage(jsonObject: JSONObject): String? {
             val errors = jsonObject.getJSONArray("errors")
             return if (errors.count() == 1) {

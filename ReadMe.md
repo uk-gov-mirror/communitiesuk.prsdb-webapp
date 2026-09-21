@@ -117,6 +117,52 @@ You will need to include the following profiles:
 
 If you need to use notify, also add the `use-notify` profile.
 
+#### Seeding NFT (load test) data locally
+
+`NftDataSeeder` generates a realistic set of landlords, organisations, properties and property registrations for
+performance/load testing. It runs as a one-off task (not a web server) via `NftDataSeedingTaskApplicationRunner`,
+which calls `exitProcess()` once seeding completes — this is expected behaviour, not a crash.
+
+**Run configuration:** use (or copy) the `local-nft-seeder` Run Configuration in IntelliJ
+(`.run/local-nft-seeder.run.xml`). It activates the profiles `local`, `web-server-deactivated`,
+`nft-data-seeder`, and automatically runs `local_resources_up` (starts local Postgres/Redis via Docker) and
+`flywayClean-local-except-address` (resets the schema, preserving the address/local council reference data) before
+each run.
+
+To run from the CLI instead:
+
+```bash
+./gradlew flywayClean flywayMigrate   # reset the schema first
+SPRING_PROFILES_ACTIVE=local,web-server-deactivated,nft-data-seeder ./gradlew bootRun
+```
+
+**Configuration** (`nft-seed.*` in `application.yml`, overridable via env vars, with smaller defaults for `local` in
+`application-local.yml`):
+
+| Property                    | Env var                        | `local` default | Purpose                                                                                                   |
+|------------------------------|---------------------------------|------------------|-------------------------------------------------------------------------------------------------------------|
+| `nft-seed.system-operators`   | `NFT_SEED_SYSTEM_OPERATORS`     | 5                | Number of system operator users to create.                                                                  |
+| `nft-seed.local-council-users`| `NFT_SEED_LOCAL_COUNCIL_USERS`  | 10               | Number of local council users to create.                                                                    |
+| `nft-seed.landlords`          | `NFT_SEED_LANDLORDS`            | 30               | Total number of landlords to create (individual + organisation, ~95%/5% split).                             |
+| `nft-seed.properties`         | `NFT_SEED_PROPERTIES`           | 45               | Total number of properties/property registrations to create.                                               |
+| `nft-seed.batch-size`         | `NFT_SEED_BATCH_SIZE`           | 10               | Batch size for bulk inserts.                                                                                 |
+| `nft-seed.random-seed`        | `NFT_SEED_RANDOM_SEED`          | 239              | Seed for the random generator, so a given configuration produces deterministic output.                      |
+| `nft-seed.reference-date`     | `NFT_SEED_REFERENCE_DATE`       | (blank = now)    | Set to an ISO date (e.g. `2026-01-01`) to make generated dates (registration dates etc.) fully reproducible. |
+| `nft-seed.generated-addresses`| `NFT_SEED_GENERATED_ADDRESSES`  | 500              | Number of fictional addresses to generate before seeding. `0` reuses the real NGD address data already in the database (this is what a real NFT/deployed run does — only set a non-zero value for local testing without full NGD address data loaded). |
+
+To test at a larger, more realistic scale locally (e.g. to catch batching/performance issues that don't show up at
+the small `local` defaults), override the scale-related env vars before running, e.g.:
+
+```bash
+export NFT_SEED_LANDLORDS=500
+export NFT_SEED_PROPERTIES=800
+export NFT_SEED_GENERATED_ADDRESSES=2000
+```
+
+A regression test suite covering these checks (`NftDataSeederTests`, under `src/test/.../services/`) runs the
+seeder directly against a testcontainer database at a small scale, so it doesn't need Docker profile activation and
+doesn't hit the `exitProcess()` behaviour described above.
+
 ### Scripts
 
 Utility scripts are in the `scripts/` directory.

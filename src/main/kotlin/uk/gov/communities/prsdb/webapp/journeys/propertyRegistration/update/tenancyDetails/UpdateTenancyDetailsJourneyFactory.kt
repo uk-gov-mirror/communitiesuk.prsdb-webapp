@@ -97,7 +97,11 @@ class UpdateTenancyDetailsJourneyFactory(
             step(journey.cyaStep) {
                 routeSegment(UpdateTenancyDetailsCyaStep.ROUTE_SEGMENT)
                 parents { journey.rentFrequencyAndAmountTask.isComplete() }
-                nextUrl { returnUrl }
+                nextDestination {
+                    Destination
+                        .ExternalUrl(returnUrl)
+                        .withFlashAttribute("updateSuccessBanner", "propertyDetails.updateSuccessBanner.tenancyDetails")
+                }
             }
             replaceHeadingsAndButtons(state)
         }

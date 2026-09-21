@@ -213,16 +213,6 @@ class PropertyRegistrationGasSafetySinglePageTests : IntegrationTestWithImmutabl
         }
 
         @Test
-        fun `Provide later - gas cert change link navigates to has gas supply page`(page: Page) {
-            val cyaPage =
-                navigator.skipToPropertyRegistrationCheckGasSafetyAnswersPage(
-                    PropertyStateSessionBuilder.beforePropertyRegistrationCheckGasSafetyAnswersProvideLater(),
-                )
-            cyaPage.gasSupplySummaryList.gasCertRow.clickFirstActionLinkAndWait()
-            assertPageIs(page, HasGasSupplyFormPagePropertyRegistration::class)
-        }
-
-        @Test
         fun `No cert - gas cert change link navigates to has gas cert page`(page: Page) {
             val cyaPage =
                 navigator.skipToPropertyRegistrationCheckGasSafetyAnswersPage(
@@ -230,6 +220,65 @@ class PropertyRegistrationGasSafetySinglePageTests : IntegrationTestWithImmutabl
                 )
             cyaPage.gasSupplySummaryList.gasCertRow.clickFirstActionLinkAndWait()
             assertPageIs(page, HasGasCertFormPagePropertyRegistration::class)
+        }
+
+        @Nested
+        inner class ProvideLater {
+            @Nested
+            inner class WhenLettingAgentsEnabled {
+                @BeforeEach
+                fun enableLettingAgentsFlag() {
+                    featureFlagManager.enableFeature(DELEGATE_TO_LETTING_AGENT)
+                }
+
+                @Test
+                fun `a single provide this later row is shown against the gas supply question`(page: Page) {
+                    val cyaPage =
+                        navigator.skipToPropertyRegistrationCheckGasSafetyAnswersPage(
+                            PropertyStateSessionBuilder.beforePropertyRegistrationCheckGasSafetyAnswersProvideLater(),
+                        )
+                    assertThat(cyaPage.gasSupplySummaryList.gasSupplyRow.value).containsText("Provide this later")
+                    assertThat(cyaPage.gasSupplySummaryList.gasCertRow.value).hasCount(0)
+                }
+
+                @Test
+                fun `the gas supply change link navigates to has gas supply page`(page: Page) {
+                    val cyaPage =
+                        navigator.skipToPropertyRegistrationCheckGasSafetyAnswersPage(
+                            PropertyStateSessionBuilder.beforePropertyRegistrationCheckGasSafetyAnswersProvideLater(),
+                        )
+                    cyaPage.gasSupplySummaryList.gasSupplyRow.clickFirstActionLinkAndWait()
+                    assertPageIs(page, HasGasSupplyFormPagePropertyRegistration::class)
+                }
+            }
+
+            @Nested
+            inner class WhenLettingAgentsDisabled {
+                @BeforeEach
+                fun disableLettingAgentsFlag() {
+                    featureFlagManager.disableFeature(DELEGATE_TO_LETTING_AGENT)
+                }
+
+                @Test
+                fun `separate gas supply and gas cert rows are shown`(page: Page) {
+                    val cyaPage =
+                        navigator.skipToPropertyRegistrationCheckGasSafetyAnswersPage(
+                            PropertyStateSessionBuilder.beforePropertyRegistrationCheckGasSafetyAnswersProvideLaterFromGasCert(),
+                        )
+                    assertThat(cyaPage.gasSupplySummaryList.gasSupplyRow.value).containsText("Yes")
+                    assertThat(cyaPage.gasSupplySummaryList.gasCertRow.value).containsText("Provide this later")
+                }
+
+                @Test
+                fun `the gas cert change link navigates to has gas cert page`(page: Page) {
+                    val cyaPage =
+                        navigator.skipToPropertyRegistrationCheckGasSafetyAnswersPage(
+                            PropertyStateSessionBuilder.beforePropertyRegistrationCheckGasSafetyAnswersProvideLaterFromGasCert(),
+                        )
+                    cyaPage.gasSupplySummaryList.gasCertRow.clickFirstActionLinkAndWait()
+                    assertPageIs(page, HasGasCertFormPagePropertyRegistration::class)
+                }
+            }
         }
 
         @Test

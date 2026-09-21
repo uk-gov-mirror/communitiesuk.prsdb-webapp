@@ -69,6 +69,20 @@ class LookupAddressStepConfigTests {
         assertNull(resultFormModel.houseNameOrNumber)
     }
 
+    @Test
+    fun `chooseTemplate returns the default lookup address template when no override is configured`() {
+        val stepConfig = setupStepConfig()
+
+        assertEquals(LookupAddressStepConfig.DEFAULT_TEMPLATE, stepConfig.chooseTemplate(mockState))
+    }
+
+    @Test
+    fun `chooseTemplate returns the configured template when one is set`() {
+        val stepConfig = setupStepConfig().withTemplate("forms/correspondenceLookupAddressForm")
+
+        assertEquals("forms/correspondenceLookupAddressForm", stepConfig.chooseTemplate(mockState))
+    }
+
     private fun setupStepConfig(): LookupAddressStepConfig {
         val stepConfig = LookupAddressStepConfig(mockAddressService)
         stepConfig.urlPath = LookupAddressStep.ROUTE_SEGMENT

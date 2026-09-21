@@ -1,0 +1,16 @@
+<!--/*@thymesVar id="formModel" type="java.lang.Object"*/-->
+<!--/*@thymesVar id="backUrl" type="java.lang.String"*/-->
+<!--/*@thymesVar id="sectionHeaderInfo" type="java.lang.Object"*/-->
+<!DOCTYPE html>
+<html id="form-content" th:replace="~{fragments/forms/questionPage :: questionPage(#{forms.update.email.title}, ${formModel}, ~{::#form-content/content()}, ${backUrl}, ${sectionHeaderInfo})}">
+    <h1 class="govuk-heading-l" th:text="#{forms.update.email.title}">forms.update.email.title</h1>
+    <p class="govuk-body" th:text="#{forms.update.email.body}">forms.update.email.body</p>
+    <div class="govuk-inset-text" th:text="#{forms.update.email.insetText}">forms.update.email.insetText</div>
+    <div th:replace="~{fragments/forms/minorFieldSet :: minorFieldSet(content=~{::#email-input/content()}, fieldName='emailAddress', fieldSetHeading=#{forms.update.email.fieldSetHeading}, fieldSetHint=null)}">
+        <th:block id="email-input">
+            <div th:replace="~{fragments/forms/emailInput :: emailInput(null, 'emailAddress', null)}"></div>
+        </th:block>
+    </div>
+    <div th:replace="~{fragments/warningText :: warningText(#{forms.update.warning})}">forms.update.warning</div>
+    <button th:replace="~{fragments/buttons/transactionSubmitButton :: transactionSubmitButton(#{forms.buttons.confirmAndSubmitUpdate})}"></button>
+</html>

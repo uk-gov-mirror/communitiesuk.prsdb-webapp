@@ -52,8 +52,8 @@ class UpdateHouseholdsAndTenantsJourneyFactory(
     private fun mainJourneyMap(
         state: UpdateHouseholdsAndTenantsJourney,
         returnUrl: String,
-    ): Map<String, StepLifecycleOrchestrator> {
-        return journey(state) {
+    ): Map<String, StepLifecycleOrchestrator> =
+        journey(state) {
             unreachableStepUrl { returnUrl }
             task(journey.householdsAndTenantsTask) {
                 initialStep()
@@ -67,17 +67,20 @@ class UpdateHouseholdsAndTenantsJourneyFactory(
             step(journey.cyaStep) {
                 routeSegment(UpdateHouseholdsAndTenantsCyaStep.ROUTE_SEGMENT)
                 parents { journey.householdsAndTenantsTask.isComplete() }
-                nextUrl { returnUrl }
+                nextDestination {
+                    Destination
+                        .ExternalUrl(returnUrl)
+                        .withFlashAttribute("updateSuccessBanner", "propertyDetails.updateSuccessBanner.tenancyDetails")
+                }
             }
             replaceHeadingsAndButtons()
         }
-    }
 
     private fun checkYourAnswersJourneyMap(
         state: UpdateHouseholdsAndTenantsJourney,
         returnUrl: String,
-    ): Map<String, StepLifecycleOrchestrator> {
-        return journey(state) {
+    ): Map<String, StepLifecycleOrchestrator> =
+        journey(state) {
             unreachableStepUrl { returnUrl }
             configure {
                 withAdditionalContentProperty {
@@ -97,7 +100,6 @@ class UpdateHouseholdsAndTenantsJourneyFactory(
             }
             replaceHeadingsAndButtons()
         }
-    }
 
     private fun JourneyBuilder<UpdateHouseholdsAndTenantsJourney>.replaceHeadingsAndButtons() {
         configureStep(journey.householdsAndTenantsTask.households) {

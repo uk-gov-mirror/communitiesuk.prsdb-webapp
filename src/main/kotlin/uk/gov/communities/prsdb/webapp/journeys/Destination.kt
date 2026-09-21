@@ -1,8 +1,11 @@
 package uk.gov.communities.prsdb.webapp.journeys
 
 import org.springframework.http.HttpStatus
+import org.springframework.web.context.request.RequestContextHolder
+import org.springframework.web.context.request.ServletRequestAttributes
 import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.ModelAndView
+import org.springframework.web.servlet.support.RequestContextUtils
 import org.springframework.web.util.UriComponentsBuilder
 import kotlin.collections.plus
 
@@ -70,13 +73,30 @@ sealed class Destination {
         var params: Map<String, String> = params
             private set
 
-        override fun toModelAndView() = ModelAndView("redirect:$externalUrl", params)
+        var flashAttributes: Map<String, String> = mapOf()
+            private set
+
+        override fun toModelAndView(): ModelAndView {
+            if (flashAttributes.isNotEmpty()) {
+                val request = (RequestContextHolder.currentRequestAttributes() as ServletRequestAttributes).request
+                RequestContextUtils.getOutputFlashMap(request).putAll(flashAttributes)
+            }
+            return ModelAndView("redirect:$externalUrl", params)
+        }
 
         override fun withUrlParameter(
             parameterName: String,
             parameterValue: String,
         ): ExternalUrl {
             params += (parameterName to parameterValue)
+            return this
+        }
+
+        fun withFlashAttribute(
+            attributeName: String,
+            attributeValue: String,
+        ): ExternalUrl {
+            flashAttributes += (attributeName to attributeValue)
             return this
         }
 

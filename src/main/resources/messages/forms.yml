@@ -623,6 +623,9 @@ checkPropertyAnswers:
         label: Letting agent or property manager’s email address
 update:
   email:
+    title: Update your email address
+    body: We’ll use this to send you information and updates.
+    insetText: This will not change any email addresses we show to councils on your property registrations. Check your registrations are correct after making this update.
     fieldSetHeading: What is your updated email address?
   name:
     fieldSetHeading: Update your full name

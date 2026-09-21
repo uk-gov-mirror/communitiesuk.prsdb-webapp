@@ -135,7 +135,11 @@ class UpdateLicensingJourneyFactory(
             step(journey.cyaStep) {
                 routeSegment(UpdateLicensingCyaStep.ROUTE_SEGMENT)
                 parents { journey.licensingTask.isComplete() }
-                nextUrl { returnUrl }
+                nextDestination {
+                    Destination
+                        .ExternalUrl(returnUrl)
+                        .withFlashAttribute("updateSuccessBanner", "propertyDetails.updateSuccessBanner.licensing")
+                }
             }
             configureStep(journey.licensingTask.licensingTypeStep) {
                 withAdditionalContentProperty {

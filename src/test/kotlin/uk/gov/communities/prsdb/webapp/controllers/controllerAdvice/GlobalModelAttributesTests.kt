@@ -18,6 +18,7 @@ import org.springframework.security.oauth2.core.oidc.OidcIdToken
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
 import org.springframework.test.util.ReflectionTestUtils
 import org.springframework.ui.ExtendedModelMap
+import uk.gov.communities.prsdb.webapp.config.security.LettingAgentSecurityConfig.Companion.LETTING_AGENT_ROUTES_PREFIX
 import uk.gov.communities.prsdb.webapp.constants.LOCAL_COUNCIL_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.SYSTEM_OPERATOR_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.controllers.FeatureFlagOverrideController.Companion.FEATURE_FLAG_OVERRIDES_ROUTE
@@ -68,7 +69,7 @@ class GlobalModelAttributesTests {
         globalModelAttributes.addGlobalModelAttributes(model, request)
 
         assertEquals(customServiceName, model["serviceName"])
-        assertTrue(model["isCustomServiceName"] as Boolean)
+        assertTrue(model["showServiceNavigation"] as Boolean)
     }
 
     @Test
@@ -83,7 +84,7 @@ class GlobalModelAttributesTests {
         globalModelAttributes.addGlobalModelAttributes(model, request)
 
         assertEquals(customServiceName, model["serviceName"])
-        assertTrue(model["isCustomServiceName"] as Boolean)
+        assertTrue(model["showServiceNavigation"] as Boolean)
     }
 
     @Test
@@ -98,7 +99,22 @@ class GlobalModelAttributesTests {
         globalModelAttributes.addGlobalModelAttributes(model, request)
 
         assertEquals(defaultServiceName, model["serviceName"])
-        assertNull(model["isCustomServiceName"])
+        assertNull(model["showServiceNavigation"])
+    }
+
+    @Test
+    fun `addGlobalModelAttributes shows the service navigation with the default service name on letting agent routes`() {
+        whenever(messageSource.getMessage(eq("serviceName"), anyOrNull(), any<String>(), any()))
+            .thenReturn(defaultServiceName)
+        val globalModelAttributes = createGlobalModelAttributes()
+        val model = ExtendedModelMap()
+        val request = MockHttpServletRequest()
+        request.requestURI = "${LETTING_AGENT_ROUTES_PREFIX}property-details/3334abcd-5678-abcd-1234-567abcd2222a"
+
+        globalModelAttributes.addGlobalModelAttributes(model, request)
+
+        assertTrue(model["showServiceNavigation"] as Boolean)
+        assertEquals(defaultServiceName, model["serviceName"])
     }
 
     @Test

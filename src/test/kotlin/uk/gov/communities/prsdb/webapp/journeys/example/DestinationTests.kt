@@ -1,5 +1,6 @@
 package uk.gov.communities.prsdb.webapp.journeys.example
 
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
@@ -8,13 +9,34 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.web.context.request.RequestContextHolder
+import org.springframework.web.context.request.ServletRequestAttributes
+import org.springframework.web.servlet.DispatcherServlet
+import org.springframework.web.servlet.FlashMap
 import org.springframework.web.servlet.ModelAndView
+import org.springframework.web.servlet.support.RequestContextUtils
 import org.springframework.web.servlet.view.RedirectView
 import uk.gov.communities.prsdb.webapp.journeys.Destination
 import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
 import uk.gov.communities.prsdb.webapp.journeys.StepLifecycleOrchestrator
 
 class DestinationTests {
+    private lateinit var mockRequest: MockHttpServletRequest
+    private lateinit var flashAttributes: FlashMap
+
+    fun setRequestContext() {
+        mockRequest = MockHttpServletRequest()
+        flashAttributes = FlashMap()
+        RequestContextHolder.setRequestAttributes(ServletRequestAttributes(mockRequest))
+        mockRequest.setAttribute(DispatcherServlet.OUTPUT_FLASH_MAP_ATTRIBUTE, flashAttributes)
+    }
+
+    @AfterEach
+    fun resetRequestContext() {
+        RequestContextHolder.resetRequestAttributes()
+    }
+
     @Test
     fun `VisitableStep Destination with just a step returns a redirect for the current step and journey`() {
         // Arrange
@@ -132,6 +154,71 @@ class DestinationTests {
 
         // Assert
         assertEquals("http://example.com?param1=value1&param2=value2", urlString)
+    }
+
+    @Test
+    fun `ExternalUrl Destination withFlashAttribute adds an attribute to the output flash map`() {
+        // Arrange
+        setRequestContext()
+        val destination = Destination.ExternalUrl("http://example.com").withFlashAttribute("bannerKey", "bannerValue")
+
+        // Act
+        destination.toModelAndView()
+
+        // Assert
+        val flashMap = RequestContextUtils.getOutputFlashMap(mockRequest)
+        assertEquals("bannerValue", flashMap["bannerKey"])
+    }
+
+    @Test
+    fun `ExternalUrl Destination withFlashAttribute called multiple times accumulates all attributes`() {
+        // Arrange
+        setRequestContext()
+        val destination =
+            Destination
+                .ExternalUrl("http://example.com")
+                .withFlashAttribute("firstKey", "firstValue")
+                .withFlashAttribute("secondKey", "secondValue")
+
+        // Act
+        destination.toModelAndView()
+
+        // Assert
+        val flashMap = RequestContextUtils.getOutputFlashMap(mockRequest)
+        assertEquals("firstValue", flashMap["firstKey"])
+        assertEquals("secondValue", flashMap["secondKey"])
+    }
+
+    @Test
+    fun `ExternalUrl Destination withFlashAttribute does not affect the redirect view name or url parameters`() {
+        // Arrange
+        setRequestContext()
+        val destination =
+            Destination
+                .ExternalUrl("http://example.com", mapOf("param1" to "value1"))
+                .withFlashAttribute("bannerKey", "bannerValue")
+
+        // Act
+        val modelAndView = destination.toModelAndView()
+
+        // Assert
+        assertEquals("redirect:http://example.com", modelAndView.viewName)
+        assertEquals("value1", modelAndView.model["param1"])
+        assertNull(modelAndView.model["bannerKey"])
+    }
+
+    @Test
+    fun `ExternalUrl Destination without flash attributes does not touch the request flash map`() {
+        // Arrange
+        setRequestContext()
+        val destination = Destination.ExternalUrl("http://example.com")
+
+        // Act
+        destination.toModelAndView()
+
+        // Assert
+        val flashMap = RequestContextUtils.getOutputFlashMap(mockRequest)
+        assertTrue(flashMap.isEmpty())
     }
 
     @Test

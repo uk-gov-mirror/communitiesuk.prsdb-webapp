@@ -7,8 +7,8 @@
 <html th:replace="~{fragments/forms/questionPage :: questionPage(#{${title}}, ${formModel}, ~{::#form-content}, ${backUrl}, ${sectionHeaderInfo})}">
 <th:block id="form-content">
     <th:block id="fieldset-content"
-              th:replace="~{fragments/forms/fieldSet :: fieldSet(content=~{::#fieldset-content/content()}, fieldName='whichEmail', fieldSetHeading=#{registerProperty.correspondenceEmail.heading}, fieldSetHint=#{registerProperty.correspondenceEmail.hint}, conditionalFieldName='differentEmailAddress')}">
-        <th:block th:replace="~{fragments/forms/radios :: radios(null,'whichEmail',null, ${radioOptions})}"></th:block>
+              th:replace="~{fragments/forms/fieldSet :: fieldSet(content=~{::#fieldset-content/content()}, fieldName='correspondenceEmailOption', fieldSetHeading=#{registerProperty.correspondenceEmail.heading}, fieldSetHint=#{registerProperty.correspondenceEmail.hint}, conditionalFieldName='differentEmailAddress')}">
+        <th:block th:replace="~{fragments/forms/radios :: radios(null,'correspondenceEmailOption',null, ${radioOptions})}"></th:block>
     </th:block>
     <button th:replace="~{fragments/buttons/primaryButton :: primaryButton(#{forms.buttons.saveAndContinue})}"></button>
 </th:block>

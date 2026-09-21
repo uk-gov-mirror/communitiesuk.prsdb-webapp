@@ -11,6 +11,8 @@ import uk.gov.communities.prsdb.webapp.journeys.StepLifecycleOrchestrator
 import uk.gov.communities.prsdb.webapp.journeys.builders.JourneyBuilder.Companion.journey
 import uk.gov.communities.prsdb.webapp.journeys.isComplete
 import uk.gov.communities.prsdb.webapp.journeys.landlordRegistration.stepConfig.EmailStep
+import uk.gov.communities.prsdb.webapp.journeys.landlordRegistration.stepConfig.EmailStepConfig
+import uk.gov.communities.prsdb.webapp.journeys.shared.Complete
 import java.security.Principal
 
 @PrsdbWebService
@@ -22,19 +24,13 @@ class UpdateEmailJourneyFactory(
 
         return journey(state) {
             unreachableStepUrl { LANDLORD_DETAILS_FOR_LANDLORD_ROUTE }
-            step(journey.emailStep) {
+            step<Complete, EmailStepConfig>(journey.emailStep) {
                 routeSegment(EmailStep.ROUTE_SEGMENT)
                 backUrl { LANDLORD_DETAILS_FOR_LANDLORD_ROUTE }
                 nextStep { journey.completeEmailUpdateStep }
                 initialStep()
-                withAdditionalContentProperties {
-                    mapOf(
-                        "title" to "landlordDetails.update.title",
-                        "fieldSetHeading" to "forms.update.email.fieldSetHeading",
-                        "submitButtonText" to "forms.buttons.confirmAndSubmitUpdate",
-                        "submitButton" to "transactionSubmitButton",
-                        "showWarning" to true,
-                    )
+                stepSpecificInitialisation {
+                    withCorrespondenceTemplateIfFlagIsSet()
                 }
             }
             step(journey.completeEmailUpdateStep) {

@@ -173,7 +173,7 @@ class PropertyRegistrationCorrespondencePersistenceJourneyTests : IntegrationTes
                     .withSubmittedValue(
                         CorrespondenceEmailStep.ROUTE_SEGMENT,
                         CorrespondenceEmailFormModel().apply {
-                            whichEmail = CorrespondenceEmailOption.DIFFERENT_EMAIL
+                            correspondenceEmailOption = CorrespondenceEmailOption.DIFFERENT_EMAIL
                             differentEmailAddress = differentEmail
                         },
                     ),

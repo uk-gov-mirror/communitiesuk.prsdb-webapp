@@ -9,6 +9,7 @@ import uk.gov.communities.prsdb.webapp.journeys.isComplete
 import uk.gov.communities.prsdb.webapp.journeys.shared.states.AddressState
 import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.LookupAddressMode
 import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.LookupAddressStep
+import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.LookupAddressStepConfig
 import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.ManualAddressStep
 import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.NoAddressFoundStep
 import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.SelectAddressMode
@@ -41,6 +42,8 @@ abstract class AddressTask(
     protected open val selectAddressContentProperties: Map<String, Any?> = emptyMap()
     protected open val manualAddressContentProperties: Map<String, Any?> = emptyMap()
 
+    protected open val lookupAddressTemplate: String = LookupAddressStepConfig.DEFAULT_TEMPLATE
+
     override val taskState get() = this
 
     fun clearFormData() {
@@ -55,7 +58,7 @@ abstract class AddressTask(
 
     override fun makeSubJourney(state: AddressState) =
         subJourney(state) {
-            step(journey.lookupAddressStep) {
+            step<LookupAddressMode, LookupAddressStepConfig>(journey.lookupAddressStep) {
                 routeSegment(LookupAddressStep.ROUTE_SEGMENT)
                 nextStep { mode ->
                     when (mode) {
@@ -63,6 +66,7 @@ abstract class AddressTask(
                         LookupAddressMode.NO_ADDRESSES_FOUND -> journey.noAddressFoundStep
                     }
                 }
+                stepSpecificInitialisation { withTemplate(lookupAddressTemplate) }
                 withAdditionalContentProperties { lookupAddressContentProperties }
             }
             step(journey.selectAddressStep) {

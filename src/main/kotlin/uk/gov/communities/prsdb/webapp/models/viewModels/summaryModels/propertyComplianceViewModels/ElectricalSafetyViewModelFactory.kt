@@ -81,8 +81,9 @@ class ElectricalSafetyViewModelFactory(
                     )
                 }
 
-                val visibleUploads =
-                    propertyCompliance.electricalSafetyFileUploads.filter { it.status != FileUploadStatus.DELETED }
+                val (uploadsDeletedByVirusScan, visibleUploads) =
+                    propertyCompliance.electricalSafetyFileUploads.partition { it.status == FileUploadStatus.DELETED }
+
                 if (visibleUploads.isNotEmpty()) {
                     addFileUploadRows(
                         visibleUploads = visibleUploads,
@@ -96,6 +97,11 @@ class ElectricalSafetyViewModelFactory(
                         noUploadMessageKey = "",
                         fallbackFileName = "electrical_safety_certificate",
                         uploadService = uploadService,
+                    )
+                } else if (uploadsDeletedByVirusScan.isNotEmpty()) {
+                    addRow(
+                        key = "propertyDetails.complianceInformation.electricalSafety.yourCertificate",
+                        value = "propertyCompliance.uploadedFile.virusScanFailed",
                     )
                 }
             }.toList()

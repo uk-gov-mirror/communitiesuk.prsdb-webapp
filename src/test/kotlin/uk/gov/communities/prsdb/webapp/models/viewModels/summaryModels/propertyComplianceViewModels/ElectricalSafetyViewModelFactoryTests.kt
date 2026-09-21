@@ -147,6 +147,22 @@ class ElectricalSafetyViewModelFactoryTests : ComplianceViewModelFactoryTests() 
                 ).withElectricalCertType()
                 .withEpc()
                 .build()
+        private val virusScanFailedUpload =
+            PropertyComplianceBuilder()
+                .withPropertyOwnershipWithOccupancy(false)
+                .withGasSafetyCert()
+                .withElectricalSafety(
+                    fileUpload =
+                        FileUpload(
+                            FileUploadStatus.DELETED,
+                            "property_1_eicr.pdf",
+                            "pdf",
+                            "etag",
+                            "versionId",
+                        ).apply { fileName = "infected_report.pdf" },
+                ).withElectricalCertType()
+                .withEpc()
+                .build()
         private val expiredAfterUpload = PropertyComplianceBuilder.createWithElectricalSafetyExpiredAfterUpload()
         private val expiredAfterUploadOccupied =
             PropertyComplianceBuilder.createWithElectricalSafetyExpiredAfterUpload(
@@ -274,6 +290,30 @@ class ElectricalSafetyViewModelFactoryTests : ComplianceViewModelFactoryTests() 
                                 ),
                             ),
                         expiryDate = quarantinedUpload.electricalSafetyExpiryDate,
+                    ),
+                ),
+                arguments(
+                    named(
+                        "with virus scan failed electrical safety upload",
+                        virusScanFailedUpload,
+                    ),
+                    listOf(
+                        SummaryListRowViewModel(
+                            "propertyDetails.complianceInformation.certificateStatus",
+                            TagValue.VALID,
+                        ),
+                        SummaryListRowViewModel(
+                            "propertyDetails.complianceInformation.electricalSafety.whichCertificate",
+                            "propertyDetails.complianceInformation.electricalSafety.eicr.certificate",
+                        ),
+                        SummaryListRowViewModel(
+                            "propertyDetails.complianceInformation.expiryDate",
+                            virusScanFailedUpload.electricalSafetyExpiryDate,
+                        ),
+                        SummaryListRowViewModel(
+                            "propertyDetails.complianceInformation.electricalSafety.yourCertificate",
+                            "propertyCompliance.uploadedFile.virusScanFailed",
+                        ),
                     ),
                 ),
                 arguments(

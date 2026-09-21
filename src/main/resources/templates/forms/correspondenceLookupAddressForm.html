@@ -1,0 +1,44 @@
+<!--/*@thymesVar id="title" type="java.lang.String"*/-->
+<!--/*@thymesVar id="formModel" type="java.lang.Object"*/-->
+<!--/*@thymesVar id="postcodeLabel" type="java.lang.String"*/-->
+<!--/*@thymesVar id="postcodeHint" type="java.lang.String"*/-->
+<!--/*@thymesVar id="houseNameOrNumberHint" type="java.lang.String"*/-->
+<!--/*@thymesVar id="submitButtonText" type="java.lang.String"*/-->
+<!--/*@thymesVar id="backUrl" type="java.lang.String"*/-->
+<!DOCTYPE html>
+<html th:replace="~{fragments/forms/questionPage :: questionPage(#{${title}}, ${formModel}, ~{::#form-content}, ${backUrl}, ${sectionHeaderInfo})}">
+<th:block id="form-content">
+    <h1 class="govuk-heading-l" th:text="#{addressForms.lookupAddress.correspondence.heading}">
+        addressForms.lookupAddress.correspondence.heading
+    </h1>
+    <p class="govuk-body" th:text="#{addressForms.lookupAddress.correspondence.leadParagraph}">
+        addressForms.lookupAddress.correspondence.leadParagraph
+    </p>
+    <h2 class="govuk-heading-m" th:text="#{addressForms.lookupAddress.correspondence.subHeading}">
+        addressForms.lookupAddress.correspondence.subHeading
+    </h2>
+    <div class="govuk-inset-text" th:text="#{addressForms.lookupAddress.correspondence.insetText}">
+        addressForms.lookupAddress.correspondence.insetText
+    </div>
+    <p class="govuk-body" th:text="#{addressForms.lookupAddress.correspondence.landlordAddress}">
+        addressForms.lookupAddress.correspondence.landlordAddress
+    </p>
+    <p class="govuk-body" th:text="#{addressForms.lookupAddress.correspondence.otherAddresses}">
+        addressForms.lookupAddress.correspondence.otherAddresses
+    </p>
+    <ul class="govuk-list govuk-list--bullet">
+        <li th:text="#{addressForms.lookupAddress.correspondence.bullet.one}">addressForms.lookupAddress.correspondence.bullet.one</li>
+        <li th:text="#{addressForms.lookupAddress.correspondence.bullet.two}">addressForms.lookupAddress.correspondence.bullet.two</li>
+        <li th:text="#{addressForms.lookupAddress.correspondence.bullet.three}">addressForms.lookupAddress.correspondence.bullet.three</li>
+    </ul>
+    <p class="govuk-body" th:text="#{addressForms.lookupAddress.correspondence.doNotUse}">
+        addressForms.lookupAddress.correspondence.doNotUse
+    </p>
+    <th:block id="fieldset-content"
+              th:replace="~{fragments/forms/minorFieldSet :: minorFieldSet(~{::#fieldset-content/content()}, 'lookupAddress', #{addressForms.lookupAddress.correspondence.fieldSetHeading}, null)}">
+        <div th:replace="~{fragments/forms/basicTextInput :: textInput(#{${postcodeLabel}}, 'postcode', #{${postcodeHint}})}"></div>
+        <div th:replace="~{fragments/forms/basicTextInput :: textInput(#{addressForms.lookupAddress.correspondence.houseNameOrNumber.label}, 'houseNameOrNumber', #{${houseNameOrNumberHint}})}"></div>
+    </th:block>
+    <button th:replace="~{fragments/buttons/primaryButton :: primaryButton(#{${submitButtonText}})}"></button>
+</th:block>
+</html>

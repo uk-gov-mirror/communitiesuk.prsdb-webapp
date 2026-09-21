@@ -23,8 +23,20 @@ lookupAddress:
     fieldSetHeading: What is your organisation’s address?
     fieldSetHint: Enter a UK postal address, not a PO Box
   correspondence:
-    fieldSetHeading: 'TODO PDJB-1591: Where should the council send post about this property?'
-    fieldSetHint: This must be an address in England or Wales. It must not be a PO Box.
+    heading: Where the council should send post about this property
+    leadParagraph: The council will use this address if they need to send you anything by post.
+    subHeading: Choosing a postal address
+    insetText: This address must be in England or Wales. It must not be a PO Box.
+    landlordAddress: You can use the residential address of any landlord.
+    otherAddresses: 'You can also use the address of your:'
+    bullet:
+      one: letting agent
+      two: property manager
+      three: solicitor
+    doNotUse: Do not use the address of the rental property.
+    fieldSetHeading: Find an address
+    houseNameOrNumber:
+      label: House name or number
   postcode:
     label: Postcode
     hint: 'For example, AA3 1AB'
@@ -80,8 +92,13 @@ manualAddress:
     fieldSetHeading: What is your organisation’s address?
     fieldSetHint: Enter a UK postal address, not a PO Box
   correspondence:
-    fieldSetHeading: 'TODO PDJB-1592: What is the postal address?'
-    fieldSetHint: This must be an address in England or Wales.
+    fieldSetHeading: Enter a postal address
+    preSubmitHeading: The council may send important documents to this address
+    preSubmitInset:
+      intro: 'By continuing, you confirm this address is:'
+      bullet:
+        one: in England or Wales
+        two: not a PO box
   fieldSetHint: This should be an address within England
   addressLineOne:
     label: Address line 1

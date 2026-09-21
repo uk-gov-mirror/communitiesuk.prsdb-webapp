@@ -60,8 +60,8 @@ class UpdateElectricalSafetyJourneyFactory(
     private fun mainJourneyMap(
         state: UpdateElectricalSafetyJourney,
         returnUrl: String,
-    ): Map<String, StepLifecycleOrchestrator> {
-        return journey(state) {
+    ): Map<String, StepLifecycleOrchestrator> =
+        journey(state) {
             unreachableStepUrl { returnUrl }
             task(journey.electricalSafetyDetailsTask) {
                 withDependencies { journey }
@@ -90,17 +90,20 @@ class UpdateElectricalSafetyJourneyFactory(
             }
             step(journey.completeElectricalSafetyUpdateStep) {
                 parents { journey.updateCheckElectricalSafetyAnswersStep.isComplete() }
-                nextUrl { returnUrl }
+                nextDestination {
+                    Destination
+                        .ExternalUrl(returnUrl)
+                        .withFlashAttribute("updateSuccessBanner", "propertyDetails.updateSuccessBanner.compliance")
+                }
             }
             replaceButtons()
         }
-    }
 
     private fun checkYourAnswersJourneyMap(
         state: UpdateElectricalSafetyJourney,
         returnUrl: String,
-    ): Map<String, StepLifecycleOrchestrator> {
-        return journey(state) {
+    ): Map<String, StepLifecycleOrchestrator> =
+        journey(state) {
             unreachableStepUrl { returnUrl }
             configure {
                 withAdditionalContentProperties {
@@ -133,7 +136,6 @@ class UpdateElectricalSafetyJourneyFactory(
             }
             replaceButtons()
         }
-    }
 
     private fun JourneyBuilder<UpdateElectricalSafetyJourney>.replaceButtons() {
         configureStep(journey.electricalSafetyDetailsTask.hasElectricalCertStep) {

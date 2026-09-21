@@ -67,7 +67,11 @@ class UpdateRentIncludesBillsJourneyFactory(
             step(journey.cyaStep) {
                 routeSegment(UpdateRentIncludesBillsCyaStep.ROUTE_SEGMENT)
                 parents { journey.rentIncludesBillsTask.isComplete() }
-                nextUrl { returnUrl }
+                nextDestination {
+                    Destination
+                        .ExternalUrl(returnUrl)
+                        .withFlashAttribute("updateSuccessBanner", "propertyDetails.updateSuccessBanner.tenancyDetails")
+                }
             }
             replaceHeadingsAndButtons()
         }

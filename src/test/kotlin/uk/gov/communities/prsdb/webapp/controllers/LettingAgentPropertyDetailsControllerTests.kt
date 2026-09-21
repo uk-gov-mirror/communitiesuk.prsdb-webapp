@@ -16,6 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.get
 import org.springframework.web.context.WebApplicationContext
 import uk.gov.communities.prsdb.webapp.config.MessageSourceConfig
+import uk.gov.communities.prsdb.webapp.constants.LETTING_AGENT_PROPERTY_DETAILS_SURVEY_URL
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.PropertyDetailsViewType
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.propertyComplianceViewModels.ElectricalSafetyViewModelFactory
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.propertyComplianceViewModels.EpcViewModelFactory
@@ -68,6 +69,33 @@ class LettingAgentPropertyDetailsControllerTests(
                 status { isOk() }
                 view { name("propertyDetailsLettingAgentView") }
                 model { attributeExists("propertyDetails") }
+            }
+    }
+
+    @Test
+    fun `getLettingAgentPropertyDetails includes the survey URL in the model`() {
+        val token = UUID.randomUUID()
+        val propertyOwnership = createOccupiedPropertyOwnership()
+
+        whenever(lettingAgentAccessService.getInvitationByTokenOrNull(eq(token)))
+            .thenReturn(MockLettingAgentData.createLettingAgentAccess(token = token, propertyOwnership = propertyOwnership))
+        whenever(propertyOwnershipService.getPropertyOwnership(eq(propertyOwnership.id)))
+            .thenReturn(propertyOwnership)
+        whenever(propertyOwnershipService.hasLettingAgent(any()))
+            .thenReturn(true)
+        whenever(propertyComplianceService.getComplianceForPropertyOrNull(eq(propertyOwnership.id)))
+            .thenReturn(PropertyComplianceBuilder.createWithInDateCerts())
+        val complianceViewModel = createComplianceViewModel()
+        whenever(propertyComplianceViewModelFactory.create(any(), any(), any(), anyOrNull()))
+            .thenReturn(complianceViewModel)
+
+        mvc
+            .get(LettingAgentPropertyDetailsController.getLettingAgentPropertyDetailsPath(token))
+            .andExpect {
+                status { isOk() }
+                model {
+                    attribute("lettingAgentPropertyDetailsSurveyUrl", LETTING_AGENT_PROPERTY_DETAILS_SURVEY_URL)
+                }
             }
     }
 

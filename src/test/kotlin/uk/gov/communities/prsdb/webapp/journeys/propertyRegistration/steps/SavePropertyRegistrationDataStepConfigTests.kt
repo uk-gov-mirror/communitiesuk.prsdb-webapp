@@ -7,6 +7,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
@@ -148,7 +149,7 @@ class SavePropertyRegistrationDataStepConfigTests {
         whenever(addressTask.getAddress()).thenReturn(postalAddress)
         whenever(emailStep.formModel).thenReturn(
             CorrespondenceEmailFormModel().apply {
-                whichEmail = choice
+                correspondenceEmailOption = choice
                 differentEmailAddress = "edited.contact@example.com"
             },
         )
@@ -374,7 +375,7 @@ class SavePropertyRegistrationDataStepConfigTests {
     }
 
     @Test
-    fun `afterStepIsReached passes hasGasSupply and gasSafetyCertProvideLater as true when the user provides gas safety later`() {
+    fun `afterStepIsReached passes hasGasSupply as null and gasSafetyCertProvideLater as true when the user provides gas safety later`() {
         // Arrange
         setupStateForPropertyRegistration()
         setupStateForComplianceDataWithNullValues()
@@ -404,10 +405,64 @@ class SavePropertyRegistrationDataStepConfigTests {
             jointLandlordEmails = anyOrNull(),
             lettingAgentEmail = anyOrNull(),
             markedJointLandlord = any(),
-            hasGasSupply = eq(true),
+            hasGasSupply = isNull(),
             gasSafetyCertIssueDate = anyOrNull(),
             gasSafetyFileUploadIds = any(),
             gasSafetyCertProvideLater = eq(true),
+            electricalSafetyFileUploadIds = any(),
+            electricalSafetyExpiryDate = anyOrNull(),
+            electricalCertType = anyOrNull(),
+            electricalSafetyCertProvideLater = anyOrNull(),
+            epcCertificateUrl = anyOrNull(),
+            epcExpiryDate = anyOrNull(),
+            epcEnergyRating = anyOrNull(),
+            tenancyStartedBeforeEpcExpiry = anyOrNull(),
+            epcExemptionReason = anyOrNull(),
+            epcMeesExemptionReason = anyOrNull(),
+            epcProvideLater = anyOrNull(),
+            licenseProvideLater = anyOrNull(),
+            tenancyProvideLater = eq(false),
+            isDelegatedToLettingAgent = any(),
+            correspondenceEmail = anyOrNull(),
+            correspondenceAddressModel = anyOrNull(),
+        )
+    }
+
+    @Test
+    fun `afterStepIsReached passes hasGasSupply as false and gasSafetyCertProvideLater as false when the property has no gas supply`() {
+        // Arrange
+        setupStateForPropertyRegistration()
+        setupStateForComplianceDataWithNullValues()
+        whenever(mockState.gasSafetyTask.gasSafetyDetailsTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.NO_SUPPLY)
+
+        // Act
+        stepConfig.afterStepIsReached(mockState)
+
+        // Assert
+        verify(mockPropertyRegistrationService).registerProperty(
+            addressModel = any(),
+            propertyType = any(),
+            licenseType = anyOrNull(),
+            licenceNumber = any(),
+            ownershipType = any(),
+            isOccupied = any(),
+            numberOfHouseholds = any(),
+            numberOfPeople = any(),
+            numBedrooms = anyOrNull(),
+            billsIncludedList = anyOrNull(),
+            customBillsIncluded = anyOrNull(),
+            furnishedStatus = anyOrNull(),
+            rentFrequency = anyOrNull(),
+            customRentFrequency = anyOrNull(),
+            rentAmount = anyOrNull(),
+            customPropertyType = anyOrNull(),
+            jointLandlordEmails = anyOrNull(),
+            lettingAgentEmail = anyOrNull(),
+            markedJointLandlord = any(),
+            hasGasSupply = eq(false),
+            gasSafetyCertIssueDate = anyOrNull(),
+            gasSafetyFileUploadIds = any(),
+            gasSafetyCertProvideLater = eq(false),
             electricalSafetyFileUploadIds = any(),
             electricalSafetyExpiryDate = anyOrNull(),
             electricalCertType = anyOrNull(),
@@ -488,6 +543,7 @@ class SavePropertyRegistrationDataStepConfigTests {
         setupStateForPropertyRegistration()
         setupStateForComplianceDataWithNullValues()
         whenever(mockState.isDelegatedToLettingAgent(any())).thenReturn(true)
+        whenever(mockState.gasSafetyTask.gasSafetyDetailsTask.gasSupplyOutcome).thenReturn(null)
         val mockWhoProvidesDetailsTask = mock<WhoProvidesDetailsTask>()
         val mockLettingAgentEmailStep = mock<LettingAgentEmailStep>()
         whenever(mockState.whoProvidesDetailsTask).thenReturn(mockWhoProvidesDetailsTask)
@@ -520,7 +576,7 @@ class SavePropertyRegistrationDataStepConfigTests {
             jointLandlordEmails = anyOrNull(),
             lettingAgentEmail = eq("letting.agent@example.com"),
             markedJointLandlord = any(),
-            hasGasSupply = eq(true),
+            hasGasSupply = isNull(),
             gasSafetyCertIssueDate = anyOrNull(),
             gasSafetyFileUploadIds = any(),
             gasSafetyCertProvideLater = eq(true),
@@ -541,6 +597,60 @@ class SavePropertyRegistrationDataStepConfigTests {
             correspondenceEmail = anyOrNull(),
             correspondenceAddressModel = anyOrNull(),
         )
+    }
+
+    @Test
+    fun `afterStepIsReached throws when gasSupplyOutcome is null and registration is not delegated to a letting agent`() {
+        // Arrange
+        whenever(mockState.isDelegatedToLettingAgent(any())).thenReturn(false)
+
+        val mockOccupiedStep = mock<OccupiedStep>()
+        whenever(mockState.occupied).thenReturn(mockOccupiedStep)
+        whenever(mockOccupiedStep.formModel).thenReturn(OccupancyFormModel().apply { occupied = false })
+
+        val mockRentIncludesBillsTask = mock<RentIncludesBillsTask>()
+        whenever(mockState.rentIncludesBillsTask).thenReturn(mockRentIncludesBillsTask)
+        whenever(mockRentIncludesBillsTask.getBillsIncludedOrNull()).thenReturn(null)
+
+        whenever(mockState.propertyDetailsTask).thenReturn(mockPropertyDetailsTask)
+        whenever(mockPropertyDetailsTask.addressTask).thenReturn(mockAddressTask)
+        whenever(mockAddressTask.getAddress()).thenReturn(
+            AddressDataModel(singleLineAddress = "1 Test St", uprn = 12345L, localCouncilId = 1),
+        )
+        val mockPropertyTypeStep = mock<PropertyTypeStep>()
+        whenever(mockPropertyDetailsTask.propertyTypeStep).thenReturn(mockPropertyTypeStep)
+        whenever(mockPropertyTypeStep.formModel).thenReturn(
+            PropertyTypeFormModel().apply { propertyType = PropertyType.DETACHED_HOUSE },
+        )
+
+        val mockLicensingTask = mock<LicensingTask>()
+        whenever(mockState.licensingTask).thenReturn(mockLicensingTask)
+        whenever(mockLicensingTask.getLicensingType()).thenReturn(LicensingType.SELECTIVE_LICENCE)
+        whenever(mockLicensingTask.getLicenceNumberOrNull()).thenReturn(null)
+
+        val mockOwnershipTypeStep = mock<OwnershipTypeStep>()
+        whenever(mockState.ownershipAndLandlordsTask).thenReturn(mockOwnershipAndLandlordsTask)
+        whenever(mockOwnershipAndLandlordsTask.ownershipTypeStep).thenReturn(mockOwnershipTypeStep)
+        whenever(mockOwnershipTypeStep.formModel).thenReturn(
+            OwnershipTypeFormModel().apply { ownershipType = OwnershipType.FREEHOLD },
+        )
+        val mockJointLandlordsTask = mock<JointLandlordsPropertyRegistrationTask>()
+        whenever(mockOwnershipAndLandlordsTask.jointLandlordsTask).thenReturn(mockJointLandlordsTask)
+        val mockHasJointLandlordsStep = mock<HasJointLandlordsStep>()
+        whenever(mockJointLandlordsTask.hasJointLandlordsStep).thenReturn(mockHasJointLandlordsStep)
+        whenever(mockHasJointLandlordsStep.formModel).thenReturn(
+            HasJointLandlordsFormModel().apply { hasJointLandlords = false },
+        )
+        whenever(mockJointLandlordsTask.inviteJointLandlordsTask).thenReturn(mock())
+
+        val mockGasDetailsTask = mock<GasSafetyDetailsTask>()
+        whenever(mockGasDetailsTask.gasSupplyOutcome).thenReturn(null)
+        val mockGasTask = mock<GasSafetyTask>()
+        whenever(mockGasTask.gasSafetyDetailsTask).thenReturn(mockGasDetailsTask)
+        whenever(mockState.gasSafetyTask).thenReturn(mockGasTask)
+
+        // Act & Assert
+        assertThrows<IllegalStateException> { stepConfig.afterStepIsReached(mockState) }
     }
 
     @Test

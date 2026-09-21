@@ -96,7 +96,7 @@ class PropertyRegistrationCorrespondenceCyaSinglePageTests : IntegrationTestWith
                     .withSubmittedValue(
                         CorrespondenceEmailStep.ROUTE_SEGMENT,
                         CorrespondenceEmailFormModel().apply {
-                            whichEmail = CorrespondenceEmailOption.DIFFERENT_EMAIL
+                            correspondenceEmailOption = CorrespondenceEmailOption.DIFFERENT_EMAIL
                             differentEmailAddress = differentEmail
                         },
                     ),
@@ -115,7 +115,7 @@ class PropertyRegistrationCorrespondenceCyaSinglePageTests : IntegrationTestWith
                 completedState().withSubmittedValue(
                     CorrespondenceEmailStep.ROUTE_SEGMENT,
                     CorrespondenceEmailFormModel().apply {
-                        whichEmail = CorrespondenceEmailOption.ACCOUNT_EMAIL
+                        correspondenceEmailOption = CorrespondenceEmailOption.ACCOUNT_EMAIL
                         differentEmailAddress = differentEmail
                     },
                 ),
@@ -158,7 +158,7 @@ class PropertyRegistrationCorrespondenceCyaSinglePageTests : IntegrationTestWith
                 completedState().withSubmittedValue(
                     CorrespondenceEmailStep.ROUTE_SEGMENT,
                     CorrespondenceEmailFormModel().apply {
-                        whichEmail = CorrespondenceEmailOption.DIFFERENT_EMAIL
+                        correspondenceEmailOption = CorrespondenceEmailOption.DIFFERENT_EMAIL
                         differentEmailAddress = differentEmail
                     },
                 ),
@@ -204,7 +204,7 @@ class PropertyRegistrationCorrespondenceCyaSinglePageTests : IntegrationTestWith
                 completedState().withSubmittedValue(
                     CorrespondenceEmailStep.ROUTE_SEGMENT,
                     CorrespondenceEmailFormModel().apply {
-                        whichEmail = CorrespondenceEmailOption.DIFFERENT_EMAIL
+                        correspondenceEmailOption = CorrespondenceEmailOption.DIFFERENT_EMAIL
                         differentEmailAddress = differentEmail
                     },
                 ),

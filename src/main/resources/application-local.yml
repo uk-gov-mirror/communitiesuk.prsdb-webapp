@@ -248,3 +248,14 @@ spring:
   sql:
     init:
       mode: never
+
+# Small volumes so the seeder can be run and reset locally. The deployed NFT
+# environment uses the full-scale defaults from application.yml.
+# Addresses are generated locally because the real NGD address data requires an OS API key and a large download.
+nft-seed:
+  system-operators: ${NFT_SEED_SYSTEM_OPERATORS:5}
+  local-council-users: ${NFT_SEED_LOCAL_COUNCIL_USERS:10}
+  landlords: ${NFT_SEED_LANDLORDS:30}
+  properties: ${NFT_SEED_PROPERTIES:45}
+  batch-size: ${NFT_SEED_BATCH_SIZE:10}
+  generated-addresses: ${NFT_SEED_GENERATED_ADDRESSES:500}

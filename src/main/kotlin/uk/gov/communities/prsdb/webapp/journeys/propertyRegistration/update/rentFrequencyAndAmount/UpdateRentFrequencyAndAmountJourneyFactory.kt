@@ -64,7 +64,11 @@ class UpdateRentFrequencyAndAmountJourneyFactory(
             step(journey.cyaStep) {
                 routeSegment(UpdateRentFrequencyAndAmountCyaStep.ROUTE_SEGMENT)
                 parents { journey.rentFrequencyAndAmountTask.isComplete() }
-                nextUrl { returnUrl }
+                nextDestination {
+                    Destination
+                        .ExternalUrl(returnUrl)
+                        .withFlashAttribute("updateSuccessBanner", "propertyDetails.updateSuccessBanner.tenancyDetails")
+                }
             }
             configureStep(journey.rentFrequencyAndAmountTask.rentFrequency) {
                 withAdditionalContentProperty {
@@ -160,8 +164,7 @@ class UpdateRentFrequencyAndAmountJourney(
     override var originalJourneyUpdated: Instant? by delegateProvider.nullableDelegate("originalJourneyUpdated")
 }
 
-interface UpdateRentFrequencyAndAmountJourneyState :
-    CheckYourAnswersJourneyState {
+interface UpdateRentFrequencyAndAmountJourneyState : CheckYourAnswersJourneyState {
     val rentFrequencyAndAmountTask: RentFrequencyAndAmountTask
     override val cyaStep: UpdateRentFrequencyAndAmountCyaStep
     val propertyId: Long

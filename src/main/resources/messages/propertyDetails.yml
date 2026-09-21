@@ -25,6 +25,8 @@ lettingAgentView:
     heading: Tenancy details
   complianceCertificates:
     heading: Compliance certificates
+  feedback:
+    body: Once you have completed one or more of the actions on this page, please click here to provide feedback about your experience
 landlordDetails:
   heading: Landlords
   registeredLandlords:
@@ -257,3 +259,8 @@ resendInvitation:
     title: Success
     heading: New invitation email sent to {0}
     body: They have 28 days to accept this invitation.
+updateSuccessBanner:
+  title: Success
+  compliance: Compliance certificates updated.
+  tenancyDetails: Tenancy details updated.
+  licensing: Property licensing updated.

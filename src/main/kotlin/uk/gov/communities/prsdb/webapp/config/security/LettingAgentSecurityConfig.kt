@@ -48,6 +48,8 @@ class LettingAgentSecurityConfig {
     }
 
     companion object {
-        const val LETTING_AGENT_ROUTES_PATTERN = "/$LANDLORD_PATH_SEGMENT/$LETTING_AGENT_PATH_SEGMENT/**"
+        const val LETTING_AGENT_ROUTES_PREFIX = "/$LANDLORD_PATH_SEGMENT/$LETTING_AGENT_PATH_SEGMENT/"
+
+        const val LETTING_AGENT_ROUTES_PATTERN = "$LETTING_AGENT_ROUTES_PREFIX**"
     }
 }

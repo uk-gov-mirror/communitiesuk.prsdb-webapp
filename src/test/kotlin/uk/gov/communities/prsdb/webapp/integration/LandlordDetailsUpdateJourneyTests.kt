@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.communities.prsdb.webapp.constants.MANUAL_ADDRESS_CHOSEN
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LandlordDetailsPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LookupAddressFormPageUpdateLandlordDetails
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.ManualAddressFormPageUpdateLandlordDetails
@@ -69,18 +70,20 @@ class LandlordDetailsUpdateJourneyTests : IntegrationTestWithMutableData("data-l
     inner class EmailUpdates {
         @Test
         fun `A landlord can update their email address`(page: Page) {
-            // Details page
             var landlordDetailsPage = navigator.goToLandlordDetails()
             landlordDetailsPage.personalDetailsSummaryList.emailRow.actions.firstActionLink
                 .clickAndWait()
             val updateEmailPage = assertPageIs(page, EmailFormPageUpdateLandlordDetails::class)
+            // This is unique to the update journey, not on property reg
+            assertThat(updateEmailPage.insetText).containsText(
+                "This will not change any email addresses we show to councils on your property registrations. " +
+                    "Check your registrations are correct after making this update.",
+            )
 
-            // Update Email page
             val newEmail = "newEmail@test.com"
             updateEmailPage.submitEmail(newEmail)
             landlordDetailsPage = assertPageIs(page, LandlordDetailsPage::class)
 
-            // Check changes have occurred
             assertThat(landlordDetailsPage.personalDetailsSummaryList.emailRow.value).containsText(newEmail)
         }
     }

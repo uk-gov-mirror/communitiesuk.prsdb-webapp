@@ -251,7 +251,7 @@ class PropertyRegistrationCyaStepConfigTests {
         private val lookupStep = mock<LookupAddressStep>()
         private val emailForm =
             CorrespondenceEmailFormModel().apply {
-                whichEmail = CorrespondenceEmailOption.ACCOUNT_EMAIL
+                correspondenceEmailOption = CorrespondenceEmailOption.ACCOUNT_EMAIL
                 differentEmailAddress = "council.contact@example.com"
             }
         private val lookupPath = "${CorrespondenceAddressTask.ROUTE_SEGMENT}/${LookupAddressStep.ROUTE_SEGMENT}"
@@ -299,7 +299,7 @@ class PropertyRegistrationCyaStepConfigTests {
 
         @Test
         fun `contact rows show the different email when selected`() {
-            emailForm.whichEmail = CorrespondenceEmailOption.DIFFERENT_EMAIL
+            emailForm.correspondenceEmailOption = CorrespondenceEmailOption.DIFFERENT_EMAIL
 
             assertEquals("council.contact@example.com", correspondenceRows()[0].fieldValue)
             verify(mockState, never()).loggedInLandlordEmail

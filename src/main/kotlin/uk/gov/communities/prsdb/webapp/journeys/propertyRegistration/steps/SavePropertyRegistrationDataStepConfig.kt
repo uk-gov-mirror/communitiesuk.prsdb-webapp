@@ -139,17 +139,20 @@ class SavePropertyRegistrationDataStepConfig(
             jointLandlordEmails = jointLandlordEmails,
             lettingAgentEmail = lettingAgentEmail,
             markedJointLandlord = markedJointLandlord,
-            // TODO PDJB-1720/PDJB-1721: when registration is delegated to a letting agent the gas-supply question is
-            //  skipped, so we persist a placeholder hasGasSupply = true (alongside gasSafetyCertProvideLater = true)
-            //  to keep the gas cert as "provide later" rather than "not required". Revisit when the delegated
-            //  gas-supply row is hidden/handled properly. Consider renaming hasGasSupply to hasGasSupplyOrProvideLater
-            //  (will require DB migration).
             hasGasSupply =
-                isDelegatedToLettingAgent ||
-                    state.gasSafetyTask.gasSafetyDetailsTask.gasSupplyOutcome.let {
-                        it == GasSupplyOutcome.HAS_SUPPLY || it == GasSupplyOutcome.PROVIDE_LATER
-                    } ||
-                    state.gasSafetyTask.gasSafetyDetailsTask.gasCertOutcome == GasCertOutcome.PROVIDE_LATER,
+                when (state.gasSafetyTask.gasSafetyDetailsTask.gasSupplyOutcome) {
+                    GasSupplyOutcome.HAS_SUPPLY -> true
+                    GasSupplyOutcome.NO_SUPPLY -> false
+                    GasSupplyOutcome.PROVIDE_LATER -> null
+                    null ->
+                        if (isDelegatedToLettingAgent) {
+                            null
+                        } else {
+                            throw IllegalStateException(
+                                "gasSupplyOutcome must be answered before registration unless it is delegated to a letting agent",
+                            )
+                        }
+                },
             gasSafetyCertIssueDate =
                 state.gasSafetyTask.gasSafetyDetailsTask
                     .getGasSafetyCertificateIssueDateIfReachable()

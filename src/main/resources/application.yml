@@ -51,6 +51,19 @@ epc:
   base-url: ${EPC_REGISTER_BASE_URL}
   certificate-base-url: ${EPC_CERTIFICATE_BASE_URL}
 
+nft-seed:
+  system-operators: ${NFT_SEED_SYSTEM_OPERATORS:150}
+  local-council-users: ${NFT_SEED_LOCAL_COUNCIL_USERS:3000}
+  landlords: ${NFT_SEED_LANDLORDS:2820000}
+  properties: ${NFT_SEED_PROPERTIES:4700000}
+  batch-size: ${NFT_SEED_BATCH_SIZE:10000}
+  random-seed: ${NFT_SEED_RANDOM_SEED:239}
+  # Blank means "now". Set to an ISO date (e.g. 2026-01-01) to make a run fully reproducible.
+  reference-date: ${NFT_SEED_REFERENCE_DATE:}
+  # Number of fictional addresses to generate before seeding. 0 uses the addresses already in the database (the real
+  # NGD data loaded by NgdAddressLoader), which is what deployed NFT does.
+  generated-addresses: ${NFT_SEED_GENERATED_ADDRESSES:0}
+
 server:
   error:
     path: /error

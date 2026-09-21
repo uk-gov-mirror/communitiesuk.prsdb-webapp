@@ -11,6 +11,26 @@ class NftDataSeederDao(
     private val session: StatelessSession,
     private val connection: Connection,
 ) {
+    fun prepareAddressStatement(): PreparedStatement {
+        val query =
+            """
+            INSERT INTO address 
+            (created_date, last_modified_date, uprn, single_line_address, building_number, street_name, town_name, 
+            postcode, local_council_id, is_active) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true)
+            """
+        return connection.prepareStatement(query)
+    }
+
+    fun countAddresses(): Int {
+        connection.createStatement().use { statement ->
+            statement.executeQuery("SELECT count(*) FROM address").use { resultSet ->
+                resultSet.next()
+                return resultSet.getInt(1)
+            }
+        }
+    }
+
     fun preparePrsdbUserStatement(): PreparedStatement {
         val query =
             """
@@ -61,13 +81,51 @@ class NftDataSeederDao(
         return connection.prepareStatement(query)
     }
 
-    fun prepareLandlordStatement(): PreparedStatement {
+    fun prepareIndividualLandlordStatement(): PreparedStatement {
         val query =
             """
             INSERT INTO landlord 
             (id, created_date, last_modified_date, individual_subject_identifier, individual_name, individual_email, individual_phone_number, individual_address_id, individual_date_of_birth, 
              registration_number_id, individual_is_verified, individual_country_of_residence, individual_is_active, individual_has_accepted_privacy_notice, landlord_type)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '${ENGLAND_OR_WALES}', true, true, 0)
+            """
+        return connection.prepareStatement(query)
+    }
+
+    fun prepareOrganisationLandlordStatement(): PreparedStatement {
+        val query =
+            """
+            INSERT INTO landlord 
+            (id, created_date, last_modified_date, registration_number_id, landlord_type,
+             organisation_landlord_name, organisation_address_id, organisation_email, organisation_phone_number,
+             organisation_is_company, organisation_is_charity, organisation_is_trust,
+             organisation_company_number, organisation_charity_registered_with, organisation_charity_number,
+             organisation_lead_trustee_name, organisation_lead_trustee_date_of_birth, organisation_lead_trustee_email,
+             organisation_lead_trustee_phone, organisation_lead_trustee_address_id,
+             organisation_main_contact_name, organisation_main_contact_email, organisation_main_contact_phone,
+             organisation_registrant_name, organisation_registrant_date_of_birth, organisation_registrant_email,
+             organisation_registrant_phone_number)
+            VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+        return connection.prepareStatement(query)
+    }
+
+    fun prepareOrganisationalLandlordUserStatement(): PreparedStatement {
+        val query =
+            """
+            INSERT INTO organisational_landlord_user 
+            (created_date, organisation_landlord_id, subject_identifier, name, email) 
+            VALUES (?, ?, ?, ?, ?)
+            """
+        return connection.prepareStatement(query)
+    }
+
+    fun prepareOrganisationGoverningBodyMemberStatement(): PreparedStatement {
+        val query =
+            """
+            INSERT INTO organisation_governing_body_member 
+            (created_date, last_modified_date, organisation_landlord_id, type, name, date_of_birth, address_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """
         return connection.prepareStatement(query)
     }
@@ -186,11 +244,14 @@ class NftDataSeederDao(
             """
             SELECT * FROM address a
             WHERE a.local_council_id IS NOT NULL
-            AND NOT EXISTS (
-                SELECT 1 FROM property_ownership po
-                WHERE po.is_active AND po.address_id = a.id
+            AND (
+                NOT EXISTS (
+                    SELECT 1 FROM property_ownership po
+                    WHERE po.is_active AND po.address_id = a.id
+                )
+                OR NOT :restrictToAvailable
             )
-            OR NOT :restrictToAvailable
+            ORDER BY a.id
             LIMIT :limit OFFSET :offset
             """
         return session
@@ -199,6 +260,32 @@ class NftDataSeederDao(
             .setParameter("limit", limit)
             .setParameter("offset", offset)
             .resultList
+    }
+
+    /**
+     * Counts addresses that would be returned by [findAddresses]. The seeder uses this once to initialise the
+     * in-memory counts used while it is the only database writer.
+     */
+    fun countAvailableAddresses(restrictToAvailable: Boolean): Int {
+        val query =
+            """
+            SELECT count(*) FROM address a
+            WHERE a.local_council_id IS NOT NULL
+            AND (
+                NOT EXISTS (
+                    SELECT 1 FROM property_ownership po
+                    WHERE po.is_active AND po.address_id = a.id
+                )
+                OR NOT ?
+            )
+            """
+        connection.prepareStatement(query).use { statement ->
+            statement.setBoolean(1, restrictToAvailable)
+            statement.executeQuery().use { resultSet ->
+                resultSet.next()
+                return resultSet.getInt(1)
+            }
+        }
     }
 
     fun findRegistrationNumbersIn(numbers: Set<Long>): List<Long> {

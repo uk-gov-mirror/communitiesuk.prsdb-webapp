@@ -59,125 +59,218 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
     }
 
     @Nested
-    inner class NoGasSupply {
-        @Test
-        fun `createGasSupplyRows returns single row with false when no gas supply`() {
-            whenever(mockState.gasSupplyOutcomeStep).thenReturn(mockHasGasSupplyStep)
-            whenever(mockHasGasSupplyStep.currentJourneyId).thenReturn("test-journey-id")
-            whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.NO_SUPPLY)
+    inner class FlagIndependentTests {
+        @Nested
+        inner class NoGasSupply {
+            @Test
+            fun `factory returns a single no-gas-supply row`() {
+                whenever(mockState.gasSupplyOutcomeStep).thenReturn(mockHasGasSupplyStep)
+                whenever(mockHasGasSupplyStep.currentJourneyId).thenReturn("test-journey-id")
+                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.NO_SUPPLY)
 
-            val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
+                val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
 
-            val gasSupplyRows = factory.createGasSupplyRows()
-            assertEquals(1, gasSupplyRows.size)
-            assertEquals(false, gasSupplyRows[0].fieldValue)
+                val gasSupplyRows = factory.createGasSupplyRows()
+                assertEquals(1, gasSupplyRows.size)
+                assertEquals(false, gasSupplyRows[0].fieldValue)
 
-            val certRows = factory.createCertRows()
-            assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
+                val certRows = factory.createCertRows()
+                assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
 
-            assertEquals("checkGasSafety.noGasSupplyInsetText", factory.getInsetTextKey())
+                assertEquals("checkGasSafety.noGasSupplyInsetText", factory.getInsetTextKey())
+            }
+        }
+
+        @Nested
+        inner class NoCertificate {
+            @Test
+            fun `factory returns correct content when no certificate provided and occupied`() {
+                setupCommonStateMocks()
+                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
+                whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.NO_CERTIFICATE)
+                whenever(mockState.isOccupied).thenReturn(true)
+
+                val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
+
+                val gasSupplyRows = factory.createGasSupplyRows()
+                assertEquals(2, gasSupplyRows.size)
+                assertEquals(true, gasSupplyRows[0].fieldValue)
+                assertEquals(false, gasSupplyRows[1].fieldValue)
+
+                val certRows = factory.createCertRows()
+                assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
+
+                assertEquals("checkGasSafety.occupiedNoCertInsetText", factory.getInsetTextKey())
+            }
+
+            @Test
+            fun `factory returns correct content when no certificate provided and unoccupied`() {
+                setupCommonStateMocks()
+                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
+                whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.NO_CERTIFICATE)
+                whenever(mockState.isOccupied).thenReturn(false)
+
+                val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
+
+                val gasSupplyRows = factory.createGasSupplyRows()
+                assertEquals(2, gasSupplyRows.size)
+                assertEquals(true, gasSupplyRows[0].fieldValue)
+                assertEquals("checkGasSafety.provideThisLater.unoccupied", gasSupplyRows[1].fieldValue)
+
+                val certRows = factory.createCertRows()
+                assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
+
+                assertNull(factory.getInsetTextKey())
+            }
+
+            @Test
+            fun `factory returns correct content when certificate expired and occupied`() {
+                setupCommonStateMocks()
+                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
+                whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.HAS_CERTIFICATE)
+                whenever(mockState.getGasSafetyCertificateIsOutdated()).thenReturn(true)
+                whenever(mockState.isOccupied).thenReturn(true)
+
+                val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
+
+                val gasSupplyRows = factory.createGasSupplyRows()
+                assertEquals(2, gasSupplyRows.size)
+                assertEquals(true, gasSupplyRows[0].fieldValue)
+                assertEquals(false, gasSupplyRows[1].fieldValue)
+
+                val certRows = factory.createCertRows()
+                assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
+
+                assertEquals("checkGasSafety.occupiedNoCertInsetText", factory.getInsetTextKey())
+            }
+
+            @Test
+            fun `factory returns correct content when certificate expired and unoccupied`() {
+                setupCommonStateMocks()
+                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
+                whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.HAS_CERTIFICATE)
+                whenever(mockState.getGasSafetyCertificateIsOutdated()).thenReturn(true)
+                whenever(mockState.isOccupied).thenReturn(false)
+
+                val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
+
+                val gasSupplyRows = factory.createGasSupplyRows()
+                assertEquals(2, gasSupplyRows.size)
+                assertEquals(true, gasSupplyRows[0].fieldValue)
+                assertEquals("checkGasSafety.provideThisLater.unoccupied", gasSupplyRows[1].fieldValue)
+
+                val certRows = factory.createCertRows()
+                assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
+
+                assertNull(factory.getInsetTextKey())
+            }
+        }
+
+        @Nested
+        inner class ValidCertificate {
+            @Test
+            fun `factory wires up gas download messageKey and sorts uploads by map index`() {
+                setupCommonStateMocks()
+                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
+                whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.HAS_CERTIFICATE)
+                whenever(mockState.getGasSafetyCertificateIsOutdated()).thenReturn(false)
+
+                val issueDate = LocalDate(2024, 6, 15)
+                whenever(mockState.getGasSafetyCertificateIssueDateIfReachable()).thenReturn(issueDate)
+
+                whenever(mockState.gasCertIssueDateStep).thenReturn(mockGasCertIssueDateStep)
+                whenever(mockState.checkGasCertUploadsStep).thenReturn(mockCheckGasCertUploadsStep)
+                whenever(mockGasCertIssueDateStep.currentJourneyId).thenReturn("test-journey-id")
+                whenever(mockCheckGasCertUploadsStep.currentJourneyId).thenReturn("test-journey-id")
+                whenever(mockState.gasUploadMap).thenReturn(
+                    mapOf(
+                        2 to CertificateUpload(2L, "second.pdf"),
+                        1 to CertificateUpload(1L, "first.pdf"),
+                    ),
+                )
+                stubUpload(1L, FileUploadStatus.SCANNED, downloadUrl = "/download/first.pdf")
+                stubUpload(2L, FileUploadStatus.SCANNED, downloadUrl = "/download/second.pdf")
+
+                val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
+
+                val gasSupplyRows = factory.createGasSupplyRows()
+                assertEquals(1, gasSupplyRows.size)
+                assertEquals(true, gasSupplyRows[0].fieldValue)
+
+                val certRows = factory.createCertRows()
+                assertEquals(3, certRows.size)
+                assertEquals(true, certRows[0].fieldValue)
+                assertEquals(issueDate, certRows[1].fieldValue)
+                assertEquals(
+                    listOf(
+                        UploadedFileUrl(
+                            messageKey = "propertyDetails.complianceInformation.gasSafety.downloadCertificate",
+                            displayName = "first.pdf",
+                            url = "/download/first.pdf",
+                        ),
+                        UploadedFileUrl(
+                            messageKey = "propertyDetails.complianceInformation.gasSafety.downloadCertificate",
+                            displayName = "second.pdf",
+                            url = "/download/second.pdf",
+                        ),
+                    ),
+                    certRows[2].fieldValue,
+                )
+
+                assertNull(factory.getInsetTextKey())
+            }
         }
     }
 
-    @Nested
-    inner class UploadedCertificate {
-        @Test
-        fun `factory wires up gas download messageKey and sorts uploads by map index`() {
-            setupCommonStateMocks()
-            whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.HAS_CERTIFICATE)
-            whenever(mockState.getGasSafetyCertificateIsOutdated()).thenReturn(false)
+    @Test
+    fun `factory shows a single deferred gas supply row when occupied`() {
+        whenever(mockState.gasSupplyOutcomeStep).thenReturn(mockHasGasSupplyStep)
+        whenever(mockHasGasSupplyStep.currentJourneyId).thenReturn("test-journey-id")
+        whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.PROVIDE_LATER)
+        whenever(mockState.isOccupied).thenReturn(true)
 
-            val issueDate = LocalDate(2024, 6, 15)
-            whenever(mockState.getGasSafetyCertificateIssueDateIfReachable()).thenReturn(issueDate)
+        val destinationSteps = mutableListOf<Any>()
+        val factory =
+            GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService, destinationProvider = {
+                destinationSteps.add(it)
+                Destination(it)
+            })
 
-            whenever(mockState.gasCertIssueDateStep).thenReturn(mockGasCertIssueDateStep)
-            whenever(mockState.checkGasCertUploadsStep).thenReturn(mockCheckGasCertUploadsStep)
-            whenever(mockGasCertIssueDateStep.currentJourneyId).thenReturn("test-journey-id")
-            whenever(mockCheckGasCertUploadsStep.currentJourneyId).thenReturn("test-journey-id")
-            whenever(mockState.gasUploadMap).thenReturn(
-                mapOf(
-                    2 to CertificateUpload(2L, "second.pdf"),
-                    1 to CertificateUpload(1L, "first.pdf"),
-                ),
-            )
-            stubUpload(1L, FileUploadStatus.SCANNED, downloadUrl = "/download/first.pdf")
-            stubUpload(2L, FileUploadStatus.SCANNED, downloadUrl = "/download/second.pdf")
+        val gasSupplyRows = factory.createGasSupplyRows()
+        assertEquals(1, gasSupplyRows.size)
+        assertEquals("checkGasSafety.provideThisLater.occupied", gasSupplyRows[0].fieldValue)
+        assertEquals(mockHasGasSupplyStep, destinationSteps[0])
 
-            val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
+        val certRows = factory.createCertRows()
+        assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
 
-            val gasSupplyRows = factory.createGasSupplyRows()
-            assertEquals(1, gasSupplyRows.size)
-            assertEquals(true, gasSupplyRows[0].fieldValue)
-
-            val certRows = factory.createCertRows()
-            assertEquals(3, certRows.size)
-            assertEquals(true, certRows[0].fieldValue)
-            assertEquals(issueDate, certRows[1].fieldValue)
-            assertEquals(
-                listOf(
-                    UploadedFileUrl(
-                        messageKey = "propertyDetails.complianceInformation.gasSafety.downloadCertificate",
-                        displayName = "first.pdf",
-                        url = "/download/first.pdf",
-                    ),
-                    UploadedFileUrl(
-                        messageKey = "propertyDetails.complianceInformation.gasSafety.downloadCertificate",
-                        displayName = "second.pdf",
-                        url = "/download/second.pdf",
-                    ),
-                ),
-                certRows[2].fieldValue,
-            )
-
-            assertNull(factory.getInsetTextKey())
-        }
+        assertNull(factory.getInsetTextKey())
     }
 
+    @Test
+    fun `factory shows a single deferred gas supply row when unoccupied`() {
+        whenever(mockState.gasSupplyOutcomeStep).thenReturn(mockHasGasSupplyStep)
+        whenever(mockHasGasSupplyStep.currentJourneyId).thenReturn("test-journey-id")
+        whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.PROVIDE_LATER)
+        whenever(mockState.isOccupied).thenReturn(false)
+
+        val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
+
+        val gasSupplyRows = factory.createGasSupplyRows()
+        assertEquals(1, gasSupplyRows.size)
+        assertEquals("checkGasSafety.provideThisLater.unoccupied", gasSupplyRows[0].fieldValue)
+
+        val certRows = factory.createCertRows()
+        assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
+
+        assertNull(factory.getInsetTextKey())
+    }
+
+    // TODO PDJB-1617: delete this class when the DELEGATE_TO_LETTING_AGENT feature flag is removed. Flag off
     @Nested
-    inner class ProvideLater {
+    inner class WhenDelegateToLettingAgentDisabled {
         @Test
-        fun `factory returns correct content for provide this later when occupied`() {
-            whenever(mockState.gasSupplyOutcomeStep).thenReturn(mockHasGasSupplyStep)
-            whenever(mockHasGasSupplyStep.currentJourneyId).thenReturn("test-journey-id")
-            whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.PROVIDE_LATER)
-            whenever(mockState.isOccupied).thenReturn(true)
-
-            val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
-
-            val gasSupplyRows = factory.createGasSupplyRows()
-            assertEquals(2, gasSupplyRows.size)
-            assertEquals(true, gasSupplyRows[0].fieldValue)
-            assertEquals("checkGasSafety.provideThisLater.occupied", gasSupplyRows[1].fieldValue)
-
-            val certRows = factory.createCertRows()
-            assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
-
-            assertNull(factory.getInsetTextKey())
-        }
-
-        @Test
-        fun `factory returns correct content for provide this later when unoccupied`() {
-            whenever(mockState.gasSupplyOutcomeStep).thenReturn(mockHasGasSupplyStep)
-            whenever(mockHasGasSupplyStep.currentJourneyId).thenReturn("test-journey-id")
-            whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.PROVIDE_LATER)
-            whenever(mockState.isOccupied).thenReturn(false)
-
-            val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
-
-            val gasSupplyRows = factory.createGasSupplyRows()
-            assertEquals(2, gasSupplyRows.size)
-            assertEquals(true, gasSupplyRows[0].fieldValue)
-            assertEquals("checkGasSafety.provideThisLater.unoccupied", gasSupplyRows[1].fieldValue)
-
-            val certRows = factory.createCertRows()
-            assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
-
-            assertNull(factory.getInsetTextKey())
-        }
-
-        @Test
-        fun `factory returns correct content for legacy provide this later on gas cert step`() {
+        fun `factory shows a gas supply row plus a deferred gas cert row when occupied`() {
             setupCommonStateMocks()
             whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
             whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.PROVIDE_LATER)
@@ -201,80 +294,12 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
 
             assertNull(factory.getInsetTextKey())
         }
-    }
-
-    @Nested
-    inner class NoCert {
-        @Test
-        fun `factory returns correct content for no cert when occupied`() {
-            setupCommonStateMocks()
-            whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.NO_CERTIFICATE)
-            whenever(mockState.isOccupied).thenReturn(true)
-
-            val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
-
-            val gasSupplyRows = factory.createGasSupplyRows()
-            assertEquals(2, gasSupplyRows.size)
-            assertEquals(true, gasSupplyRows[0].fieldValue)
-            assertEquals(false, gasSupplyRows[1].fieldValue)
-
-            val certRows = factory.createCertRows()
-            assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
-
-            assertEquals("checkGasSafety.occupiedNoCertInsetText", factory.getInsetTextKey())
-        }
 
         @Test
-        fun `factory returns correct content for no cert when unoccupied`() {
+        fun `factory shows a gas supply row plus a deferred gas cert row when unoccupied`() {
             setupCommonStateMocks()
             whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.NO_CERTIFICATE)
-            whenever(mockState.isOccupied).thenReturn(false)
-
-            val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
-
-            val gasSupplyRows = factory.createGasSupplyRows()
-            assertEquals(2, gasSupplyRows.size)
-            assertEquals(true, gasSupplyRows[0].fieldValue)
-            assertEquals("checkGasSafety.provideThisLater.unoccupied", gasSupplyRows[1].fieldValue)
-
-            val certRows = factory.createCertRows()
-            assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
-
-            assertNull(factory.getInsetTextKey())
-        }
-    }
-
-    @Nested
-    inner class CertExpired {
-        @Test
-        fun `factory returns correct content for expired cert when occupied`() {
-            setupCommonStateMocks()
-            whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.HAS_CERTIFICATE)
-            whenever(mockState.getGasSafetyCertificateIsOutdated()).thenReturn(true)
-            whenever(mockState.isOccupied).thenReturn(true)
-
-            val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
-
-            val gasSupplyRows = factory.createGasSupplyRows()
-            assertEquals(2, gasSupplyRows.size)
-            assertEquals(true, gasSupplyRows[0].fieldValue)
-            assertEquals(false, gasSupplyRows[1].fieldValue)
-
-            val certRows = factory.createCertRows()
-            assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
-
-            assertEquals("checkGasSafety.occupiedNoCertInsetText", factory.getInsetTextKey())
-        }
-
-        @Test
-        fun `factory returns correct content for expired cert when unoccupied`() {
-            setupCommonStateMocks()
-            whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.HAS_CERTIFICATE)
-            whenever(mockState.getGasSafetyCertificateIsOutdated()).thenReturn(true)
+            whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.PROVIDE_LATER)
             whenever(mockState.isOccupied).thenReturn(false)
 
             val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)

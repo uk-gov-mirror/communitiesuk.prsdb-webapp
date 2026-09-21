@@ -54,6 +54,34 @@ class LettingAgentUpdateLicensingJourneyTests : IntegrationTestWithMutableData("
     }
 
     @Test
+    fun `A letting agent sees an update-success banner after completing the licensing journey, which clears on refresh or revisit`(
+        page: Page,
+    ) {
+        var propertyDetailsPage = navigator.goToPropertyDetailsLettingAgentView(token)
+        assertThat(propertyDetailsPage.updateSuccessBanner).isHidden()
+
+        propertyDetailsPage.summaryList.licensingTypeRow.clickFirstActionLinkAndWait()
+        val licensingTypePage = assertPageIs(page, LicensingTypeFormPageLettingAgentUpdate::class, urlArguments)
+
+        licensingTypePage.submitLicensingType(LicensingType.SELECTIVE_LICENCE)
+        val licenceNumberPage = assertPageIs(page, SelectiveLicenceFormPageLettingAgentUpdate::class, urlArguments)
+
+        licenceNumberPage.submitLicenseNumber("SL999")
+        val checkYourAnswersPage = assertPageIs(page, CheckLicensingAnswersPageLettingAgentUpdate::class, urlArguments)
+        checkYourAnswersPage.confirm()
+
+        propertyDetailsPage = assertPageIs(page, PropertyDetailsPageLettingAgentView::class, urlArguments)
+        assertThat(propertyDetailsPage.updateSuccessBanner).isVisible()
+        assertThat(propertyDetailsPage.updateSuccessBanner).containsText("Property licensing updated.")
+
+        page.reload()
+        assertThat(propertyDetailsPage.updateSuccessBanner).isHidden()
+
+        propertyDetailsPage = navigator.goToPropertyDetailsLettingAgentView(token)
+        assertThat(propertyDetailsPage.updateSuccessBanner).isHidden()
+    }
+
+    @Test
     fun `A letting agent can remove a property's licensing`(page: Page) {
         var propertyDetailsPage = navigator.goToPropertyDetailsLettingAgentView(token)
         propertyDetailsPage.summaryList.licensingTypeRow.clickFirstActionLinkAndWait()

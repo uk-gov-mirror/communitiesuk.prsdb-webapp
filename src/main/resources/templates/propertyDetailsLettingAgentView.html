@@ -5,6 +5,16 @@
     <main class="govuk-main-wrapper">
         <div id="page-contents" class="govuk-grid-row">
             <div class="govuk-grid-column-two-thirds">
+                <th:block th:if="${updateSuccessBanner != null}" th:with="isSuccess=true">
+                    <div id="update-success-banner"
+                         th:insert="~{fragments/banners/notificationBanner ::
+                        notificationBanner(#{propertyDetails.updateSuccessBanner.title}, ~{::#update-success-banner/content()})}"
+                         th:with="isSuccess=true">
+                        <p class="govuk-notification-banner__heading" th:text="#{${updateSuccessBanner}}">
+                            propertyDetails.updateSuccessBanner
+                        </p>
+                    </div>
+                </th:block>
                 <span class="govuk-caption-l" th:text="#{propertyDetails.lettingAgentView.caption}">propertyDetails.lettingAgentView.caption</span>
                 <h1 class="govuk-heading-l">
                     <th:block th:replace="~{fragments/multiLineText :: multiLineText(${propertyDetails.addressParts})}"></th:block>
@@ -31,6 +41,12 @@
                     <div th:replace="~{fragments/summaryCard :: summaryCardWithAdditionalContent(${complianceDetails.electricalSafetySummaryCard.title}, null, ${complianceDetails.electricalSafetySummaryCard.actions}, ${complianceDetails.electricalSafetySummaryCard.summaryList}, ~{fragments/insetTextWithSectionBreak :: insetTextWithSectionBreak(${complianceDetails.electricalSafetySummaryCard.insetViewModel?.messageKey})})}"></div>
 
                     <div th:replace="~{fragments/summaryCard :: summaryCardWithAdditionalContent(${complianceDetails.epcSummaryCard.title}, null, ${complianceDetails.epcSummaryCard.actions}, ${complianceDetails.epcSummaryCard.summaryList}, ~{fragments/epcAdditionalContent :: epcAdditionalContent(${complianceDetails.epcSupplementarySections}, ${complianceDetails.epcSummaryCard.insetViewModel?.messageKey}, ${complianceDetails.epcExpiredInsetViewModel})})}"></div>
+                </div>
+
+                <div th:replace="~{fragments/content/feedbackSurveyPanel :: feedbackSurveyPanel(
+                    #{common.confirmationPage.feedback.heading},
+                    #{propertyDetails.lettingAgentView.feedback.body},
+                    ${lettingAgentPropertyDetailsSurveyUrl})}">
                 </div>
             </div>
         </div>

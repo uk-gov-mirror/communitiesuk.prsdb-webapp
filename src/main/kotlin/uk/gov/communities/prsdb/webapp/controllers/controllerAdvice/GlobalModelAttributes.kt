@@ -11,6 +11,7 @@ import org.springframework.web.context.request.ServletRequestAttributes
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbControllerAdvice
 import uk.gov.communities.prsdb.webapp.config.filters.CSPNonceFilter.Companion.CSP_NONCE_ATTRIBUTE
 import uk.gov.communities.prsdb.webapp.config.interceptors.BackLinkInterceptor.Companion.overrideBackLinkForUrl
+import uk.gov.communities.prsdb.webapp.config.security.LettingAgentSecurityConfig.Companion.LETTING_AGENT_ROUTES_PREFIX
 import uk.gov.communities.prsdb.webapp.constants.CONFIRM_SIGN_OUT_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.CROWN_COPYRIGHT_URL
 import uk.gov.communities.prsdb.webapp.constants.GOV_LICENCE_URL
@@ -87,8 +88,8 @@ class GlobalModelAttributes(
         val serviceNameKey = if (isCustomServiceName) "localCouncilServiceName" else "serviceName"
         val serviceName = messageSource.getMessage(serviceNameKey, null, serviceNameKey, Locale.getDefault())
         model.addAttribute("serviceName", serviceName)
-        if (isCustomServiceName) {
-            model.addAttribute("isCustomServiceName", true)
+        if (isCustomServiceName || uri.startsWith(LETTING_AGENT_ROUTES_PREFIX)) {
+            model.addAttribute("showServiceNavigation", true)
         }
 
         val dashboardUrl = dashboardUrlProvider.getDashboardUrlForCurrentUser()

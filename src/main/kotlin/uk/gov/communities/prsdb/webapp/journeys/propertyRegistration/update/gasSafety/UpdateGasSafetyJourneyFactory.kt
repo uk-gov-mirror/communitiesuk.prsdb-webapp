@@ -86,7 +86,11 @@ class UpdateGasSafetyJourneyFactory(
             }
             step(journey.completeGasSafetyUpdateStep) {
                 parents { journey.updateCheckGasSafetyAnswersStep.isComplete() }
-                nextUrl { returnUrl }
+                nextDestination {
+                    Destination
+                        .ExternalUrl(returnUrl)
+                        .withFlashAttribute("updateSuccessBanner", "propertyDetails.updateSuccessBanner.compliance")
+                }
             }
             replaceButtons()
         }

@@ -41,10 +41,14 @@ class EpcRegisterClient(
                         .build()
                         .toUri(),
                 ).retrieve()
-                // This ensures that we naively treat NOT_FOUND responses as valid, for searches that do not
-                // match a property/certificate. This silently ignores the error and the response body is treated
-                // like a successful response.
-                .onStatus({ it == HttpStatus.NOT_FOUND }) { request, response -> }
+                // We return the body rather than throwing and the caller can act upon a NOT_FOUND EPC.
+                // There are some cases where we were receiving a 404 with a different error, but this is wrong.
+                // So, we normalise so all 404 statuses come through as a NOT_FOUND error.
+                .onStatus({ it == HttpStatus.NOT_FOUND }) { request, response ->
+                    val json = JSONObject(response.body.reader().readText())
+                    EpcLookupService.setErrorCode(json, "NOT_FOUND")
+                    errorString = json.toString()
+                }
                 // This parses the response body and depending on the content either sets a fallback value as a side
                 // effect or throws a custom exception. We read the body stream without closing it as it will be read
                 // by the `body<String>` below.

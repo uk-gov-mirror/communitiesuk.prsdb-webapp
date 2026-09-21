@@ -7,8 +7,11 @@ import uk.gov.communities.prsdb.webapp.constants.MAX_REG_NUM
 import uk.gov.communities.prsdb.webapp.constants.MIN_REG_NUM
 import uk.gov.communities.prsdb.webapp.constants.enums.BillsIncluded
 import uk.gov.communities.prsdb.webapp.constants.enums.CertificateType
+import uk.gov.communities.prsdb.webapp.constants.enums.CharityRegulator
 import uk.gov.communities.prsdb.webapp.constants.enums.EpcExemptionReason
 import uk.gov.communities.prsdb.webapp.constants.enums.FurnishedStatus
+import uk.gov.communities.prsdb.webapp.constants.enums.GoverningBodyMemberType
+import uk.gov.communities.prsdb.webapp.constants.enums.LandlordType
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
 import uk.gov.communities.prsdb.webapp.constants.enums.MeesExemptionReason
 import uk.gov.communities.prsdb.webapp.constants.enums.OwnershipType
@@ -25,17 +28,74 @@ import java.sql.Timestamp
 import java.time.Instant
 import java.time.LocalDate
 import java.util.Locale
+import java.util.Random
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 object NftDataFaker {
-    private val faker = Faker(Locale.UK)
+    private const val DEFAULT_SEED = 239L
+    private const val MAX_ADDRESSES_PER_STREET = 30
+
+    private var seededRandom = Random(DEFAULT_SEED)
+    private var faker = Faker(Locale.UK, seededRandom)
+    private var scenarioRandom = Random(DEFAULT_SEED)
+
+    /**
+     * The reference "now" for all generated dates, pinned once per run so that a seeding run does not drift as it
+     * executes. Dates stay relative to the run date, so expiry and reminder windows remain realistic.
+     */
+    private var runReference: Instant = Instant.now()
+
+    /**
+     * Resets all random sources so that a seeding run produces identical data every time.
+     * Must be called before seeding starts.
+     */
+    fun reset(
+        seed: Long = DEFAULT_SEED,
+        reference: Instant = Instant.now(),
+    ) {
+        seededRandom = Random(seed)
+        faker = Faker(Locale.UK, seededRandom)
+        scenarioRandom = Random(seed)
+        runReference = reference
+    }
+
+    private fun referenceDate(): LocalDate = runReference.toLocalDate()
 
     fun generateBoolean(probabilityTrue: Double = 0.5): Boolean = faker.random().nextDouble() < probabilityTrue
 
+    fun <T> pickOne(values: List<T>): T = values[seededRandom.nextInt(values.size)]
+
+    fun <T> shuffle(values: List<T>): List<T> = values.shuffled(seededRandom)
+
+    fun generatePropertyScenario(): PropertyScenario {
+        val isRegistrationComplete = scenarioRandom.nextDouble() < 0.9
+        if (!isRegistrationComplete) {
+            return PropertyScenario(
+                isRegistrationComplete = false,
+                isOccupied = false,
+                hasLicence = false,
+                licenseProvideLater = null,
+                tenancyProvideLater = null,
+            )
+        }
+
+        val isOccupied = scenarioRandom.nextDouble() < 0.8
+        val hasLicence = scenarioRandom.nextDouble() < 0.2
+        return PropertyScenario(
+            isRegistrationComplete = true,
+            isOccupied = isOccupied,
+            hasLicence = hasLicence,
+            licenseProvideLater = if (!hasLicence) scenarioRandom.nextDouble() < 0.4 else null,
+            tenancyProvideLater = if (isOccupied) scenarioRandom.nextDouble() < 0.4 else null,
+        )
+    }
+
+    fun generateReminderEmailSent(): Boolean = scenarioRandom.nextDouble() < 0.25
+
     fun generateNumberLessThan(max: Int): Int = faker.random().nextInt(max)
 
-    fun generateCreatedDate(after: Timestamp = LocalDate.now().minusYears(1).toTimestamp()): Timestamp = generateDateAfter(after)
+    fun generateCreatedDate(after: Timestamp = referenceDate().minusYears(1).toTimestamp()): Timestamp = generateDateAfter(after)
 
     fun generateLastModifiedDate(createdDate: Timestamp): Timestamp? =
         if (generateBoolean(probabilityTrue = 0.6)) {
@@ -50,7 +110,7 @@ object NftDataFaker {
         landlordCreatedDate: Timestamp,
         reminderEmailSent: Boolean,
     ): Timestamp {
-        val now = LocalDate.now()
+        val now = referenceDate()
         val earliestCreatedDate = landlordCreatedDate.coerceAtLeast(now.minusDays(28).toTimestamp())
         return if (reminderEmailSent) {
             val latestCreatedDate =
@@ -92,12 +152,127 @@ object NftDataFaker {
 
     fun generateCoreDetailsForLandlords(landlordIds: List<Int>): List<CoreLandlordDetails> =
         landlordIds.map { id ->
+            val landlordType = generateLandlordType()
+            val organisationDetails =
+                if (landlordType == LandlordType.ORGANISATION) {
+                    generateOrganisationLandlordDetails(generateOrganisationCategory())
+                } else {
+                    null
+                }
             CoreLandlordDetails(
                 id = id.toLong(),
                 subjectId = generateSubjectIdentifier(),
                 createdDate = generateCreatedDate(),
+                landlordType = landlordType,
+                organisationDetails = organisationDetails,
             )
         }
+
+    // Assumption: roughly 5% of seeded landlords are organisations. This is a rough estimate not backed by real-world
+    // data, documented here as agreed, and can be adjusted if a more accurate ratio becomes available.
+    fun generateLandlordType(): LandlordType =
+        if (generateBoolean(
+                probabilityTrue = 0.05,
+            )
+        ) {
+            LandlordType.ORGANISATION
+        } else {
+            LandlordType.INDIVIDUAL
+        }
+
+    // A simplified, mutually-exclusive split of organisation shapes, chosen to give realistic variety without
+    // modelling every combination the real registration journey allows (e.g. a charity that is also a company).
+    enum class OrganisationCategory {
+        COMPANY,
+        CHARITY,
+        TRUST,
+        UNINCORPORATED,
+    }
+
+    fun generateOrganisationCategory(): OrganisationCategory =
+        when (faker.random().nextDouble()) {
+            // 40%
+            in 0.0..0.40 -> OrganisationCategory.COMPANY
+            // 20%
+            in 0.40..0.60 -> OrganisationCategory.CHARITY
+            // 10%
+            in 0.60..0.70 -> OrganisationCategory.TRUST
+            // 30%
+            else -> OrganisationCategory.UNINCORPORATED
+        }
+
+    fun generateOrganisationLandlordDetails(category: OrganisationCategory): OrganisationLandlordDetails {
+        val name = faker.company().name()
+        val isCompany = category == OrganisationCategory.COMPANY
+        val isTrust = category == OrganisationCategory.TRUST
+        // Only companies are guaranteed not to be charities; the other categories may still be registered charities.
+        val isCharity = category == OrganisationCategory.CHARITY || (!isCompany && generateBoolean(probabilityTrue = 0.15))
+
+        val companyNumber = if (isCompany) faker.regexify("[0-9]{8}") else null
+
+        val hasCharityRegistration = isCharity && generateBoolean(probabilityTrue = 0.8)
+        val charityRegisteredWith =
+            when {
+                !isCharity -> null
+                hasCharityRegistration ->
+                    pickOne(
+                        listOf(CharityRegulator.ENGLAND_AND_WALES, CharityRegulator.NORTHERN_IRELAND, CharityRegulator.SCOTLAND),
+                    )
+                else -> CharityRegulator.NONE
+            }
+        val charityNumber = if (hasCharityRegistration) faker.regexify("[0-9]{6,8}") else null
+
+        val leadTrusteeName = if (isTrust) generateName() else null
+        val leadTrusteeDateOfBirth = if (isTrust) generateDateOfBirth() else null
+        val leadTrusteeEmail = if (isTrust) generateEmail(leadTrusteeName) else null
+        val leadTrusteePhone = if (isTrust) generatePhoneNumber() else null
+
+        val registrantName = generateName()
+        val mainContactName = generateName()
+
+        return OrganisationLandlordDetails(
+            name = name,
+            email = generateEmail(name),
+            phoneNumber = generatePhoneNumber(),
+            isCompany = isCompany,
+            isCharity = isCharity,
+            isTrust = isTrust,
+            companyNumber = companyNumber,
+            charityRegisteredWith = charityRegisteredWith,
+            charityNumber = charityNumber,
+            leadTrusteeName = leadTrusteeName,
+            leadTrusteeDateOfBirth = leadTrusteeDateOfBirth,
+            leadTrusteeEmail = leadTrusteeEmail,
+            leadTrusteePhone = leadTrusteePhone,
+            mainContactName = mainContactName,
+            mainContactEmail = generateEmail(mainContactName),
+            mainContactPhone = generatePhoneNumber(),
+            registrantName = registrantName,
+            registrantDateOfBirth = generateDateOfBirth(),
+            registrantEmail = generateEmail(registrantName),
+            registrantPhoneNumber = generatePhoneNumber(),
+            // Per the real registration journey, only organisations without a company number need governing body
+            // members (see LandlordRegistrationService.registerOrganisationLandlord).
+            hasGoverningBody = !isCompany,
+        )
+    }
+
+    fun generateGoverningBodyMembers(hasLeadTrustee: Boolean): List<GoverningBodyMemberDetails> {
+        val count = faker.random().nextInt(1, 3)
+        return (1..count).map {
+            val type =
+                if (hasLeadTrustee) {
+                    GoverningBodyMemberType.TRUSTEE
+                } else {
+                    pickOne(listOf(GoverningBodyMemberType.PARTNER, GoverningBodyMemberType.OTHER))
+                }
+            GoverningBodyMemberDetails(
+                type = type,
+                name = generateName(),
+                dateOfBirth = generateDateOfBirth(),
+            )
+        }
+    }
 
     fun generateNumberOfPropertiesForLandlord(): Int =
         when (faker.random().nextDouble()) {
@@ -161,7 +336,12 @@ object NftDataFaker {
                 null
             }
 
-        return Pair(standardBillsIncluded.joinToString(separator = ","), customBillsIncluded?.joinToString(separator = ","))
+        // subset() returns a HashSet, and enum hash codes are identity-based, so iteration order varies between JVM
+        // runs. The stored order is not meaningful, so sort it to keep seeding reproducible.
+        return Pair(
+            standardBillsIncluded.sortedBy { it.ordinal }.joinToString(separator = ","),
+            customBillsIncluded?.sorted()?.joinToString(separator = ","),
+        )
     }
 
     fun generateFurnishedStatus(): FurnishedStatus = faker.options().option(FurnishedStatus::class.java)
@@ -282,6 +462,9 @@ object NftDataFaker {
         )
     }
 
+    fun isGasSafetyCertificateCurrent(issueDate: Date?): Boolean =
+        issueDate?.after(Date.valueOf(referenceDate().minusYears(GAS_SAFETY_CERT_VALIDITY_YEARS.toLong()))) == true
+
     fun generateJourneyId(): String = faker.regexify("[a-z0-9]{7}")
 
     fun generateIncompletePropertyJourneyState(address: Address): String {
@@ -309,6 +492,66 @@ object NftDataFaker {
 
     private val customRentFrequencies = arrayOf("Fortnightly", "Quarterly", "Yearly")
 
+    /**
+     * Deliberately fictional street and town names. Generated addresses must never coincide with a real address, so
+     * these are paired with the reserved ZZ postcode area (see [generateFakePostcode]).
+     */
+    private val fakeStreetNames =
+        listOf(
+            "Fictional", "Imaginary", "Invented", "Pretend", "Notional", "Hypothetical", "Sample", "Example",
+            "Placeholder", "Specimen", "Mockingbird", "Phantom", "Mirage", "Chimera", "Folly", "Whimsy",
+            "Fable", "Legend", "Myth", "Parable", "Riddle", "Rumour", "Daydream", "Reverie",
+            "Foxglove", "Bramble", "Thistle", "Hawthorn", "Willow", "Alder", "Juniper", "Larkspur",
+            "Kestrel", "Heron", "Otter", "Badger", "Marten", "Pipit", "Curlew", "Redshank",
+        )
+
+    private val fakeStreetTypes =
+        listOf("Road", "Street", "Way", "Avenue", "Close", "Lane", "Drive", "Gardens", "Crescent", "Grove", "Rise", "View")
+
+    private val fakeTownNames =
+        listOf(
+            "Testerton", "Fakenham Parva", "Mockbury", "Sampleford", "Dummerton", "Stubbington Magna",
+            "Placeholder Green", "Exampleside", "Notreal Heath", "Pretendwick", "Fictionbury", "Imagineley",
+        )
+
+    private val fakePostcodeLetters = ('A'..'Z').filterNot { it in "CIKMOV" }
+
+    /**
+     * ZZ is not a real UK postcode area — it is reserved for fictional and test addresses — so a generated postcode
+     * can never collide with a genuine one while still being format-valid.
+     */
+    fun generateFakePostcode(): String {
+        val outwardDigits = seededRandom.nextInt(1, 100)
+        val inwardDigit = seededRandom.nextInt(0, 10)
+        val firstLetter = fakePostcodeLetters[seededRandom.nextInt(fakePostcodeLetters.size)]
+        val secondLetter = fakePostcodeLetters[seededRandom.nextInt(fakePostcodeLetters.size)]
+        return "ZZ$outwardDigits $inwardDigit$firstLetter$secondLetter"
+    }
+
+    fun generateFakeStreet(): FakeStreet =
+        FakeStreet(
+            streetName = "${pickOne(fakeStreetNames)} ${pickOne(fakeStreetTypes)}",
+            townName = pickOne(fakeTownNames),
+            postcode = generateFakePostcode(),
+        )
+
+    /**
+     * Real postcodes cover several addresses, so addresses are generated in streets rather than individually. This
+     * keeps postcode lookups representative of production, where a search returns a cluster of results.
+     */
+    fun generateNumberOfAddressesOnStreet(): Int = seededRandom.nextInt(1, MAX_ADDRESSES_PER_STREET + 1)
+
+    fun buildSingleLineAddress(
+        buildingNumber: Int,
+        street: FakeStreet,
+    ): String = "$buildingNumber ${street.streetName}, ${street.townName}, ${street.postcode}"
+
+    data class FakeStreet(
+        val streetName: String,
+        val townName: String,
+        val postcode: String,
+    )
+
     private val epcNumbers =
         arrayOf(
             "0000-0000-0000-1050-2867",
@@ -319,7 +562,7 @@ object NftDataFaker {
             "0000-0000-0000-0438-7749",
         )
 
-    private fun generateDateAfter(date: Timestamp): Timestamp = Timestamp.from(faker.timeAndDate().between(date.toInstant(), Instant.now()))
+    private fun generateDateAfter(date: Timestamp): Timestamp = Timestamp.from(faker.timeAndDate().between(date.toInstant(), runReference))
 
     private fun generateDateBefore(
         date: Date,
@@ -350,6 +593,46 @@ object NftDataFaker {
         val id: Long,
         val subjectId: String,
         val createdDate: Timestamp,
+        val landlordType: LandlordType = LandlordType.INDIVIDUAL,
+        val organisationDetails: OrganisationLandlordDetails? = null,
+    )
+
+    data class OrganisationLandlordDetails(
+        val name: String,
+        val email: String,
+        val phoneNumber: String,
+        val isCompany: Boolean,
+        val isCharity: Boolean,
+        val isTrust: Boolean,
+        val companyNumber: String?,
+        val charityRegisteredWith: CharityRegulator?,
+        val charityNumber: String?,
+        val leadTrusteeName: String?,
+        val leadTrusteeDateOfBirth: Date?,
+        val leadTrusteeEmail: String?,
+        val leadTrusteePhone: String?,
+        val mainContactName: String,
+        val mainContactEmail: String,
+        val mainContactPhone: String,
+        val registrantName: String,
+        val registrantDateOfBirth: Date,
+        val registrantEmail: String,
+        val registrantPhoneNumber: String,
+        val hasGoverningBody: Boolean,
+    )
+
+    data class GoverningBodyMemberDetails(
+        val type: GoverningBodyMemberType,
+        val name: String,
+        val dateOfBirth: Date,
+    )
+
+    data class PropertyScenario(
+        val isRegistrationComplete: Boolean,
+        val isOccupied: Boolean,
+        val hasLicence: Boolean,
+        val licenseProvideLater: Boolean?,
+        val tenancyProvideLater: Boolean?,
     )
 
     data class RentDetails(

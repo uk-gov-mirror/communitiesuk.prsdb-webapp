@@ -13,6 +13,7 @@ import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbControlle
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.LANDLORD_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.LETTING_AGENT_PATH_SEGMENT
+import uk.gov.communities.prsdb.webapp.constants.LETTING_AGENT_PROPERTY_DETAILS_SURVEY_URL
 import uk.gov.communities.prsdb.webapp.constants.PROPERTY_DETAILS_SEGMENT
 import uk.gov.communities.prsdb.webapp.controllers.LettingAgentPropertyDetailsController.Companion.LETTING_AGENT_PROPERTY_DETAILS_ROUTE
 import uk.gov.communities.prsdb.webapp.exceptions.PrsdbWebException
@@ -69,6 +70,7 @@ class LettingAgentPropertyDetailsController(
                 lettingAgentAccessToken = token,
             ),
         )
+        model.addAttribute("lettingAgentPropertyDetailsSurveyUrl", LETTING_AGENT_PROPERTY_DETAILS_SURVEY_URL)
 
         return "propertyDetailsLettingAgentView"
     }
