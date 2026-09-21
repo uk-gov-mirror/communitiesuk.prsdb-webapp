@@ -23,11 +23,16 @@ VALUES (1, '09/13/24', '09/13/24', 1, 1, '09/13/2000', true, 07111111111, 'urn:f
         'Co Owner', 'co.owner@example.com', 'England or Wales', true, true);
 SELECT setval(pg_get_serial_sequence('landlord', 'id'), (SELECT MAX(id) FROM landlord));
 
+-- Correspondence addresses
+INSERT INTO address (id, single_line_address, postcode) VALUES
+    (8501500001, 'Correspondence address for property row 1', 'CO1 1CO'),
+    (8501500002, 'Correspondence address for property row 2', 'CO1 1CO');
+
 INSERT INTO property_ownership (id, is_active, ownership_type, current_num_households, current_num_tenants,
                                 registration_number_id, address_id, property_build_type, num_bedrooms, rent_amount,
-                                marked_joint_landlord, is_occupied)
-VALUES (1, true, 1, 0, 0, 3, 2, 1, null, null, false, false),
-       (2, true, 1, 1, 2, 4, 3, 1, 1, 123.12, true, true);
+                                marked_joint_landlord, is_occupied, correspondence_email, correspondence_address_id)
+VALUES (1, true, 1, 0, 0, 3, 2, 1, null, null, false, false, 'email@example.com', 8501500001),
+       (2, true, 1, 1, 2, 4, 3, 1, 1, 123.12, true, true, 'email@example.com', 8501500002);
 SELECT setval(pg_get_serial_sequence('property_ownership', 'id'), (SELECT MAX(id) FROM property_ownership));
 
 INSERT INTO ownership_link (landlord_id, landlordship_id, created_date)

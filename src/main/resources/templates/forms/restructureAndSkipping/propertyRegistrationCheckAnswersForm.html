@@ -7,6 +7,7 @@
 <!--/*@thymesVar id="propertyDetails" type="java.lang.Object"*/-->
 <!--/*@thymesVar id="ownershipAndLandlordsHeadingKey" type="java.lang.String"*/-->
 <!--/*@thymesVar id="ownershipAndLandlordsRows" type="java.util.List"*/-->
+<!--/*@thymesVar id="correspondenceRows" type="java.util.List"*/-->
 <!--/*@thymesVar id="occupancyDetails" type="java.lang.Object"*/-->
 <!--/*@thymesVar id="rentedOutHeadingKey" type="java.lang.String"*/-->
 <!--/*@thymesVar id="rentedOutLicensingHeadingKey" type="java.lang.String"*/-->
@@ -56,6 +57,11 @@
         <th:block th:if="${!#lists.isEmpty(ownershipAndLandlordsRows)}">
             <h3 class="govuk-heading-m" th:text="#{${ownershipAndLandlordsHeadingKey}}"></h3>
             <dl th:replace="~{fragments/summaryList :: summaryList(${ownershipAndLandlordsRows})}"></dl>
+        </th:block>
+        <th:block th:if="${!#lists.isEmpty(correspondenceRows)}">
+            <h3 class="govuk-heading-m"
+                th:text="#{registerProperty.taskList.aboutYourProperty.correspondence}">registerProperty.taskList.aboutYourProperty.correspondence</h3>
+            <dl th:replace="~{fragments/summaryList :: summaryList(${correspondenceRows})}"></dl>
         </th:block>
         <th:block th:if="${!#lists.isEmpty(occupancyDetails)}">
             <h3 class="govuk-heading-m" th:text="#{forms.checkPropertyAnswers.occupancy.heading}"></h3>

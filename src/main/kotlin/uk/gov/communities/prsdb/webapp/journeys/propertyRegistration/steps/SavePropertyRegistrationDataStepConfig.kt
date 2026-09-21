@@ -4,6 +4,7 @@ import jakarta.persistence.EntityExistsException
 import kotlinx.datetime.toJavaLocalDate
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.JourneyFrameworkComponent
 import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
+import uk.gov.communities.prsdb.webapp.constants.CORRESPONDENCE_ADDRESS
 import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
 import uk.gov.communities.prsdb.webapp.constants.enums.PropertyType
@@ -55,6 +56,7 @@ class SavePropertyRegistrationDataStepConfig(
     private fun registerProperty(state: PropertyRegistrationJourneyState) {
         val isOccupied = state.occupied.formModel.notNullValue(OccupancyFormModel::occupied)
         val isSkippingEnabled = featureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)
+        val correspondenceEnabled = isSkippingEnabled && featureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS)
         val isDelegatedToLettingAgent = state.isDelegatedToLettingAgent(featureFlagManager)
         val lettingAgentEmail =
             if (isDelegatedToLettingAgent) {
@@ -194,6 +196,14 @@ class SavePropertyRegistrationDataStepConfig(
                     state.licensingTask.licensingTypeStep.outcome == LicensingTypeMode.PROVIDE_LATER,
             tenancyProvideLater = isDelegatedToLettingAgent || state.provideTenancyDetailsLater,
             isDelegatedToLettingAgent = isDelegatedToLettingAgent,
+            correspondenceEmail =
+                if (correspondenceEnabled) {
+                    state.correspondenceTask.correspondenceEmailStep.formModel
+                        .getEmailAddress { checkNotNull(state.loggedInLandlordEmail) }
+                } else {
+                    null
+                },
+            correspondenceAddressModel = if (correspondenceEnabled) state.correspondenceTask.addressTask.getAddress() else null,
         )
     }
 }

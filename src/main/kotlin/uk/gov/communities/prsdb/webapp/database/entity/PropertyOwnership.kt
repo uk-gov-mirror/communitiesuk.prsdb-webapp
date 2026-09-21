@@ -62,6 +62,15 @@ class PropertyOwnership() : ModifiableAuditableEntity() {
     lateinit var address: Address
         private set
 
+    @Column(name = "correspondence_email", nullable = false)
+    lateinit var correspondenceEmail: String
+        private set
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "correspondence_address_id", nullable = false)
+    lateinit var correspondenceAddress: Address
+        private set
+
     @OneToOne(optional = true, orphanRemoval = true)
     @JoinColumn(name = "license_id", nullable = true, unique = true)
     var license: License? = null
@@ -123,6 +132,8 @@ class PropertyOwnership() : ModifiableAuditableEntity() {
         propertyBuildType: PropertyType,
         address: Address,
         license: License?,
+        correspondenceEmail: String,
+        correspondenceAddress: Address,
         isActive: Boolean = true,
         numBedrooms: Int? = null,
         billsIncludedList: String? = null,
@@ -146,6 +157,8 @@ class PropertyOwnership() : ModifiableAuditableEntity() {
         this.propertyBuildType = propertyBuildType
         this.address = address
         this.license = license
+        this.correspondenceEmail = correspondenceEmail
+        this.correspondenceAddress = correspondenceAddress
         this.isActive = isActive
         this.numBedrooms = numBedrooms
         this.billsIncludedList = billsIncludedList

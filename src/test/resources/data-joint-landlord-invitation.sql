@@ -13,7 +13,9 @@ SELECT setval(pg_get_serial_sequence('registration_number', 'id'), (SELECT MAX(i
 INSERT INTO address (id, created_date, last_modified_date, uprn, single_line_address, local_council_id, postcode)
 VALUES (1, '09/13/24', '09/13/24', 1, '1 Fictional Road', 2, 'EG1 1EG'),
        (2, '09/13/24', '09/13/24', 2, '2 Fake Way', 2, 'EG1 1EG'),
-       (3, '09/13/24', '09/13/24', 3, '3 Test Lane', 2, 'EG1 1EG');
+       (3, '09/13/24', '09/13/24', 3, '3 Test Lane', 2, 'EG1 1EG'),
+       (4, '09/13/24', '09/13/24', 4, '4 Correspondence Close', 2, 'EG1 1EG'),
+       (5, '09/13/24', '09/13/24', 5, '5 Correspondence Close', 2, 'EG1 1EG');
 SELECT setval(pg_get_serial_sequence('address', 'id'), (SELECT MAX(id) FROM address));
 
 INSERT INTO landlord (id, created_date, last_modified_date, registration_number_id, individual_address_id, individual_date_of_birth,
@@ -27,17 +29,17 @@ SELECT setval(pg_get_serial_sequence('landlord', 'id'), (SELECT MAX(id) FROM lan
 INSERT INTO property_ownership (id, is_active, ownership_type, current_num_households, current_num_tenants,
                                 registration_number_id, address_id, created_date, property_build_type,
                                 num_bedrooms, bills_included_list, custom_bills_included, furnished_status,
-                                rent_frequency, custom_rent_frequency, rent_amount, is_occupied, last_occupied_date)
+                                rent_frequency, custom_rent_frequency, rent_amount, is_occupied, last_occupied_date, correspondence_email, correspondence_address_id)
 
 -- Both properties are occupied with no licence, so under the new registration layout
 -- (PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING) they render the licensing "provide later"
 -- deadline, which requires last_occupied_date to be set.
 -- property the default user is not yet invited to
 VALUES (1, true, 1, 1, 2, 2, 2, current_date, 1,
-        1, null, null, 2, 1, null, 123.12, true, current_date - INTERVAL '7 days'),
+        1, null, null, 2, 1, null, 123.12, true, current_date - INTERVAL '7 days', 'email@example.com', 4),
 -- property the default user is primary landlord for
        (2, true, 1, 1, 4, 1, 3,  current_date, 1,
-        1, null, null, 2, 1, null, 200.00, true, current_date - INTERVAL '7 days');
+        1, null, null, 2, 1, null, 200.00, true, current_date - INTERVAL '7 days', 'email@example.com', 5);
 SELECT setval(pg_get_serial_sequence('property_ownership', 'id'), (SELECT MAX(id) FROM property_ownership));
 
 -- Every registered property has a compliance record (see PropertyDetailsController), so both

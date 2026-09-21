@@ -17,6 +17,10 @@ INSERT INTO address (id, created_date, uprn, single_line_address, postcode, buil
 SELECT 9000000000 + i, current_timestamp, null::bigint,
        i || ' Provide Later Road, Testville, QA1 1AA', 'QA1 1AA', i || '', 2
 FROM generate_series(1, 9) AS s(i)
+UNION ALL
+SELECT 9000010000 + i, current_timestamp, null::bigint,
+       i || ' QA Correspondence Way, Testville, QA1 1AA', 'QA1 1AA', i || '', 2
+FROM generate_series(1, 9) AS s(i)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO prsdb_user (id, created_date)
@@ -327,45 +331,48 @@ ON CONFLICT DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('landlord', 'id'), (SELECT MAX(id) FROM landlord));
 
+-- Correspondence addresses
+INSERT INTO address (id, single_line_address, postcode) VALUES
+    (8500300001, 'Correspondence address for property row 1', 'CO1 1CO'),
+    (8500300002, 'Correspondence address for property row 2', 'CO1 1CO'),
+    (8500300003, 'Correspondence address for property row 3', 'CO1 1CO'),
+    (8500300004, 'Correspondence address for property row 4', 'CO1 1CO'),
+    (8500300005, 'Correspondence address for property row 5', 'CO1 1CO'),
+    (8500300006, 'Correspondence address for property row 6', 'CO1 1CO'),
+    (8500300007, 'Correspondence address for property row 7', 'CO1 1CO'),
+    (8500300008, 'Correspondence address for property row 8', 'CO1 1CO'),
+    (8500300009, 'Correspondence address for property row 9', 'CO1 1CO'),
+    (8500300010, 'Correspondence address for property row 10', 'CO1 1CO'),
+    (8500300011, 'Correspondence address for property row 11', 'CO1 1CO'),
+    (8500300012, 'Correspondence address for property row 12', 'CO1 1CO'),
+    (8500300013, 'Correspondence address for property row 13', 'CO1 1CO'),
+    (8500300014, 'Correspondence address for property row 14', 'CO1 1CO'),
+    (8500300015, 'Correspondence address for property row 15', 'CO1 1CO'),
+    (8500300016, 'Correspondence address for property row 16', 'CO1 1CO'),
+    (8500300017, 'Correspondence address for property row 17', 'CO1 1CO');
+
 INSERT INTO property_ownership (id, is_active, ownership_type, current_num_households, current_num_tenants, registration_number_id,
                                 address_id, created_date, last_modified_date,
                                 property_build_type,
                                 num_bedrooms, bills_included_list, custom_bills_included, furnished_status, rent_frequency,
-                                custom_rent_frequency, rent_amount, custom_property_type, is_occupied)
-VALUES (1, true, 1, 1, 2, 21, 1, '2024-10-15 00:00:00+00', null, 1,
-        1, null, null, 2, 1, null, 123.12, null, true),
-       (2, true, 0, 0, 0, 22, 2, '2025-01-15 00:00:00+00', null, 1,
-        null, null, null, null, null, null, null, null, false),
-       (3, true, 0, 0, 0, 23, 3, '2025-01-15 00:00:00+00', null, 1,
-        null, null, null, null, null, null, null, null, false),
-       (4, true, 0, 0, 0, 24, 4, '2025-01-15 00:00:00+00', null, 1,
-        null, null, null, null, null, null, null, null, false),
-       (5, true, 0, 0, 0, 25, 5, '2026-02-27 00:00:00+00', null, 4,
-        null, null, null, null, null, null, null, 'End terrace', false),
-       (6, true, 1, 1, 2, 31, 7449161, '2026-04-14 00:00:00+00', null, 1,
-        1, null, null, 2, 1, null, 123.12, null, true),
-       (7, true, 1, 1, 2, 32, 7449162, '2026-04-14 00:00:00+00', null, 1,
-        1, null, null, 2, 1, null, 123.12, null, true),
-       (8, true, 1, 1, 2, 33, 7449163, '2026-04-14 00:00:00+00', null, 1,
-        1, null, null, 2, 1, null, 123.12, null, true),
-       (9, true, 1, 1, 2, 34, 7449166, '2026-04-14 00:00:00+00', null, 1,
-        1, null, null, 2, 1, null, 123.12, null, true),
-       (10, true, 1, 1, 2, 35, 7449167, '2026-04-14 00:00:00+00', null, 1,
-        1, null, null, 2, 1, null, 123.12, null, true),
-       (11, true, 1, 1, 2, 36, 7449170, '2026-04-14 00:00:00+00', null, 1,
-        1, null, null, 2, 1, null, 123.12, null, true),
-       (12, true, 0, 0, 0, 37, 7449175, '2026-04-14 00:00:00+00', null, 1,
-        null, null, null, null, null, null, null, null, false),
-       (13, true, 0, 0, 0, 38, 7449181, '2026-04-14 00:00:00+00', null, 1,
-        null, null, null, null, null, null, null, null, false),
-       (14, true, 0, 0, 0, 39, 7449182, '2026-04-14 00:00:00+00', null, 1,
-        null, null, null, null, null, null, null, null, false),
-       (15, true, 0, 0, 0, 40, 7449164, '2026-04-14 00:00:00+00', null, 1,
-        null, null, null, null, null, null, null, null, false),
-       (16, true, 0, 0, 0, 41, 7449168, '2026-04-14 00:00:00+00', null, 1,
-        null, null, null, null, null, null, null, null, false),
-       (17, true, 0, 0, 0, 42, 7449171, '2026-04-14 00:00:00+00', null, 1,
-        null, null, null, null, null, null, null, null, false) ON CONFLICT DO NOTHING;
+                                custom_rent_frequency, rent_amount, custom_property_type, is_occupied, correspondence_email, correspondence_address_id)
+VALUES (1, true, 1, 1, 2, 21, 1, '2024-10-15 00:00:00+00', null, 1, 1, null, null, 2, 1, null, 123.12, null, true, 'email@example.com', 8500300001),
+       (2, true, 0, 0, 0, 22, 2, '2025-01-15 00:00:00+00', null, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500300002),
+       (3, true, 0, 0, 0, 23, 3, '2025-01-15 00:00:00+00', null, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500300003),
+       (4, true, 0, 0, 0, 24, 4, '2025-01-15 00:00:00+00', null, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500300004),
+       (5, true, 0, 0, 0, 25, 5, '2026-02-27 00:00:00+00', null, 4, null, null, null, null, null, null, null, 'End terrace', false, 'email@example.com', 8500300005),
+       (6, true, 1, 1, 2, 31, 7449161, '2026-04-14 00:00:00+00', null, 1, 1, null, null, 2, 1, null, 123.12, null, true, 'email@example.com', 8500300006),
+       (7, true, 1, 1, 2, 32, 7449162, '2026-04-14 00:00:00+00', null, 1, 1, null, null, 2, 1, null, 123.12, null, true, 'email@example.com', 8500300007),
+       (8, true, 1, 1, 2, 33, 7449163, '2026-04-14 00:00:00+00', null, 1, 1, null, null, 2, 1, null, 123.12, null, true, 'email@example.com', 8500300008),
+       (9, true, 1, 1, 2, 34, 7449166, '2026-04-14 00:00:00+00', null, 1, 1, null, null, 2, 1, null, 123.12, null, true, 'email@example.com', 8500300009),
+       (10, true, 1, 1, 2, 35, 7449167, '2026-04-14 00:00:00+00', null, 1, 1, null, null, 2, 1, null, 123.12, null, true, 'email@example.com', 8500300010),
+       (11, true, 1, 1, 2, 36, 7449170, '2026-04-14 00:00:00+00', null, 1, 1, null, null, 2, 1, null, 123.12, null, true, 'email@example.com', 8500300011),
+       (12, true, 0, 0, 0, 37, 7449175, '2026-04-14 00:00:00+00', null, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500300012),
+       (13, true, 0, 0, 0, 38, 7449181, '2026-04-14 00:00:00+00', null, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500300013),
+       (14, true, 0, 0, 0, 39, 7449182, '2026-04-14 00:00:00+00', null, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500300014),
+       (15, true, 0, 0, 0, 40, 7449164, '2026-04-14 00:00:00+00', null, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500300015),
+       (16, true, 0, 0, 0, 41, 7449168, '2026-04-14 00:00:00+00', null, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500300016),
+       (17, true, 0, 0, 0, 42, 7449171, '2026-04-14 00:00:00+00', null, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500300017) ON CONFLICT DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('property_ownership', 'id'), (SELECT MAX(id) FROM property_ownership));
 
@@ -414,12 +421,12 @@ INSERT INTO property_ownership (id, is_active, ownership_type, current_num_house
                                 address_id, created_date, last_modified_date, license_id, property_build_type, num_bedrooms,
                                 bills_included_list, custom_bills_included, furnished_status, rent_frequency, custom_rent_frequency,
                                 rent_amount, custom_property_type, marked_joint_landlord, is_occupied, last_occupied_date,
-                                license_provide_later, tenancy_provide_later)
+                                license_provide_later, tenancy_provide_later, correspondence_email, correspondence_address_id)
 SELECT np.id, true, 1, np.current_num_households, np.current_num_tenants, np.registration_number_id,
        9000000000 + np.rn, current_date, current_date, np.license_id, 1, 1,
        null, null, np.furnished_status, np.rent_frequency, null,
        np.rent_amount, null, false, np.is_occupied, np.last_occupied_date,
-       np.license_provide_later, np.tenancy_provide_later
+       np.license_provide_later, np.tenancy_provide_later, 'email@example.com', 9000010000 + np.rn
 FROM new_properties np
 ON CONFLICT DO NOTHING;
 

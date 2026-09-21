@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.Mock
 import org.mockito.Mockito.lenient
 import org.mockito.junit.jupiter.MockitoExtension
@@ -24,7 +27,10 @@ import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import org.springframework.security.core.context.SecurityContextHolder
 import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
+import uk.gov.communities.prsdb.webapp.constants.CORRESPONDENCE_ADDRESS
+import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING
 import uk.gov.communities.prsdb.webapp.constants.enums.CertificateType
+import uk.gov.communities.prsdb.webapp.constants.enums.CorrespondenceEmailOption
 import uk.gov.communities.prsdb.webapp.constants.enums.EpcExemptionReason
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
 import uk.gov.communities.prsdb.webapp.constants.enums.MeesExemptionReason
@@ -34,6 +40,7 @@ import uk.gov.communities.prsdb.webapp.journeys.Destination
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.PropertyRegistrationJourneyState
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasCertOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.CorrespondenceTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.ElectricalSafetyDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.ElectricalSafetyTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.EpcDetailsTask
@@ -50,9 +57,11 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.RentF
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.RentIncludesBillsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.WhoProvidesDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.shared.Complete
+import uk.gov.communities.prsdb.webapp.journeys.shared.tasks.CorrespondenceAddressTask
 import uk.gov.communities.prsdb.webapp.models.dataModels.AddressDataModel
 import uk.gov.communities.prsdb.webapp.models.dataModels.EpcDataModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.AllowLettingAgentEmailFormModel
+import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.CorrespondenceEmailFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.EpcExemptionFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.EpcInDateAtStartOfTenancyCheckFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.FurnishedStatusFormModel
@@ -117,6 +126,114 @@ class SavePropertyRegistrationDataStepConfigTests {
 
         // Assert
         assertEquals(Complete.COMPLETE, result)
+    }
+
+    @ParameterizedTest
+    @EnumSource(CorrespondenceEmailOption::class)
+    fun `registration passes the selected correspondence email and postal address`(choice: CorrespondenceEmailOption) {
+        setupStateForPropertyRegistration()
+        setupStateForComplianceDataWithNullValues()
+        whenever(mockFeatureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)).thenReturn(true)
+        whenever(mockFeatureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS)).thenReturn(true)
+        val bedrooms = mock<BedroomsStep>()
+        whenever(mockState.bedrooms).thenReturn(bedrooms)
+        whenever(bedrooms.formModel).thenReturn(NumberOfBedroomsFormModel().apply { numberOfBedrooms = "4" })
+        val correspondenceTask = mock<CorrespondenceTask>()
+        val emailStep = mock<CorrespondenceEmailStep>()
+        val addressTask = mock<CorrespondenceAddressTask>()
+        val postalAddress = AddressDataModel.fromManualAddressData("12 Test Road", "Leeds", "LS1 1AA", county = "West Yorkshire")
+        whenever(mockState.correspondenceTask).thenReturn(correspondenceTask)
+        whenever(correspondenceTask.correspondenceEmailStep).thenReturn(emailStep)
+        whenever(correspondenceTask.addressTask).thenReturn(addressTask)
+        whenever(addressTask.getAddress()).thenReturn(postalAddress)
+        whenever(emailStep.formModel).thenReturn(
+            CorrespondenceEmailFormModel().apply {
+                whichEmail = choice
+                differentEmailAddress = "edited.contact@example.com"
+            },
+        )
+        if (choice == CorrespondenceEmailOption.ACCOUNT_EMAIL) {
+            whenever(mockState.loggedInLandlordEmail).thenReturn("account@example.com")
+        }
+
+        stepConfig.afterStepIsReached(mockState)
+
+        verifyCorrespondenceDetails(
+            if (choice == CorrespondenceEmailOption.ACCOUNT_EMAIL) "account@example.com" else "edited.contact@example.com",
+            postalAddress,
+        )
+        if (choice == CorrespondenceEmailOption.DIFFERENT_EMAIL) {
+            verify(mockState, never()).loggedInLandlordEmail
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource("false,false", "false,true", "true,false")
+    fun `registration leaves correspondence defaults to the service when its journey is disabled`(
+        restructured: Boolean,
+        correspondenceEnabled: Boolean,
+    ) {
+        setupStateForPropertyRegistration()
+        setupStateForComplianceDataWithNullValues()
+        whenever(mockFeatureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)).thenReturn(restructured)
+        lenient().`when`(mockFeatureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS)).thenReturn(correspondenceEnabled)
+        if (restructured) {
+            val bedrooms = mock<BedroomsStep>()
+            whenever(mockState.bedrooms).thenReturn(bedrooms)
+            whenever(bedrooms.formModel).thenReturn(NumberOfBedroomsFormModel().apply { numberOfBedrooms = "4" })
+        }
+
+        stepConfig.afterStepIsReached(mockState)
+
+        verifyCorrespondenceDetails(null, null)
+        verify(mockState, never()).correspondenceTask
+    }
+
+    private fun verifyCorrespondenceDetails(
+        email: String?,
+        address: AddressDataModel?,
+    ) {
+        verify(mockPropertyRegistrationService).registerProperty(
+            addressModel = any(),
+            propertyType = any(),
+            licenseType = any(),
+            licenceNumber = any(),
+            ownershipType = any(),
+            isOccupied = any(),
+            numberOfHouseholds = any(),
+            numberOfPeople = any(),
+            numBedrooms = anyOrNull(),
+            billsIncludedList = anyOrNull(),
+            customBillsIncluded = anyOrNull(),
+            furnishedStatus = anyOrNull(),
+            rentFrequency = anyOrNull(),
+            customRentFrequency = anyOrNull(),
+            rentAmount = anyOrNull(),
+            customPropertyType = anyOrNull(),
+            jointLandlordEmails = anyOrNull(),
+            lettingAgentEmail = anyOrNull(),
+            markedJointLandlord = any(),
+            hasGasSupply = anyOrNull(),
+            gasSafetyCertIssueDate = anyOrNull(),
+            gasSafetyFileUploadIds = any(),
+            gasSafetyCertProvideLater = anyOrNull(),
+            electricalSafetyFileUploadIds = any(),
+            electricalSafetyExpiryDate = anyOrNull(),
+            electricalCertType = anyOrNull(),
+            electricalSafetyCertProvideLater = anyOrNull(),
+            epcCertificateUrl = anyOrNull(),
+            epcExpiryDate = anyOrNull(),
+            epcEnergyRating = anyOrNull(),
+            tenancyStartedBeforeEpcExpiry = anyOrNull(),
+            epcExemptionReason = anyOrNull(),
+            epcMeesExemptionReason = anyOrNull(),
+            epcProvideLater = anyOrNull(),
+            licenseProvideLater = any(),
+            tenancyProvideLater = anyOrNull(),
+            isDelegatedToLettingAgent = any(),
+            correspondenceEmail = eq(email),
+            correspondenceAddressModel = eq(address),
+        )
     }
 
     @Test
@@ -196,6 +313,8 @@ class SavePropertyRegistrationDataStepConfigTests {
             licenseProvideLater = eq(false),
             tenancyProvideLater = any(),
             isDelegatedToLettingAgent = any(),
+            correspondenceEmail = anyOrNull(),
+            correspondenceAddressModel = anyOrNull(),
         )
     }
 
@@ -249,6 +368,8 @@ class SavePropertyRegistrationDataStepConfigTests {
             licenseProvideLater = eq(true),
             tenancyProvideLater = eq(false),
             isDelegatedToLettingAgent = any(),
+            correspondenceEmail = anyOrNull(),
+            correspondenceAddressModel = anyOrNull(),
         )
     }
 
@@ -301,6 +422,8 @@ class SavePropertyRegistrationDataStepConfigTests {
             licenseProvideLater = anyOrNull(),
             tenancyProvideLater = eq(false),
             isDelegatedToLettingAgent = any(),
+            correspondenceEmail = anyOrNull(),
+            correspondenceAddressModel = anyOrNull(),
         )
     }
 
@@ -353,6 +476,8 @@ class SavePropertyRegistrationDataStepConfigTests {
             licenseProvideLater = anyOrNull(),
             tenancyProvideLater = eq(false),
             isDelegatedToLettingAgent = any(),
+            correspondenceEmail = anyOrNull(),
+            correspondenceAddressModel = anyOrNull(),
         )
     }
 
@@ -413,6 +538,8 @@ class SavePropertyRegistrationDataStepConfigTests {
             licenseProvideLater = eq(true),
             tenancyProvideLater = eq(true),
             isDelegatedToLettingAgent = eq(true),
+            correspondenceEmail = anyOrNull(),
+            correspondenceAddressModel = anyOrNull(),
         )
     }
 
@@ -464,6 +591,8 @@ class SavePropertyRegistrationDataStepConfigTests {
             licenseProvideLater = anyOrNull(),
             tenancyProvideLater = any(),
             isDelegatedToLettingAgent = any(),
+            correspondenceEmail = anyOrNull(),
+            correspondenceAddressModel = anyOrNull(),
         )
 
         // Act
@@ -521,6 +650,8 @@ class SavePropertyRegistrationDataStepConfigTests {
             licenseProvideLater = anyOrNull(),
             tenancyProvideLater = eq(false),
             isDelegatedToLettingAgent = any(),
+            correspondenceEmail = anyOrNull(),
+            correspondenceAddressModel = anyOrNull(),
         )
     }
 
@@ -574,6 +705,8 @@ class SavePropertyRegistrationDataStepConfigTests {
             licenseProvideLater = anyOrNull(),
             tenancyProvideLater = eq(false),
             isDelegatedToLettingAgent = any(),
+            correspondenceEmail = anyOrNull(),
+            correspondenceAddressModel = anyOrNull(),
         )
     }
 
@@ -627,6 +760,8 @@ class SavePropertyRegistrationDataStepConfigTests {
             licenseProvideLater = anyOrNull(),
             tenancyProvideLater = eq(true),
             isDelegatedToLettingAgent = any(),
+            correspondenceEmail = anyOrNull(),
+            correspondenceAddressModel = anyOrNull(),
         )
     }
 

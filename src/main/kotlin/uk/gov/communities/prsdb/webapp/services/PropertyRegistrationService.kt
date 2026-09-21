@@ -78,6 +78,8 @@ class PropertyRegistrationService(
         licenseProvideLater: Boolean = false,
         tenancyProvideLater: Boolean? = null,
         isDelegatedToLettingAgent: Boolean = false,
+        correspondenceEmail: String? = null,
+        correspondenceAddressModel: AddressDataModel? = null,
     ) {
         val landlord = userToLandlordService.getCurrentLandlordForUser()
 
@@ -103,6 +105,8 @@ class PropertyRegistrationService(
                 tenancyProvideLater,
                 mutableSetOf(landlord),
                 licenseProvideLater = licenseProvideLater,
+                correspondenceEmail = correspondenceEmail,
+                correspondenceAddressModel = correspondenceAddressModel,
             )
 
         landlord.setAnniversaryIfAbsent(MonthDay.from(propertyOwnership.registrationDate))
@@ -167,6 +171,8 @@ class PropertyRegistrationService(
         tenancyProvideLater: Boolean?,
         landlords: MutableSet<Landlord>,
         licenseProvideLater: Boolean = false,
+        correspondenceEmail: String?,
+        correspondenceAddressModel: AddressDataModel?,
     ): PropertyOwnership {
         if (addressModel.uprn != null && propertyOwnershipRepository.existsByIsActiveTrueAndAddress_Uprn(addressModel.uprn)) {
             throw EntityExistsException("Address already registered")
@@ -201,6 +207,8 @@ class PropertyRegistrationService(
             address = address,
             license = license,
             licenseProvideLater = licenseProvideLater,
+            correspondenceEmail = correspondenceEmail,
+            correspondenceAddressModel = correspondenceAddressModel,
         )
     }
 

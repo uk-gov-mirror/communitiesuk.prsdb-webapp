@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentCaptor.captor
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.mockito.Mockito.lenient
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals
 import org.mockito.junit.jupiter.MockitoExtension
@@ -40,6 +42,7 @@ import uk.gov.communities.prsdb.webapp.constants.enums.PropertyType
 import uk.gov.communities.prsdb.webapp.constants.enums.RegistrationNumberType
 import uk.gov.communities.prsdb.webapp.constants.enums.RentFrequency
 import uk.gov.communities.prsdb.webapp.controllers.PropertyDetailsController
+import uk.gov.communities.prsdb.webapp.database.entity.Address
 import uk.gov.communities.prsdb.webapp.database.entity.IndividualLandlord
 import uk.gov.communities.prsdb.webapp.database.entity.Landlord
 import uk.gov.communities.prsdb.webapp.database.entity.License
@@ -51,6 +54,7 @@ import uk.gov.communities.prsdb.webapp.database.repository.LettingAgentAccessRep
 import uk.gov.communities.prsdb.webapp.database.repository.PropertyOwnershipRepository
 import uk.gov.communities.prsdb.webapp.exceptions.RepositoryQueryTimeoutException
 import uk.gov.communities.prsdb.webapp.exceptions.UpdateConflictException
+import uk.gov.communities.prsdb.webapp.models.dataModels.AddressDataModel
 import uk.gov.communities.prsdb.webapp.models.dataModels.RegistrationNumberDataModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.searchResultModels.PropertySearchResultViewModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.RegisteredPropertyLandlordViewModel
@@ -95,8 +99,18 @@ class PropertyOwnershipServiceTests {
     @Mock
     private lateinit var mockFeatureFlagManager: FeatureFlagManager
 
+    @Mock
+    private lateinit var mockAddressService: AddressService
+
     @InjectMocks
     private lateinit var propertyOwnershipService: PropertyOwnershipService
+
+    @BeforeEach
+    fun setUpAddressSnapshots() {
+        lenient().`when`(mockAddressService.createAddressSnapshot(any())).thenAnswer {
+            Address(it.getArgument<AddressDataModel>(0).copy(uprn = null))
+        }
+    }
 
     @Test
     fun `createPropertyOwnership creates a property ownership`() {
@@ -111,6 +125,10 @@ class PropertyOwnershipServiceTests {
         val customPropertyType = "End terrace"
         val address = MockLandlordData.createAddress("11 Example Road, EG1 2AB")
         val license = License()
+        val correspondenceAddress = MockLandlordData.createAddress("12 Contact Road, EG1 2AC")
+        val correspondenceModel = AddressDataModel.fromAddress(correspondenceAddress)
+        val correspondenceEmail = "chosen@example.com"
+        whenever(mockAddressService.createAddressSnapshot(correspondenceModel)).thenReturn(correspondenceAddress)
         val numberOfBedrooms = 1
         val billsIncludedList = "Electricity, Water"
         val customBillsIncluded = "Internet"
@@ -131,6 +149,8 @@ class PropertyOwnershipServiceTests {
                 customPropertyType = customPropertyType,
                 address = address,
                 license = license,
+                correspondenceEmail = correspondenceEmail,
+                correspondenceAddress = correspondenceAddress,
                 numBedrooms = numberOfBedrooms,
                 billsIncludedList = billsIncludedList,
                 customBillsIncluded = customBillsIncluded,
@@ -159,6 +179,8 @@ class PropertyOwnershipServiceTests {
             customPropertyType = customPropertyType,
             address = address,
             license = license,
+            correspondenceEmail = correspondenceEmail,
+            correspondenceAddressModel = correspondenceModel,
             numBedrooms = numberOfBedrooms,
             billsIncludedList = billsIncludedList,
             customBillsIncluded = customBillsIncluded,
@@ -187,6 +209,8 @@ class PropertyOwnershipServiceTests {
         val customPropertyType = "End terrace"
         val address = MockLandlordData.createAddress("11 Example Road, EG1 2AB")
         val numberOfBedrooms = 1
+        val correspondenceAddress = Address(AddressDataModel.fromAddress(address).copy(uprn = null), address.localCouncil)
+        whenever(mockAddressService.createAddressSnapshot(AddressDataModel.fromAddress(address))).thenReturn(correspondenceAddress)
         val billsIncludedList = "Electricity, Water"
         val customBillsIncluded = "Internet"
         val furnishedStatus = FurnishedStatus.FURNISHED
@@ -206,6 +230,8 @@ class PropertyOwnershipServiceTests {
                 customPropertyType = customPropertyType,
                 address = address,
                 license = null,
+                correspondenceEmail = landlord.email,
+                correspondenceAddress = correspondenceAddress,
                 numBedrooms = numberOfBedrooms,
                 billsIncludedList = billsIncludedList,
                 customBillsIncluded = customBillsIncluded,

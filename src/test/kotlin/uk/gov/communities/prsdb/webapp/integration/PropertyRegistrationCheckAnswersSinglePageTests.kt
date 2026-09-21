@@ -191,6 +191,7 @@ class PropertyRegistrationCheckAnswersSinglePageTests : IntegrationTestWithImmut
                     "About your property",
                     "Property details",
                     "Ownership and landlords",
+                    "Who the council should contact",
                     "Tell us if your property’s occupied",
                     "How your property’s rented out",
                     "Who will provide these details",

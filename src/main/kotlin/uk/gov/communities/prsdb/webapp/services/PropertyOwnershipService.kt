@@ -29,6 +29,7 @@ import uk.gov.communities.prsdb.webapp.exceptions.UpdateConflictException
 import uk.gov.communities.prsdb.webapp.helpers.AddressHelper
 import uk.gov.communities.prsdb.webapp.helpers.DateTimeHelper
 import uk.gov.communities.prsdb.webapp.helpers.TransactionHelper.Companion.runAfterTransactionCommits
+import uk.gov.communities.prsdb.webapp.models.dataModels.AddressDataModel
 import uk.gov.communities.prsdb.webapp.models.dataModels.RegistrationNumberDataModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.searchResultModels.PropertySearchResultViewModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.RegisteredPropertyLandlordViewModel
@@ -48,6 +49,7 @@ class PropertyOwnershipService(
     private val userToLandlordService: UserToLandlordService,
     private val lettingAgentAccessService: LettingAgentAccessService,
     private val lettingAgentAccessRepository: LettingAgentAccessRepository,
+    private val addressService: AddressService,
     private val featureFlagManager: FeatureFlagManager,
 ) {
     @Transactional
@@ -72,8 +74,13 @@ class PropertyOwnershipService(
         markedJointLandlord: Boolean = false,
         licenseProvideLater: Boolean? = null,
         tenancyProvideLater: Boolean? = null,
+        correspondenceEmail: String? = null,
+        correspondenceAddressModel: AddressDataModel? = null,
     ): PropertyOwnership {
         val registrationNumber = registrationNumberService.createRegistrationNumber(RegistrationNumberType.PROPERTY)
+        // Registrations without the correspondence journey retain the existing contact defaults.
+        val correspondenceAddress =
+            addressService.createAddressSnapshot(correspondenceAddressModel ?: AddressDataModel.fromAddress(address))
 
         return propertyOwnershipRepository.save(
             PropertyOwnership(
@@ -87,6 +94,8 @@ class PropertyOwnershipService(
                 customPropertyType = customPropertyType,
                 address = address,
                 license = license,
+                correspondenceEmail = correspondenceEmail ?: landlords.first().email,
+                correspondenceAddress = correspondenceAddress,
                 isActive = isActive,
                 numBedrooms = numBedrooms,
                 billsIncludedList = billsIncludedList,

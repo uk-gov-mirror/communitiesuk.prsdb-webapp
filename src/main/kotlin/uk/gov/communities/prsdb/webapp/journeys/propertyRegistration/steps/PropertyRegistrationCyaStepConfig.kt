@@ -3,6 +3,7 @@ package uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps
 import org.springframework.context.MessageSource
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.JourneyFrameworkComponent
 import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
+import uk.gov.communities.prsdb.webapp.constants.CORRESPONDENCE_ADDRESS
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
@@ -197,6 +198,8 @@ class PropertyRegistrationCyaStepConfig(
                     getOwnershipTypeRow(state, "propertyDetails.propertyRecord.ownership.ownershipType"),
                     getJointLandLordsSummaryRow(state, "forms.checkPropertyAnswers.jointLandlordsDetails.jointLandlordInvitations"),
                 ),
+            "correspondenceRows" to
+                if (featureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS)) getCorrespondenceRows(state) else emptyList(),
             "rentedOutHeadingKey" to "forms.checkPropertyAnswers.rentedOut.heading",
             "rentedOutLicensingHeadingKey" to "forms.checkPropertyAnswers.rentedOut.licensing.heading",
             "rentedOutGasHeadingKey" to "checkGasSafety.heading",
@@ -207,6 +210,25 @@ class PropertyRegistrationCyaStepConfig(
             "rentedOutTenancyRows" to tenancyDetails,
             "occupancyDetails" to occupancyDetails,
             "tenancyUnoccupiedBodyTextKey" to if (!isOccupied) "forms.checkPropertyAnswers.tenancyDetails.unoccupiedBodyText" else null,
+        )
+    }
+
+    private fun getCorrespondenceRows(state: PropertyRegistrationJourneyState): List<SummaryListRowViewModel> {
+        val emailStep = state.correspondenceTask.correspondenceEmailStep
+        val email = emailStep.formModel.getEmailAddress { checkNotNull(state.loggedInLandlordEmail) }
+        val addressTask = state.correspondenceTask.addressTask
+
+        return listOf(
+            SummaryListRowViewModel.forCheckYourAnswersPage(
+                "forms.checkPropertyAnswers.correspondence.emailAddress",
+                email,
+                Destination.VisitableStep(emailStep, state.getCyaJourneyId(emailStep)),
+            ),
+            SummaryListRowViewModel.forCheckYourAnswersPage(
+                "forms.checkPropertyAnswers.correspondence.postalAddress",
+                addressTask.getAddress().toMultiLineAddress().split("\n"),
+                Destination.VisitableStep(addressTask.lookupAddressStep, state.getCyaJourneyId(addressTask.lookupAddressStep)),
+            ),
         )
     }
 

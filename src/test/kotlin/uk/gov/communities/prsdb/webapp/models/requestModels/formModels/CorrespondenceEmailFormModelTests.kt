@@ -3,10 +3,41 @@ package uk.gov.communities.prsdb.webapp.models.requestModels.formModels
 import jakarta.validation.Validation
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import uk.gov.communities.prsdb.webapp.constants.enums.CorrespondenceEmailOption
+import uk.gov.communities.prsdb.webapp.exceptions.NotNullFormModelValueIsNullException
 
 class CorrespondenceEmailFormModelTests {
     private val validator = Validation.buildDefaultValidatorFactory().validator
+
+    @Test
+    fun `getEmailAddress uses account email instead of a retained different email`() {
+        val model =
+            CorrespondenceEmailFormModel().apply {
+                whichEmail = CorrespondenceEmailOption.ACCOUNT_EMAIL
+                differentEmailAddress = "previous@example.com"
+            }
+
+        assertThat(model.getEmailAddress { "account@example.com" }).isEqualTo("account@example.com")
+    }
+
+    @Test
+    fun `getEmailAddress uses the different email without resolving the account email`() {
+        val model =
+            CorrespondenceEmailFormModel().apply {
+                whichEmail = CorrespondenceEmailOption.DIFFERENT_EMAIL
+                differentEmailAddress = "chosen@example.com"
+            }
+
+        assertThat(model.getEmailAddress { error("Account email must not be read") }).isEqualTo("chosen@example.com")
+    }
+
+    @Test
+    fun `getEmailAddress rejects a missing choice instead of substituting contact data`() {
+        assertThrows<NotNullFormModelValueIsNullException> {
+            CorrespondenceEmailFormModel().getEmailAddress { "account@example.com" }
+        }
+    }
 
     @Test
     fun `is invalid when no option is selected`() {

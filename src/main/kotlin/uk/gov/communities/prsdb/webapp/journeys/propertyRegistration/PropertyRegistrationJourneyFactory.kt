@@ -37,6 +37,7 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.Confi
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.ConfirmMissingComplianceCheckResult
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.ConfirmMissingComplianceMode
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.ConfirmMissingComplianceStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CorrespondenceEmailStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.ElectricalCertExpiryDateStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.EpcExemptionStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.EpcInDateAtStartOfTenancyCheckStep
@@ -97,6 +98,7 @@ import uk.gov.communities.prsdb.webapp.journeys.shared.states.CheckYourAnswersJo
 import uk.gov.communities.prsdb.webapp.journeys.shared.states.CheckYourAnswersJourneyState.Companion.checkAnswerStep
 import uk.gov.communities.prsdb.webapp.journeys.shared.states.CheckYourAnswersJourneyState.Companion.checkAnswerTask
 import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.LookupAddressStep
+import uk.gov.communities.prsdb.webapp.journeys.shared.tasks.CorrespondenceAddressTask
 import uk.gov.communities.prsdb.webapp.models.viewModels.SectionHeaderViewModel
 import uk.gov.communities.prsdb.webapp.services.UserToLandlordService
 import java.security.Principal
@@ -142,6 +144,28 @@ class PropertyRegistrationJourneyFactory(
                         fromTask(journey.whoProvidesDetailsTask) {
                             checkAnswerStep(task.lettingAgentEmailStep, LettingAgentEmailStep.ROUTE_SEGMENT)
                         }
+                    } else {
+                        throw IllegalStateException("Unknown checkable element $checkingAnswersFor")
+                    }
+                }
+
+                CorrespondenceEmailStep.ROUTE_SEGMENT -> {
+                    if (featureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS) &&
+                        featureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)
+                    ) {
+                        fromTask(journey.correspondenceTask) {
+                            checkAnswerStep(task.correspondenceEmailStep, CorrespondenceEmailStep.ROUTE_SEGMENT)
+                        }
+                    } else {
+                        throw IllegalStateException("Unknown checkable element $checkingAnswersFor")
+                    }
+                }
+
+                "${CorrespondenceAddressTask.ROUTE_SEGMENT}/${LookupAddressStep.ROUTE_SEGMENT}" -> {
+                    if (featureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS) &&
+                        featureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)
+                    ) {
+                        checkAnswerTask(journey.correspondenceTask.addressTask, CorrespondenceAddressTask.ROUTE_SEGMENT)
                     } else {
                         throw IllegalStateException("Unknown checkable element $checkingAnswersFor")
                     }

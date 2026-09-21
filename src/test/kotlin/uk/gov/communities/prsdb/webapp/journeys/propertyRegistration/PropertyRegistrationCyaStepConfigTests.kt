@@ -12,14 +12,20 @@ import org.mockito.Mockito.lenient
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.context.MessageSource
 import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
+import uk.gov.communities.prsdb.webapp.constants.CORRESPONDENCE_ADDRESS
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING
+import uk.gov.communities.prsdb.webapp.constants.enums.CorrespondenceEmailOption
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
 import uk.gov.communities.prsdb.webapp.constants.enums.WhoProvidesRentalDetails
+import uk.gov.communities.prsdb.webapp.journeys.JourneyStateService
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BedroomsStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CorrespondenceEmailStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasJointLandlordsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HouseholdStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.LettingAgentEmailStep
@@ -31,6 +37,7 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.Prope
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.PropertyTypeStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.ProvideTenancyDetailsLaterStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.WhoProvidesRentalDetailsStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.CorrespondenceTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.ElectricalSafetyTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.EpcTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.GasSafetyTask
@@ -48,8 +55,10 @@ import uk.gov.communities.prsdb.webapp.journeys.shared.helpers.OccupancyDetailsH
 import uk.gov.communities.prsdb.webapp.journeys.shared.inviteJointLandlord.CheckJointLandlordsStep
 import uk.gov.communities.prsdb.webapp.journeys.shared.inviteJointLandlord.InviteJointLandlordsTask
 import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.LookupAddressStep
+import uk.gov.communities.prsdb.webapp.journeys.shared.tasks.CorrespondenceAddressTask
 import uk.gov.communities.prsdb.webapp.models.dataModels.AddressDataModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.AllowLettingAgentEmailFormModel
+import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.CorrespondenceEmailFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.HasJointLandlordsFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.NumberOfBedroomsFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.OccupancyFormModel
@@ -58,6 +67,7 @@ import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.PropertyT
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.WhoProvidesRentalDetailsFormModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.SummaryListRowViewModel
 import uk.gov.communities.prsdb.webapp.services.LocalCouncilService
+import kotlin.test.assertIs
 
 @ExtendWith(MockitoExtension::class)
 class PropertyRegistrationCyaStepConfigTests {
@@ -231,6 +241,156 @@ class PropertyRegistrationCyaStepConfigTests {
         lenient().`when`(mockWhoProvidesRentalDetailsStep.formModelIfReachableOrNull).thenReturn(mockWhoProvidesRentalDetailsFormModel)
         lenient().`when`(mockWhoProvidesDetailsTask.lettingAgentEmailStep).thenReturn(mockLettingAgentEmailStep)
         lenient().`when`(mockLettingAgentEmailStep.formModel).thenReturn(mockLettingAgentEmailFormModel)
+    }
+
+    @Nested
+    inner class CorrespondenceContent {
+        private val correspondenceTask = mock<CorrespondenceTask>()
+        private val emailStep = mock<CorrespondenceEmailStep>()
+        private val addressTask = mock<CorrespondenceAddressTask>()
+        private val lookupStep = mock<LookupAddressStep>()
+        private val emailForm =
+            CorrespondenceEmailFormModel().apply {
+                whichEmail = CorrespondenceEmailOption.ACCOUNT_EMAIL
+                differentEmailAddress = "council.contact@example.com"
+            }
+        private val lookupPath = "${CorrespondenceAddressTask.ROUTE_SEGMENT}/${LookupAddressStep.ROUTE_SEGMENT}"
+
+        @BeforeEach
+        fun setUpCorrespondence() {
+            lenient().`when`(mockFeatureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)).thenReturn(true)
+            lenient().`when`(mockFeatureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS)).thenReturn(true)
+            lenient().`when`(mockState.correspondenceTask).thenReturn(correspondenceTask)
+            lenient().`when`(correspondenceTask.correspondenceEmailStep).thenReturn(emailStep)
+            lenient().`when`(correspondenceTask.addressTask).thenReturn(addressTask)
+            lenient().`when`(emailStep.formModel).thenReturn(emailForm)
+            lenient().`when`(emailStep.isStepReachable).thenReturn(true)
+            lenient().`when`(emailStep.urlPath).thenReturn(CorrespondenceEmailStep.ROUTE_SEGMENT)
+            lenient().`when`(mockState.loggedInLandlordEmail).thenReturn("account@example.com")
+            lenient().`when`(addressTask.lookupAddressStep).thenReturn(lookupStep)
+            lenient().`when`(lookupStep.isStepReachable).thenReturn(true)
+            lenient().`when`(lookupStep.urlPath).thenReturn(lookupPath)
+            lenient().`when`(mockState.getCyaJourneyId(emailStep)).thenReturn("email-change")
+            lenient().`when`(mockState.getCyaJourneyId(lookupStep)).thenReturn("postal-change")
+            lenient().`when`(addressTask.getAddress()).thenReturn(
+                AddressDataModel(
+                    "12 Test Road, Leeds, LS1 1AA",
+                    buildingNumber = "12",
+                    streetName = "Test Road",
+                    townName = "Leeds",
+                    postcode = "LS1 1AA",
+                ),
+            )
+        }
+
+        @Test
+        fun `contact rows show the selected account email instead of a retained different email`() {
+            val rows = correspondenceRows()
+
+            assertEquals(
+                listOf(
+                    "forms.checkPropertyAnswers.correspondence.emailAddress",
+                    "forms.checkPropertyAnswers.correspondence.postalAddress",
+                ),
+                rows.map { it.fieldHeading },
+            )
+            assertEquals("account@example.com", rows[0].fieldValue)
+        }
+
+        @Test
+        fun `contact rows show the different email when selected`() {
+            emailForm.whichEmail = CorrespondenceEmailOption.DIFFERENT_EMAIL
+
+            assertEquals("council.contact@example.com", correspondenceRows()[0].fieldValue)
+            verify(mockState, never()).loggedInLandlordEmail
+        }
+
+        @Test
+        fun `contact postal address uses the same multiline format as the property address`() {
+            assertEquals(listOf("12 Test Road", "Leeds", "LS1 1AA"), correspondenceRows()[1].fieldValue)
+        }
+
+        @Test
+        fun `contact postal address preserves manually entered address lines and county`() {
+            whenever(addressTask.getAddress()).thenReturn(
+                AddressDataModel.fromManualAddressData(
+                    addressLineOne = "12 Test Road",
+                    addressLineTwo = "Test District",
+                    townOrCity = "Leeds",
+                    county = "West Yorkshire",
+                    postcode = "LS1 1AA",
+                ),
+            )
+
+            assertEquals(
+                listOf("12 Test Road", "Test District", "Leeds", "West Yorkshire", "LS1 1AA"),
+                correspondenceRows()[1].fieldValue,
+            )
+        }
+
+        @Test
+        fun `contact change links have independent child journey ids and the postal address route prefix`() {
+            val rows = correspondenceRows()
+
+            assertEquals("forms.links.change", rows[0].actions.single().text)
+            assertEquals("forms.links.change", rows[1].actions.single().text)
+            assertEquals(
+                JourneyStateService.urlWithJourneyState(CorrespondenceEmailStep.ROUTE_SEGMENT, "email-change"),
+                rows[0].actions.single().url,
+            )
+            assertEquals(
+                JourneyStateService.urlWithJourneyState(lookupPath, "postal-change"),
+                rows[1].actions.single().url,
+            )
+        }
+
+        @Test
+        fun `contact rows are retained when property details are delegated to a letting agent`() {
+            whenever(mockState.isDelegatedToLettingAgent(mockFeatureFlagManager)).thenReturn(true)
+            whenever(mockWhoProvidesRentalDetailsFormModel.whoProvides).thenReturn(WhoProvidesRentalDetails.LETTING_AGENT)
+
+            assertEquals(2, correspondenceRows().size)
+        }
+
+        @Test
+        fun `contact rows are retained when the property is unoccupied`() {
+            whenever(mockOccupancyFormModel.occupied).thenReturn(false)
+
+            assertEquals(2, correspondenceRows().size)
+        }
+
+        @Test
+        fun `contact rows are retained when letting agent delegation is disabled`() {
+            whenever(mockFeatureFlagManager.checkFeature(DELEGATE_TO_LETTING_AGENT)).thenReturn(false)
+
+            assertEquals(2, correspondenceRows().size)
+        }
+
+        @Test
+        fun `disabled correspondence does not read contact state or create child journeys`() {
+            whenever(mockFeatureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS)).thenReturn(false)
+
+            assertEquals(emptyList<SummaryListRowViewModel>(), correspondenceRows())
+            verify(mockState, never()).correspondenceTask
+            verify(mockState, never()).getCyaJourneyId(emailStep)
+            verify(mockState, never()).getCyaJourneyId(lookupStep)
+        }
+
+        @Test
+        fun `legacy CYA does not read contact state even when correspondence is enabled`() {
+            whenever(mockFeatureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)).thenReturn(false)
+
+            val content = stepConfig.getStepSpecificContent(mockState)
+
+            assertTrue(!content.containsKey("correspondenceRows"))
+            verify(mockState, never()).correspondenceTask
+            verify(mockState, never()).getCyaJourneyId(emailStep)
+            verify(mockState, never()).getCyaJourneyId(lookupStep)
+        }
+
+        private fun correspondenceRows(): List<SummaryListRowViewModel> =
+            assertIs<List<*>>(stepConfig.getStepSpecificContent(mockState)["correspondenceRows"])
+                .map { assertIs<SummaryListRowViewModel>(it) }
     }
 
     @Nested

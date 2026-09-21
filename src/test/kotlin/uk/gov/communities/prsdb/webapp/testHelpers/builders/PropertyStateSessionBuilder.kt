@@ -90,7 +90,10 @@ class PropertyStateSessionBuilder(
             }
         withSubmittedValue("$addressScope/${LookupAddressStep.ROUTE_SEGMENT}", lookupAddressFormModel)
         additionalDataMap["$addressScope/cachedAddresses"] =
-            Json.encodeToString(serializer(), listOf(AddressDataModel(singleLineAddress, localCouncilId = null, uprn = null)))
+            Json.encodeToString(
+                serializer(),
+                listOf(AddressDataModel(singleLineAddress, localCouncilId = null, uprn = null, postcode = postcode)),
+            )
 
         val selectAddressFormModel =
             SelectAddressFormModel().apply {

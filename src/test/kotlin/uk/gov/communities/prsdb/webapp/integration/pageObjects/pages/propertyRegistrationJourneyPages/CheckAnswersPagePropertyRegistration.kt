@@ -44,6 +44,14 @@ class CheckAnswersPagePropertyRegistration(
     val propertyDetailsHeading =
         Heading(page.locator("h3.govuk-heading-m", Page.LocatorOptions().setHasText("Property details")))
 
+    private val correspondenceHeadingLocator =
+        page.locator("h3.govuk-heading-m", Page.LocatorOptions().setHasText(Pattern.compile("^Who the council should contact$")))
+
+    val correspondenceHeading = Heading(correspondenceHeadingLocator)
+
+    val correspondenceRowKeys =
+        correspondenceHeadingLocator.locator("xpath=following-sibling::dl[1]//dt[contains(@class,'govuk-summary-list__key')]")
+
     val occupancyHeading =
         Heading(page.locator("h3.govuk-heading-m", Page.LocatorOptions().setHasText("Tell us if your property’s occupied")))
 
@@ -114,7 +122,10 @@ class CheckAnswersPagePropertyRegistration(
     class CheckAnswersPropertyRegistrationSummaryList(
         page: Page,
     ) : SummaryList(page) {
+        val propertyAddressRow = getRow(Pattern.compile("^Address$"))
         val ownershipRow = getRow("How do you own this property?")
+        val correspondenceEmailRow = getRow(Pattern.compile("^Email address$"))
+        val correspondencePostalAddressRow = getRow(Pattern.compile("^Postal address$"))
 
         // TODO PDJB-1340: Delete beforePropertyRegistrationRestructuredOwnershipRow when PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING is removed.
         val beforePropertyRegistrationRestructuredOwnershipRow = getRow("Ownership type")

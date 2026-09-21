@@ -14,6 +14,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.never
 import org.mockito.kotlin.whenever
 import uk.gov.communities.prsdb.webapp.database.entity.Address
 import uk.gov.communities.prsdb.webapp.database.repository.AddressRepository
@@ -32,6 +33,33 @@ class AddressServiceTests {
 
     @InjectMocks
     private lateinit var addressService: AddressService
+
+    @Test
+    fun `createAddressSnapshot saves a separate copy without the source UPRN`() {
+        val model =
+            AddressDataModel(
+                "12 Test Road, Leeds, LS1 1AA",
+                localCouncilId = 1,
+                uprn = 123456L,
+                buildingNumber = "12",
+                streetName = "Test Road",
+                townName = "Leeds",
+                postcode = "LS1 1AA",
+            )
+        val council = MockLocalCouncilData.createLocalCouncil(id = 1)
+        val savedAddress = MockLandlordData.createAddress()
+        whenever(mockLocalCouncilService.retrieveLocalCouncilById(1)).thenReturn(council)
+        whenever(mockAddressRepository.save(any())).thenReturn(savedAddress)
+
+        val snapshot = addressService.createAddressSnapshot(model)
+
+        val addressCaptor = captor<Address>()
+        verify(mockAddressRepository).save(addressCaptor.capture())
+        assertEquals(model.copy(uprn = null), AddressDataModel.fromAddress(addressCaptor.value))
+        assertEquals(council, addressCaptor.value.localCouncil)
+        assertEquals(savedAddress, snapshot)
+        verify(mockAddressRepository, never()).findByIsActiveTrueAndUprn(any())
+    }
 
     @Nested
     inner class FindOrCreateAddressTests {

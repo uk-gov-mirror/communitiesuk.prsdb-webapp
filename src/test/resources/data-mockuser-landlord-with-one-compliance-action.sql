@@ -21,14 +21,17 @@ VALUES (1, '09/13/24', '09/13/24', 1, 1, '09/13/2000', true, 07111111111, 'urn:f
         'Alexander Smith', 'alex.surname@example.com', 'England or Wales', false, true);
 SELECT setval(pg_get_serial_sequence('landlord', 'id'), (SELECT MAX(id) FROM landlord));
 
+-- Correspondence addresses
+INSERT INTO address (id, single_line_address, postcode) VALUES
+    (8501100001, 'Correspondence address for property row 1', 'CO1 1CO'),
+    (8501100002, 'Correspondence address for property row 2', 'CO1 1CO'),
+    (8501100003, 'Correspondence address for property row 3', 'CO1 1CO');
+
 INSERT INTO property_ownership (id, is_active, ownership_type, current_num_households, current_num_tenants, registration_number_id, address_id, created_date, property_build_type,
-                                num_bedrooms, bills_included_list, custom_bills_included, furnished_status, rent_frequency, custom_rent_frequency, rent_amount, is_occupied)
-VALUES (1, true, 1, 1, 2, 2, 2, current_date, 1,
-        1, null, null, 2, 1, null, 123.12, true),
-       (2, true, 1, 1, 2, 3, 3, current_date, 1,
-        1, null, null, 2, 1, null, 123.12, true),
-       (3, true, 1, 1, 2, 4, 4, current_date, 1,
-        1, null, null, 2, 1, null, 123.12, true);
+                                num_bedrooms, bills_included_list, custom_bills_included, furnished_status, rent_frequency, custom_rent_frequency, rent_amount, is_occupied, correspondence_email, correspondence_address_id)
+VALUES (1, true, 1, 1, 2, 2, 2, current_date, 1, 1, null, null, 2, 1, null, 123.12, true, 'email@example.com', 8501100001),
+       (2, true, 1, 1, 2, 3, 3, current_date, 1, 1, null, null, 2, 1, null, 123.12, true, 'email@example.com', 8501100002),
+       (3, true, 1, 1, 2, 4, 4, current_date, 1, 1, null, null, 2, 1, null, 123.12, true, 'email@example.com', 8501100003);
 
 INSERT INTO ownership_link (landlord_id, landlordship_id, created_date)
 VALUES (1, 1, '2025-01-15'),

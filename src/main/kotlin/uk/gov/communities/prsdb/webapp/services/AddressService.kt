@@ -18,9 +18,15 @@ class AddressService(
             addressRepository.findByIsActiveTrueAndUprn(addressDataModel.uprn)
                 ?: throw EntityNotFoundException("No active address found with UPRN ${addressDataModel.uprn}")
         } else {
-            val localCouncil = addressDataModel.localCouncilId?.let { localCouncilService.retrieveLocalCouncilById(it) }
-            addressRepository.save(Address(addressDataModel, localCouncil))
+            createAddressSnapshot(addressDataModel)
         }
+
+    @Transactional
+    fun createAddressSnapshot(addressDataModel: AddressDataModel): Address {
+        val localCouncil = addressDataModel.localCouncilId?.let { localCouncilService.retrieveLocalCouncilById(it) }
+        // UPRNs uniquely identify lookup rows; a snapshot must not share their identity.
+        return addressRepository.save(Address(addressDataModel.copy(uprn = null), localCouncil))
+    }
 
     fun searchForAddresses(
         houseNameOrNumber: String,

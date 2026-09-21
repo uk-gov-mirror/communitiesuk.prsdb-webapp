@@ -573,6 +573,9 @@ checkPropertyAnswers:
     licensingProvideLaterUnoccupied: Provide this later (within 28 days of the property being occupied)
   ownershipAndLandlords:
     heading: Ownership and landlords
+  correspondence:
+    emailAddress: Email address
+    postalAddress: Postal address
   occupancy:
     heading: Tell us if your property’s occupied
     question: Is this property occupied by tenants?

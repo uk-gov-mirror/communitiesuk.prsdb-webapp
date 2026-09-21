@@ -2,6 +2,7 @@ package uk.gov.communities.prsdb.webapp.models.requestModels.formModels
 
 import jakarta.validation.constraints.NotNull
 import uk.gov.communities.prsdb.webapp.constants.enums.CorrespondenceEmailOption
+import uk.gov.communities.prsdb.webapp.exceptions.NotNullFormModelValueIsNullException.Companion.notNullValue
 import uk.gov.communities.prsdb.webapp.validation.ConstraintDescriptor
 import uk.gov.communities.prsdb.webapp.validation.DelegatedPropertyConstraintValidator
 import uk.gov.communities.prsdb.webapp.validation.EmailConstraintValidator
@@ -28,6 +29,12 @@ class CorrespondenceEmailFormModel : FormModel {
         ],
     )
     var differentEmailAddress: String = ""
+
+    fun getEmailAddress(accountEmail: () -> String): String =
+        when (notNullValue(CorrespondenceEmailFormModel::whichEmail)) {
+            CorrespondenceEmailOption.ACCOUNT_EMAIL -> accountEmail()
+            CorrespondenceEmailOption.DIFFERENT_EMAIL -> differentEmailAddress
+        }
 
     fun isDifferentEmailAddressPresentIfSelected(): Boolean =
         whichEmail != CorrespondenceEmailOption.DIFFERENT_EMAIL || differentEmailAddress.isNotBlank()

@@ -58,34 +58,58 @@ VALUES (1, '09/13/24', '09/13/24', 1, 1, '09/13/2000', true, 07111111111, 'urn:f
 SELECT setval(pg_get_serial_sequence('landlord', 'id'), (SELECT MAX(id) FROM landlord));
 
 -- Occupied properties have current_num_tenants > 0, unoccupied have 0
+-- Correspondence addresses
+INSERT INTO address (id, single_line_address, postcode) VALUES
+    (8500900001, 'Correspondence address for property row 1', 'CO1 1CO'),
+    (8500900002, 'Correspondence address for property row 2', 'CO1 1CO'),
+    (8500900003, 'Correspondence address for property row 3', 'CO1 1CO'),
+    (8500900004, 'Correspondence address for property row 4', 'CO1 1CO'),
+    (8500900005, 'Correspondence address for property row 5', 'CO1 1CO'),
+    (8500900006, 'Correspondence address for property row 6', 'CO1 1CO'),
+    (8500900007, 'Correspondence address for property row 7', 'CO1 1CO'),
+    (8500900008, 'Correspondence address for property row 8', 'CO1 1CO'),
+    (8500900009, 'Correspondence address for property row 9', 'CO1 1CO'),
+    (8500900010, 'Correspondence address for property row 10', 'CO1 1CO'),
+    (8500900011, 'Correspondence address for property row 11', 'CO1 1CO'),
+    (8500900012, 'Correspondence address for property row 12', 'CO1 1CO'),
+    (8500900013, 'Correspondence address for property row 13', 'CO1 1CO'),
+    (8500900014, 'Correspondence address for property row 14', 'CO1 1CO'),
+    (8500900015, 'Correspondence address for property row 15', 'CO1 1CO'),
+    (8500900016, 'Correspondence address for property row 16', 'CO1 1CO'),
+    (8500900017, 'Correspondence address for property row 17', 'CO1 1CO'),
+    (8500900018, 'Correspondence address for property row 18', 'CO1 1CO'),
+    (8500900019, 'Correspondence address for property row 19', 'CO1 1CO'),
+    (8500900020, 'Correspondence address for property row 20', 'CO1 1CO'),
+    (8500900021, 'Correspondence address for property row 21', 'CO1 1CO');
+
 INSERT INTO property_ownership (id, is_active, ownership_type, current_num_households, current_num_tenants, registration_number_id, address_id, created_date, property_build_type,
-                                num_bedrooms, bills_included_list, custom_bills_included, furnished_status, rent_frequency, custom_rent_frequency, rent_amount, last_occupied_date, is_occupied)
-VALUES (1, true, 1, 1, 2, 2, 2, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true),
-       (2, true, 1, 0, 0, 3, 3, current_date, 1, null, null, null, null, null, null, null, null, false),
-       (3, true, 1, 1, 2, 4, 4, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true),
-       (4, true, 1, 0, 0, 5, 5, current_date, 1, null, null, null, null, null, null, null, null, false),
-       (5, true, 1, 1, 2, 6, 6, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true),
-       (6, true, 1, 0, 0, 7, 7, current_date, 1, null, null, null, null, null, null, null, null, false),
-       (7, true, 1, 1, 2, 8, 8, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true),
-       (8, true, 1, 0, 0, 9, 9, current_date, 1, null, null, null, null, null, null, null, null, false),
-       (9, true, 1, 1, 2, 10, 10, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true),
-       (10, true, 1, 0, 0, 11, 11, current_date, 1, null, null, null, null, null, null, null, null, false),
-       (11, true, 1, 1, 2, 12, 12, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true),
-       (12, true, 1, 0, 0, 13, 13, current_date, 1, null, null, null, null, null, null, null, null, false),
-       (13, true, 1, 1, 2, 14, 14, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true),
-       (14, true, 1, 0, 0, 15, 15, current_date, 1, null, null, null, null, null, null, null, null, false),
-       (15, true, 1, 1, 2, 16, 16, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true),
-       (16, true, 1, 0, 0, 17, 17, current_date, 1, null, null, null, null, null, null, null, null, false),
-       (17, true, 1, 1, 2, 18, 18, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true),
-       (18, true, 1, 0, 0, 19, 19, current_date, 1, null, null, null, null, null, null, null, null, false),
-       (19, true, 1, 1, 2, 20, 20, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true),
-       (20, true, 1, 0, 0, 21, 21, current_date, 1, null, null, null, null, null, null, null, null, false);
+                                num_bedrooms, bills_included_list, custom_bills_included, furnished_status, rent_frequency, custom_rent_frequency, rent_amount, last_occupied_date, is_occupied, correspondence_email, correspondence_address_id)
+VALUES (1, true, 1, 1, 2, 2, 2, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900001),
+       (2, true, 1, 0, 0, 3, 3, current_date, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500900002),
+       (3, true, 1, 1, 2, 4, 4, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900003),
+       (4, true, 1, 0, 0, 5, 5, current_date, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500900004),
+       (5, true, 1, 1, 2, 6, 6, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900005),
+       (6, true, 1, 0, 0, 7, 7, current_date, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500900006),
+       (7, true, 1, 1, 2, 8, 8, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900007),
+       (8, true, 1, 0, 0, 9, 9, current_date, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500900008),
+       (9, true, 1, 1, 2, 10, 10, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900009),
+       (10, true, 1, 0, 0, 11, 11, current_date, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500900010),
+       (11, true, 1, 1, 2, 12, 12, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900011),
+       (12, true, 1, 0, 0, 13, 13, current_date, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500900012),
+       (13, true, 1, 1, 2, 14, 14, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900013),
+       (14, true, 1, 0, 0, 15, 15, current_date, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500900014),
+       (15, true, 1, 1, 2, 16, 16, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900015),
+       (16, true, 1, 0, 0, 17, 17, current_date, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500900016),
+       (17, true, 1, 1, 2, 18, 18, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900017),
+       (18, true, 1, 0, 0, 19, 19, current_date, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500900018),
+       (19, true, 1, 1, 2, 20, 20, current_date, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900019),
+       (20, true, 1, 0, 0, 21, 21, current_date, 1, null, null, null, null, null, null, null, null, false, 'email@example.com', 8500900020);
 
 -- 21: occupied AFTER registration (created_date in the past, last_occupied_date = current_date), so the provide-later
 -- deadline has no dated deadline and shows the "within 28 days" message when the flag is on.
 INSERT INTO property_ownership (id, is_active, ownership_type, current_num_households, current_num_tenants, registration_number_id, address_id, created_date, property_build_type,
-                                num_bedrooms, bills_included_list, custom_bills_included, furnished_status, rent_frequency, custom_rent_frequency, rent_amount, last_occupied_date, is_occupied)
-VALUES (21, true, 1, 1, 2, 22, 22, current_date - 100, 1, 1, null, null, 2, 1, null, 123.12, current_date, true);
+                                num_bedrooms, bills_included_list, custom_bills_included, furnished_status, rent_frequency, custom_rent_frequency, rent_amount, last_occupied_date, is_occupied, correspondence_email, correspondence_address_id)
+VALUES (21, true, 1, 1, 2, 22, 22, current_date - 100, 1, 1, null, null, 2, 1, null, 123.12, current_date, true, 'email@example.com', 8500900021);
 
 INSERT INTO ownership_link (landlord_id, landlordship_id, created_date)
 VALUES (1, 1, '2025-01-15'),
