@@ -161,7 +161,8 @@ class PropertyRegistrationCorrespondencePersistenceJourneyTests : IntegrationTes
     }
 
     @Test
-    fun `final registration saves account email instead of retained different email and snapshots a lookup address`(page: Page) {
+    fun `final registration saves snapshotted account email instead of retained different email and snapshots a lookup address`(page: Page) {
+        val snapshottedEmail = "original.landlord@example.com"
         val selectedAddress = addressRepository.findById(2L).orElseThrow()
         val selectedAddressData = AddressDataModel.fromAddress(selectedAddress)
         assertEquals(2L, selectedAddressData.uprn)
@@ -170,6 +171,8 @@ class PropertyRegistrationCorrespondencePersistenceJourneyTests : IntegrationTes
                 page,
                 completedState()
                     .withCompletedCorrespondence()
+                    .withAdditionalData("isStateInitialized", "true")
+                    .withAdditionalData("loggedInLandlordEmail", "\"$snapshottedEmail\"")
                     .withSubmittedValue(
                         CorrespondenceEmailStep.ROUTE_SEGMENT,
                         CorrespondenceEmailFormModel().apply {
@@ -199,13 +202,13 @@ class PropertyRegistrationCorrespondencePersistenceJourneyTests : IntegrationTes
         val selectPage = assertPageIs(page, CorrespondenceSelectAddressFormPagePropertyRegistration::class)
         selectPage.selectAddressAndSubmit("2 Fake Way")
         checkAnswersPage = assertPageIs(page, CheckAnswersPagePropertyRegistration::class)
-        assertThat(checkAnswersPage.summaryList.correspondenceEmailRow.value).hasText(accountEmail)
+        assertThat(checkAnswersPage.summaryList.correspondenceEmailRow.value).hasText(snapshottedEmail)
         assertThat(checkAnswersPage.summaryList.correspondencePostalAddressRow.value.locator("p"))
             .hasText(arrayOf("2 Fake Way", "FA1 1AB"))
 
         val savedOwnership = confirmAndRetrieveOwnership(page, checkAnswersPage)
 
-        assertEquals(accountEmail, savedOwnership.correspondenceEmail)
+        assertEquals(snapshottedEmail, savedOwnership.correspondenceEmail)
         assertNotEquals(differentEmail, savedOwnership.correspondenceEmail)
         // UPRNs uniquely identify lookup rows; a correspondence snapshot must not claim the source row's UPRN.
         assertEquals(
@@ -223,7 +226,7 @@ class PropertyRegistrationCorrespondencePersistenceJourneyTests : IntegrationTes
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `final registration without correspondence steps saves account email and a separate property address snapshot`(
+    fun `final registration without correspondence steps saves landlord email and address defaults`(
         restructured: Boolean,
         page: Page,
     ) {
@@ -233,6 +236,7 @@ class PropertyRegistrationCorrespondencePersistenceJourneyTests : IntegrationTes
             // Leave correspondence enabled to prove the legacy journey does not access its unwired steps.
             featureFlagManager.disableFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)
         }
+        val landlordAddress = addressRepository.findById(1L).orElseThrow()
         val checkAnswersPage = goToCheckAnswers(page, completedState(), restructured)
         BaseComponent.assertThat(checkAnswersPage.correspondenceHeading).isHidden()
         assertThat(checkAnswersPage.correspondenceRowKeys).hasCount(0)
@@ -242,9 +246,9 @@ class PropertyRegistrationCorrespondencePersistenceJourneyTests : IntegrationTes
         val savedOwnership = confirmAndRetrieveOwnership(page, checkAnswersPage)
 
         assertEquals(accountEmail, savedOwnership.correspondenceEmail)
-        assertEquals(propertyAddress, AddressDataModel.fromAddress(savedOwnership.correspondenceAddress))
+        assertEquals(AddressDataModel.fromAddress(landlordAddress), AddressDataModel.fromAddress(savedOwnership.correspondenceAddress))
+        assertEquals(landlordAddress.id, savedOwnership.correspondenceAddress.id)
         assertPropertyAddressUnchanged(savedOwnership)
-        assertNotEquals(1L, savedOwnership.correspondenceAddress.id)
     }
 
     private fun completedState() =

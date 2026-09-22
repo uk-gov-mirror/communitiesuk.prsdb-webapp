@@ -78,9 +78,10 @@ class PropertyOwnershipService(
         correspondenceAddressModel: AddressDataModel? = null,
     ): PropertyOwnership {
         val registrationNumber = registrationNumberService.createRegistrationNumber(RegistrationNumberType.PROPERTY)
-        // Registrations without the correspondence journey retain the existing contact defaults.
+        val registeringLandlord = landlords.first()
+        // TODO PDJB-1733: Remove the flag-off correspondence defaults.
         val correspondenceAddress =
-            addressService.createAddressSnapshot(correspondenceAddressModel ?: AddressDataModel.fromAddress(address))
+            correspondenceAddressModel?.let { addressService.createAddressSnapshot(it) } ?: registeringLandlord.address
 
         return propertyOwnershipRepository.save(
             PropertyOwnership(
@@ -94,7 +95,7 @@ class PropertyOwnershipService(
                 customPropertyType = customPropertyType,
                 address = address,
                 license = license,
-                correspondenceEmail = correspondenceEmail ?: landlords.first().email,
+                correspondenceEmail = correspondenceEmail ?: registeringLandlord.email,
                 correspondenceAddress = correspondenceAddress,
                 isActive = isActive,
                 numBedrooms = numBedrooms,

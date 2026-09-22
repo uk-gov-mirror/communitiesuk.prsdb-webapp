@@ -26,7 +26,7 @@ class OrganisationalLandlord() : Landlord() {
 
     @ManyToOne
     @JoinColumn(name = "organisation_address_id")
-    lateinit var address: Address
+    override lateinit var address: Address
 
     /**
      * This should not be used for sending emails, just for displaying the contact info for an organisation.

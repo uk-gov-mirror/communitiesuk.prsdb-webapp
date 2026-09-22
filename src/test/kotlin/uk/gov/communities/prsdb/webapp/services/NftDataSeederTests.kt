@@ -131,6 +131,36 @@ class NftDataSeederTests(
     }
 
     @Test
+    fun `seedDatabase reuses property addresses for correspondence without reserving extras`() {
+        val properties = 80
+
+        newSeeder(
+            landlords = 120,
+            properties = properties,
+            batchSize = 10,
+            generatedAddresses = properties,
+        ).seedDatabase()
+
+        assertEquals(
+            properties.toLong(),
+            propertyOwnershipRepository.count() + incompletePropertiesRepository.count(),
+        )
+        assertEquals(
+            propertyOwnershipRepository.count(),
+            jdbcTemplate.queryForObject(
+                """
+                SELECT count(*)
+                FROM property_ownership po
+                JOIN address a ON a.id = po.correspondence_address_id
+                WHERE po.correspondence_email IS NOT NULL
+                  AND po.correspondence_address_id = po.address_id
+                """.trimIndent(),
+                Long::class.java,
+            ),
+        )
+    }
+
+    @Test
     fun `seedDatabase fails clearly when addresses are exhausted`() {
         val exception =
             assertThrows(IllegalStateException::class.java) {

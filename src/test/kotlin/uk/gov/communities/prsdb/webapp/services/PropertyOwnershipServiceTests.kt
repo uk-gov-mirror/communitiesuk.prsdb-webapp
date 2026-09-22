@@ -3,16 +3,17 @@ package uk.gov.communities.prsdb.webapp.services
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.ArgumentCaptor.captor
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.lenient
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals
 import org.mockito.junit.jupiter.MockitoExtension
@@ -36,13 +37,13 @@ import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.REGISTERED_PROPERTIES_FRAGMENT
 import uk.gov.communities.prsdb.webapp.constants.enums.FurnishedStatus
+import uk.gov.communities.prsdb.webapp.constants.enums.LandlordType
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
 import uk.gov.communities.prsdb.webapp.constants.enums.OwnershipType
 import uk.gov.communities.prsdb.webapp.constants.enums.PropertyType
 import uk.gov.communities.prsdb.webapp.constants.enums.RegistrationNumberType
 import uk.gov.communities.prsdb.webapp.constants.enums.RentFrequency
 import uk.gov.communities.prsdb.webapp.controllers.PropertyDetailsController
-import uk.gov.communities.prsdb.webapp.database.entity.Address
 import uk.gov.communities.prsdb.webapp.database.entity.IndividualLandlord
 import uk.gov.communities.prsdb.webapp.database.entity.Landlord
 import uk.gov.communities.prsdb.webapp.database.entity.License
@@ -105,22 +106,21 @@ class PropertyOwnershipServiceTests {
     @InjectMocks
     private lateinit var propertyOwnershipService: PropertyOwnershipService
 
-    @BeforeEach
-    fun setUpAddressSnapshots() {
-        lenient().`when`(mockAddressService.createAddressSnapshot(any())).thenAnswer {
-            Address(it.getArgument<AddressDataModel>(0).copy(uprn = null))
-        }
-    }
-
-    @Test
-    fun `createPropertyOwnership creates a property ownership`() {
+    @ParameterizedTest
+    @EnumSource(LandlordType::class)
+    fun `createPropertyOwnership creates a property ownership with supplied correspondence details`(landlordType: LandlordType) {
         // Arrange
         val ownershipType = OwnershipType.FREEHOLD
         val households = 1
         val tenants = 2
         val isOccupied = true
         val registrationNumber = RegistrationNumber(RegistrationNumberType.PROPERTY, 1233456)
-        val landlord = MockLandlordData.createIndividualLandlord()
+        val landlordAddress = MockLandlordData.createAddress("10 Landlord Road, EG1 1AB")
+        val landlord =
+            when (landlordType) {
+                LandlordType.INDIVIDUAL -> MockLandlordData.createIndividualLandlord(address = landlordAddress)
+                LandlordType.ORGANISATION -> MockLandlordData.createOrgLandlord(address = landlordAddress)
+            }
         val propertyBuildType = PropertyType.OTHER
         val customPropertyType = "End terrace"
         val address = MockLandlordData.createAddress("11 Example Road, EG1 2AB")
@@ -194,23 +194,31 @@ class PropertyOwnershipServiceTests {
         val propertyOwnershipCaptor = captor<PropertyOwnership>()
         verify(mockPropertyOwnershipRepository).save(propertyOwnershipCaptor.capture())
         assertTrue(ReflectionEquals(expectedPropertyOwnership, "ownershipLinks").matches(propertyOwnershipCaptor.value))
+        assertSame(correspondenceAddress, propertyOwnershipCaptor.value.correspondenceAddress)
+        verify(mockAddressService).createAddressSnapshot(correspondenceModel)
         assertEquals(setOf(landlord), propertyOwnershipCaptor.value.landlords)
     }
 
-    @Test
-    fun `createPropertyOwnership can create a property ownership with no license`() {
+    @ParameterizedTest
+    @EnumSource(LandlordType::class)
+    fun `createPropertyOwnership uses landlord contact defaults when no correspondence details or license are supplied`(
+        landlordType: LandlordType,
+    ) {
         val ownershipType = OwnershipType.FREEHOLD
         val households = 1
         val tenants = 2
         val isOccupied = true
         val registrationNumber = RegistrationNumber(RegistrationNumberType.PROPERTY, 1233456)
-        val landlord = MockLandlordData.createIndividualLandlord()
+        val landlordAddress = MockLandlordData.createAddress("10 Landlord Road, EG1 1AB")
+        val landlord =
+            when (landlordType) {
+                LandlordType.INDIVIDUAL -> MockLandlordData.createIndividualLandlord(address = landlordAddress)
+                LandlordType.ORGANISATION -> MockLandlordData.createOrgLandlord(address = landlordAddress)
+            }
         val propertyBuildType = PropertyType.OTHER
         val customPropertyType = "End terrace"
         val address = MockLandlordData.createAddress("11 Example Road, EG1 2AB")
         val numberOfBedrooms = 1
-        val correspondenceAddress = Address(AddressDataModel.fromAddress(address).copy(uprn = null), address.localCouncil)
-        whenever(mockAddressService.createAddressSnapshot(AddressDataModel.fromAddress(address))).thenReturn(correspondenceAddress)
         val billsIncludedList = "Electricity, Water"
         val customBillsIncluded = "Internet"
         val furnishedStatus = FurnishedStatus.FURNISHED
@@ -231,7 +239,7 @@ class PropertyOwnershipServiceTests {
                 address = address,
                 license = null,
                 correspondenceEmail = landlord.email,
-                correspondenceAddress = correspondenceAddress,
+                correspondenceAddress = landlordAddress,
                 numBedrooms = numberOfBedrooms,
                 billsIncludedList = billsIncludedList,
                 customBillsIncluded = customBillsIncluded,
@@ -270,6 +278,8 @@ class PropertyOwnershipServiceTests {
         val propertyOwnershipCaptor = captor<PropertyOwnership>()
         verify(mockPropertyOwnershipRepository).save(propertyOwnershipCaptor.capture())
         assertTrue(ReflectionEquals(expectedPropertyOwnership, "ownershipLinks").matches(propertyOwnershipCaptor.value))
+        assertSame(landlordAddress, propertyOwnershipCaptor.value.correspondenceAddress)
+        verifyNoInteractions(mockAddressService)
         assertEquals(setOf(landlord), propertyOwnershipCaptor.value.landlords)
     }
 

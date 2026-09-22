@@ -78,23 +78,12 @@ SELECT 1000 + i, TIMESTAMPTZ '2030-01-01 09:00:00+00', TIMESTAMPTZ '2030-01-01 0
 FROM generate_series(1, 121) AS s(i)
 ON CONFLICT DO NOTHING;
 
--- Correspondence addresses
-INSERT INTO address (id, single_line_address, postcode) VALUES
-    (8500400001, 'Correspondence address for property row 1', 'CO1 1CO'),
-    (8500400002, 'Correspondence address for property row 2', 'CO1 1CO');
-
-INSERT INTO address (id, created_date, single_line_address, local_council_id, postcode, building_number)
-SELECT 8500410000 + i, TIMESTAMPTZ '2030-01-01 09:00:00+00',
-       i || ' Metrics Correspondence Street, MT2 2BB', NULL::integer, 'MT2 2BB', i || ''
-FROM generate_series(1, 101) AS s(i)
-ON CONFLICT DO NOTHING;
-
 INSERT INTO property_ownership (id, is_active, ownership_type, current_num_households, current_num_tenants,
                                registration_number_id, address_id, created_date, last_modified_date, license_id,
                                property_build_type, num_bedrooms, marked_joint_landlord, is_occupied, correspondence_email, correspondence_address_id)
 SELECT 1200 + i, true, 1, 1, 2, 1200 + i, 1200 + i,
        TIMESTAMPTZ '2030-01-01 09:00:00+00' + make_interval(secs => (i - 1) * 86400),
-       TIMESTAMPTZ '2030-01-01 09:00:00+00' + make_interval(secs => (i - 1) * 86400), NULL, 1, 2, false, true, 'email@example.com', 8500410000 + i
+       TIMESTAMPTZ '2030-01-01 09:00:00+00' + make_interval(secs => (i - 1) * 86400), NULL, 1, 2, false, true, 'email@example.com', 1001
 FROM generate_series(1, 101) AS s(i)
 ON CONFLICT DO NOTHING;
 
@@ -167,12 +156,6 @@ ON CONFLICT DO NOTHING;
 --   81..90 -> 20..30 hours       (around the p90 = 1 day point)
 --   91..100-> 1.4..2.8 days      (around the p95 = 2 days point)
 -- These exact boundary values make median/p90/p95 land on 22 minutes / 1 day / 2 days.
--- Correspondence addresses for metrics cohort 2 (one per property_ownership row).
-INSERT INTO address (id, created_date, single_line_address, local_council_id, postcode, building_number)
-SELECT 8500420000 + i, TIMESTAMPTZ '2028-01-01 00:00:00+00',
-       i || ' Realistic Correspondence Road, MT3 3CC', NULL::integer, 'MT3 3CC', i || ''
-FROM generate_series(1, 100) AS s(i)
-ON CONFLICT DO NOTHING;
 
 INSERT INTO property_ownership (id, is_active, ownership_type, current_num_households, current_num_tenants,
                                registration_number_id, address_id, created_date, last_modified_date, license_id,
@@ -189,7 +172,7 @@ WITH p AS (
                  END)::int) AS created
     FROM generate_series(1, 100) AS s(i)
 )
-SELECT 1600 + i, true, 1, 1, 2, 1600 + i, 1600 + i, created, created, NULL, 1, 2, false, true, 'email@example.com', 8500420000 + i
+SELECT 1600 + i, true, 1, 1, 2, 1600 + i, 1600 + i, created, created, NULL, 1, 2, false, true, 'email@example.com', 1001
 FROM p
 ON CONFLICT DO NOTHING;
 
@@ -252,8 +235,8 @@ ON CONFLICT DO NOTHING;
 INSERT INTO property_ownership (id, is_active, ownership_type, current_num_households, current_num_tenants,
                                registration_number_id, address_id, created_date, last_modified_date, license_id,
                                property_build_type, num_bedrooms, marked_joint_landlord, is_occupied, correspondence_email, correspondence_address_id)
-VALUES (2201, true, 1, 1, 2, 2201, 2201, TIMESTAMPTZ '2029-12-03 09:00:00+00', NULL, NULL, 1, 2, true, true, 'email@example.com', 8500400001),
-       (2202, true, 1, 1, 2, 2202, 2202, TIMESTAMPTZ '2031-02-03 09:00:00+00', NULL, NULL, 1, 2, true, true, 'email@example.com', 8500400002)
+VALUES (2201, true, 1, 1, 2, 2201, 2201, TIMESTAMPTZ '2029-12-03 09:00:00+00', NULL, NULL, 1, 2, true, true, 'email@example.com', 1001),
+       (2202, true, 1, 1, 2, 2202, 2202, TIMESTAMPTZ '2031-02-03 09:00:00+00', NULL, NULL, 1, 2, true, true, 'email@example.com', 1001)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO ownership_link (landlord_id, landlordship_id, created_date)

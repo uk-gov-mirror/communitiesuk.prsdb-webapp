@@ -34,7 +34,7 @@ class IndividualLandlord() : Landlord() {
 
     @ManyToOne
     @JoinColumn(name = "individual_address_id")
-    lateinit var address: Address
+    override lateinit var address: Address
 
     @Column(name = "individual_country_of_residence")
     lateinit var countryOfResidence: String

@@ -13,9 +13,7 @@ SELECT setval(pg_get_serial_sequence('registration_number', 'id'), (SELECT MAX(i
 INSERT INTO address (id, created_date, last_modified_date, uprn, single_line_address, local_council_id, postcode)
 VALUES (1, '09/13/24', '09/13/24', 1, '1 Fictional Road', 2, 'EG1 1EG'),
        (2, '09/13/24', '09/13/24', 2, '2 Fake Way', 2, 'EG1 1EG'),
-       (3, '09/13/24', '09/13/24', 3, '3 Test Lane', 2, 'EG1 1EG'),
-       (4, '09/13/24', '09/13/24', 4, '4 Correspondence Close', 2, 'EG1 1EG'),
-       (5, '09/13/24', '09/13/24', 5, '5 Correspondence Close', 2, 'EG1 1EG');
+       (3, '09/13/24', '09/13/24', 3, '3 Test Lane', 2, 'EG1 1EG');
 SELECT setval(pg_get_serial_sequence('address', 'id'), (SELECT MAX(id) FROM address));
 
 INSERT INTO landlord (id, created_date, last_modified_date, registration_number_id, individual_address_id, individual_date_of_birth,
@@ -36,10 +34,10 @@ INSERT INTO property_ownership (id, is_active, ownership_type, current_num_house
 -- deadline, which requires last_occupied_date to be set.
 -- property the default user is not yet invited to
 VALUES (1, true, 1, 1, 2, 2, 2, current_date, 1,
-        1, null, null, 2, 1, null, 123.12, true, current_date - INTERVAL '7 days', 'email@example.com', 4),
+        1, null, null, 2, 1, null, 123.12, true, current_date - INTERVAL '7 days', 'email@example.com', 1),
 -- property the default user is primary landlord for
        (2, true, 1, 1, 4, 1, 3,  current_date, 1,
-        1, null, null, 2, 1, null, 200.00, true, current_date - INTERVAL '7 days', 'email@example.com', 5);
+        1, null, null, 2, 1, null, 200.00, true, current_date - INTERVAL '7 days', 'email@example.com', 1);
 SELECT setval(pg_get_serial_sequence('property_ownership', 'id'), (SELECT MAX(id) FROM property_ownership));
 
 -- Every registered property has a compliance record (see PropertyDetailsController), so both
