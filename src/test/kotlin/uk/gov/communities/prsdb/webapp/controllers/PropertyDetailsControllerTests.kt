@@ -1,5 +1,7 @@
 package uk.gov.communities.prsdb.webapp.controllers
 
+import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
@@ -16,6 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.get
 import org.springframework.web.context.WebApplicationContext
 import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
+import uk.gov.communities.prsdb.webapp.constants.CORRESPONDENCE_ADDRESS
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING
 import uk.gov.communities.prsdb.webapp.database.entity.LettingAgentAccess
@@ -181,6 +184,47 @@ class PropertyDetailsControllerTests(
                 .andExpect {
                     status { isOk() }
                     view { name(expectedView) }
+                }
+        }
+
+        @Test
+        @WithMockUser(roles = ["LANDLORD"])
+        fun `getPropertyDetails shows correspondence section when CORRESPONDENCE_ADDRESS flag is enabled`() {
+            val propertyOwnership = createPropertyOwnership()
+
+            whenever(propertyOwnershipService.getPropertyOwnershipIfCurrentUserAuthorized(eq(propertyOwnership.id)))
+                .thenReturn(propertyOwnership)
+            whenever(jointLandlordInvitationService.getPendingAndExpiredInvitations(propertyOwnership))
+                .thenReturn(Pair(emptyList(), emptyList()))
+            whenever(featureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)).thenReturn(true)
+            whenever(featureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS)).thenReturn(true)
+
+            mvc
+                .get(PropertyDetailsController.getPropertyDetailsPath(propertyOwnership.id, isLocalCouncilView = false))
+                .andExpect {
+                    status { isOk() }
+                    content { string(containsString("landlord@example.com")) }
+                    content { string(containsString("11 Elm Drive")) }
+                }
+        }
+
+        @Test
+        @WithMockUser(roles = ["LANDLORD"])
+        fun `getPropertyDetails hides correspondence section when CORRESPONDENCE_ADDRESS flag is disabled`() {
+            val propertyOwnership = createPropertyOwnership()
+
+            whenever(propertyOwnershipService.getPropertyOwnershipIfCurrentUserAuthorized(eq(propertyOwnership.id)))
+                .thenReturn(propertyOwnership)
+            whenever(jointLandlordInvitationService.getPendingAndExpiredInvitations(propertyOwnership))
+                .thenReturn(Pair(emptyList(), emptyList()))
+            whenever(featureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)).thenReturn(true)
+            whenever(featureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS)).thenReturn(false)
+
+            mvc
+                .get(PropertyDetailsController.getPropertyDetailsPath(propertyOwnership.id, isLocalCouncilView = false))
+                .andExpect {
+                    status { isOk() }
+                    content { string(not(containsString("landlord@example.com"))) }
                 }
         }
 
@@ -622,6 +666,25 @@ class PropertyDetailsControllerTests(
             mvc.get(PropertyDetailsController.getPropertyDetailsPath(1L, isLocalCouncilView = true)).andExpect {
                 status { isOk() }
                 model { attributeDoesNotExist("lettingAgentPanelLink") }
+            }
+        }
+
+        // TODO PDJB-1680: Update this test
+        @Test
+        @WithMockUser(roles = ["LOCAL_COUNCIL_USER"])
+        fun `getPropertyDetailsLocalCouncilView does not show correspondence section even when CORRESPONDENCE_ADDRESS flag is enabled`() {
+            val propertyOwnership = createPropertyOwnership()
+
+            whenever(propertyOwnershipService.getPropertyOwnershipIfCurrentUserAuthorized(eq(1)))
+                .thenReturn(propertyOwnership)
+            whenever(jointLandlordInvitationService.getPendingAndExpiredInvitations(propertyOwnership))
+                .thenReturn(Pair(emptyList(), emptyList()))
+            whenever(featureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)).thenReturn(true)
+            whenever(featureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS)).thenReturn(true)
+
+            mvc.get(PropertyDetailsController.getPropertyDetailsPath(1L, isLocalCouncilView = true)).andExpect {
+                status { isOk() }
+                content { string(not(containsString("landlord@example.com"))) }
             }
         }
     }

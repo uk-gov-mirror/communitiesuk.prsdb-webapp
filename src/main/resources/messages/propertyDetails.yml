@@ -172,6 +172,10 @@ propertyRecord:
   ownership:
     heading: Ownership
     ownershipType: How do you own this property?
+  correspondence:
+    heading: Who the council should contact
+    emailAddress: Contact email address
+    address: Contact address
   occupation:
     heading: Occupied by tenants
     isOccupied: Is this property occupied by tenants?

@@ -9,4 +9,5 @@ interface WhoProvidesDetailsState : JourneyState {
     val whoProvidesRentalDetailsStep: WhoProvidesRentalDetailsStep
     val lettingAgentEmailStep: LettingAgentEmailStep
     var cachedWhoProvidesRentalDetails: WhoProvidesRentalDetails?
+    val loggedInLandlordEmail: String?
 }

@@ -151,6 +151,27 @@ class PropertyRegistrationCorrespondenceCyaSinglePageTests : IntegrationTestWith
     }
 
     @Test
+    fun `CYA email edits retain the account email snapshotted at the start of the journey`(page: Page) {
+        val snapshottedEmail = "original.landlord@example.com"
+        var checkAnswersPage =
+            goToCheckAnswers(
+                page,
+                completedState()
+                    .withAdditionalData("isStateInitialized", "true")
+                    .withAdditionalData("loggedInLandlordEmail", "\"$snapshottedEmail\""),
+            )
+        assertContactDetails(checkAnswersPage, email = snapshottedEmail)
+        checkAnswersPage.summaryList.correspondenceEmailRow.clickFirstActionLinkAndWait()
+        val emailPage = assertPageIs(page, CorrespondenceEmailFormPagePropertyRegistration::class)
+
+        BaseComponent.assertThat(emailPage.form.whichEmailRadios).containsText(snapshottedEmail)
+        emailPage.submitAccountEmail()
+
+        checkAnswersPage = assertPageIs(page, CheckAnswersPagePropertyRegistration::class)
+        assertContactDetails(checkAnswersPage, email = snapshottedEmail)
+    }
+
+    @Test
     fun `email Back does not apply an unsubmitted email or selection`(page: Page) {
         var checkAnswersPage =
             goToCheckAnswers(

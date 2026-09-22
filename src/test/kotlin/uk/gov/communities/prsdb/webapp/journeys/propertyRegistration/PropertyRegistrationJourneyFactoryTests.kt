@@ -13,10 +13,12 @@ import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
 import uk.gov.communities.prsdb.webapp.constants.CORRESPONDENCE_ADDRESS
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING
+import uk.gov.communities.prsdb.webapp.database.entity.Landlord
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CorrespondenceEmailStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.WhoProvidesRentalDetailsStep
 import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.LookupAddressStep
 import uk.gov.communities.prsdb.webapp.journeys.shared.tasks.CorrespondenceAddressTask
+import uk.gov.communities.prsdb.webapp.services.UserToLandlordService
 
 class PropertyRegistrationJourneyFactoryTests {
     @Test
@@ -61,7 +63,9 @@ class PropertyRegistrationJourneyFactoryTests {
                 on { checkFeature(CORRESPONDENCE_ADDRESS) } doReturn correspondenceEnabled
                 on { checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING) } doReturn restructureEnabled
             }
-        return PropertyRegistrationJourneyFactory(stateFactory, featureFlagManager)
+        val landlord = mock<Landlord> { on { email } doReturn "original.landlord@example.com" }
+        val userToLandlordService = mock<UserToLandlordService> { on { getCurrentLandlordForUser() } doReturn landlord }
+        return PropertyRegistrationJourneyFactory(stateFactory, featureFlagManager, userToLandlordService)
     }
 
     companion object {

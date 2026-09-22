@@ -93,6 +93,7 @@ class WhoProvidesDetailsTaskTests {
         task.bindDependencies(
             object : WhoProvidesDetailsDependencies {
                 override var cachedWhoProvidesRentalDetails: WhoProvidesRentalDetails? = null
+                override val loggedInLandlordEmail: String? = "original.landlord@example.com"
             },
         )
 
@@ -161,7 +162,7 @@ class WhoProvidesDetailsTaskTests {
         }
 
     private fun lettingAgentEmailStepStepConfig() =
-        LettingAgentEmailStepConfig(mock()).apply {
+        LettingAgentEmailStepConfig().apply {
             validator = AlwaysTrueValidator()
         }
 

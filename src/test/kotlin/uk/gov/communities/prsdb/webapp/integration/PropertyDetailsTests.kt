@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.communities.prsdb.webapp.constants.COMPLIANCE_INFO_FRAGMENT
+import uk.gov.communities.prsdb.webapp.constants.CORRESPONDENCE_ADDRESS
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING
 import uk.gov.communities.prsdb.webapp.constants.PROVIDE_LATER_DEADLINE_DAYS
@@ -301,6 +302,37 @@ class PropertyDetailsTests : IntegrationTestWithImmutableData("data-local.sql") 
                     "Once your property’s occupied, they can keep details updated for you",
                 )
                 assertThat(detailsPage.delegateToLettingAgentLink).not().isVisible()
+            }
+        }
+
+        @Nested
+        inner class CorrespondenceSection {
+            @Test
+            fun `shows the correspondence section when the CORRESPONDENCE_ADDRESS flag is enabled`(page: Page) {
+                navigator.goToPropertyDetailsLandlordView(1)
+
+                assertThat(
+                    page.getByRole(
+                        com.microsoft.playwright.options.AriaRole.HEADING,
+                        Page.GetByRoleOptions().setName("Who the council should contact"),
+                    ),
+                ).isVisible()
+                assertThat(page.getByText("landlord@example.com")).isVisible()
+                assertThat(page.getByText("11 Elm Drive")).isVisible()
+            }
+
+            @Test
+            fun `hides the correspondence section when the CORRESPONDENCE_ADDRESS flag is disabled`(page: Page) {
+                featureFlagManager.disableFeature(CORRESPONDENCE_ADDRESS)
+
+                navigator.goToPropertyDetailsLandlordView(1)
+
+                assertThat(
+                    page.getByRole(
+                        com.microsoft.playwright.options.AriaRole.HEADING,
+                        Page.GetByRoleOptions().setName("Who the council should contact"),
+                    ),
+                ).not().isVisible()
             }
         }
     }
