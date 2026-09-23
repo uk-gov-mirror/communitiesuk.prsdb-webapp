@@ -161,7 +161,9 @@ class PropertyRegistrationCorrespondencePersistenceJourneyTests : IntegrationTes
     }
 
     @Test
-    fun `final registration saves snapshotted account email instead of retained different email and snapshots a lookup address`(page: Page) {
+    fun `final registration saves snapshotted account email instead of retained different email and snapshots a lookup address`(
+        page: Page,
+    ) {
         val snapshottedEmail = "original.landlord@example.com"
         val selectedAddress = addressRepository.findById(2L).orElseThrow()
         val selectedAddressData = AddressDataModel.fromAddress(selectedAddress)
