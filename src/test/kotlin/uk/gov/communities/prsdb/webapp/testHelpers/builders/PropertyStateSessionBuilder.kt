@@ -121,6 +121,9 @@ class PropertyStateSessionBuilder(
 
         fun beforePropertyRegistrationPropertyType() = PropertyStateSessionBuilder().withLookupAddress().withSelectedAddress()
 
+        fun beforePropertyRegistrationCorrespondenceEmailAddress() =
+            beforePropertyRegistrationPropertyType().withPropertyType().withBedrooms().withOwnershipType().withHasNoJointLandlords()
+
         fun beforePropertyRegistrationOwnershipType() =
             beforePropertyRegistrationPropertyType().withPropertyType().withCompletedCorrespondence()
 

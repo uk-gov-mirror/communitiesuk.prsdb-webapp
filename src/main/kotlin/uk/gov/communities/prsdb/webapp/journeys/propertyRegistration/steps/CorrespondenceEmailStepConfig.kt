@@ -20,7 +20,6 @@ class CorrespondenceEmailStepConfig : AbstractRequestableStepConfig<Complete, Co
                     RadiosButtonViewModel(
                         value = CorrespondenceEmailOption.ACCOUNT_EMAIL,
                         labelMsgKey = "registerProperty.correspondenceEmail.radios.option.accountEmail.label",
-                        // TODO: PDJB-1738: Use the current organisational sub-user's email rather than the organisation's email.
                         hintValue = state.loggedInLandlordEmail,
                     ),
                     RadiosButtonViewModel(

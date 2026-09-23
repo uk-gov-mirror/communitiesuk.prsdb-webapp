@@ -36,7 +36,7 @@ class AllowLettingAgentStepConfig(
         formData: FormData,
     ): FormData =
         super.enrichSubmittedDataBeforeValidation(state, formData) +
-            (AllowLettingAgentEmailFormModel::landlordEmail.name to userToLandlordService.getCurrentLandlordForUser().email)
+            (AllowLettingAgentEmailFormModel::landlordEmailAtStartOfJourney.name to userToLandlordService.getCurrentLandlordForUser().email)
 
     override fun afterStepDataIsAdded(state: DelegateToLettingAgentJourneyState) {
         getFormModelFromState(state).emailAddress?.let { invitedEmailAddress ->

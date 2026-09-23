@@ -1,5 +1,6 @@
 package uk.gov.communities.prsdb.webapp.integration
 
+import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -317,8 +318,10 @@ class PropertyDetailsTests : IntegrationTestWithImmutableData("data-local.sql") 
                         Page.GetByRoleOptions().setName("Who the council should contact"),
                     ),
                 ).isVisible()
-                assertThat(page.getByText("landlord@example.com")).isVisible()
-                assertThat(page.getByText("11 Elm Drive")).isVisible()
+                val propertyDetails = page.locator("#property-details")
+                assertThat(propertyDetails.getByText("email@example.com", Locator.GetByTextOptions().setExact(true))).isVisible()
+                assertThat(propertyDetails.getByText("1 Fictional Road", Locator.GetByTextOptions().setExact(true))).isVisible()
+                assertThat(propertyDetails.getByText("FA1 1AA", Locator.GetByTextOptions().setExact(true))).isVisible()
             }
 
             @Test
@@ -401,6 +404,27 @@ class PropertyDetailsTests : IntegrationTestWithImmutableData("data-local.sql") 
             val detailsPage = navigator.goToPropertyDetailsLocalCouncilView(1)
             detailsPage.backLink.clickAndWait()
             assertPageIs(page, LocalCouncilDashboardPage::class)
+        }
+
+        @Nested
+        inner class CorrespondenceSection {
+            @Test
+            fun `shows the correspondence section when the CORRESPONDENCE_ADDRESS flag is enabled`(page: Page) {
+                val detailsPage = navigator.goToPropertyDetailsLocalCouncilView(1)
+
+                assertThat(detailsPage.sectionHeading("Who the council should contact")).isVisible()
+                assertThat(detailsPage.propertyDetailsSummaryList.contactEmailAddressRow.value).containsText("email@example.com")
+                assertThat(detailsPage.propertyDetailsSummaryList.contactAddressRow.value).containsText("1 Fictional Road")
+            }
+
+            @Test
+            fun `hides the correspondence section when the CORRESPONDENCE_ADDRESS flag is disabled`(page: Page) {
+                featureFlagManager.disableFeature(CORRESPONDENCE_ADDRESS)
+
+                val detailsPage = navigator.goToPropertyDetailsLocalCouncilView(1)
+
+                assertThat(detailsPage.sectionHeading("Who the council should contact")).not().isVisible()
+            }
         }
 
         @Nested

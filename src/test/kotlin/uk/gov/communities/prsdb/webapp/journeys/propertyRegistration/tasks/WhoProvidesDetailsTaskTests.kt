@@ -93,7 +93,7 @@ class WhoProvidesDetailsTaskTests {
         task.bindDependencies(
             object : WhoProvidesDetailsDependencies {
                 override var cachedWhoProvidesRentalDetails: WhoProvidesRentalDetails? = null
-                override val loggedInLandlordEmail: String? = "original.landlord@example.com"
+                override val loggedInLandlordEmail: String = "original.landlord@example.com"
             },
         )
 

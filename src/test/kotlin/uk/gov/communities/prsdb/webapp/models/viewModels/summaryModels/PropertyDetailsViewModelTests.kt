@@ -582,10 +582,15 @@ class PropertyDetailsViewModelTests {
     }
 
     @Test
-    fun `correspondenceSection contains placeholder email and address rows without when showCorrespondenceSection is true`() {
+    fun `correspondenceSection shows saved contact details when enabled`() {
+        val propertyOwnership =
+            createPropertyOwnership(
+                correspondenceEmail = "contact@example.com",
+                correspondenceAddress = createAddress("Flat 2, 25 Contact Road, Bristol, BS1 2AB"),
+            )
         val viewModel =
             PropertyDetailsViewModel(
-                createPropertyOwnership(),
+                propertyOwnership,
                 isLandlordView = true,
                 messageSource = mockMessageSource,
                 showCorrespondenceSection = true,
@@ -597,12 +602,27 @@ class PropertyDetailsViewModelTests {
 
         val emailRow = section[0]
         assertEquals("propertyDetails.propertyRecord.correspondence.emailAddress", emailRow.fieldHeading)
-        assertEquals("landlord@example.com", emailRow.fieldValue)
+        assertEquals("contact@example.com", emailRow.fieldValue)
         assertFalse(emailRow.hasActions)
 
         val addressRow = section[1]
         assertEquals("propertyDetails.propertyRecord.correspondence.address", addressRow.fieldHeading)
-        assertEquals(listOf("Flat 1", "11 Elm Drive", "London", "NW8 2DK"), addressRow.fieldValue)
+        assertEquals(listOf("Flat 2", "25 Contact Road", "Bristol", "BS1 2AB"), addressRow.fieldValue)
         assertFalse(addressRow.hasActions)
+    }
+
+    @Test
+    fun `correspondenceSection rows have no change actions in the local council view`() {
+        val viewModel =
+            PropertyDetailsViewModel(
+                createPropertyOwnership(),
+                isLandlordView = false,
+                messageSource = mockMessageSource,
+                showCorrespondenceSection = true,
+            )
+
+        val section = viewModel.correspondenceSection
+        assertNotNull(section)
+        assertTrue(section!!.none { it.hasActions })
     }
 }

@@ -53,7 +53,7 @@ class AllowLettingAgentStepConfigTests {
         }
 
     @Test
-    fun `enrichSubmittedDataBeforeValidation injects the landlord email`() {
+    fun `enrichSubmittedDataBeforeValidation injects the landlord email snapshot at the start of the journey`() {
         val stepConfig = createStepConfig()
 
         whenever(mockUserToLandlordService.getCurrentLandlordForUser()).thenReturn(mockLandlord)
@@ -61,7 +61,7 @@ class AllowLettingAgentStepConfigTests {
 
         val result = stepConfig.enrichSubmittedDataBeforeValidation(mockJourneyState, emptyMap())
 
-        assertEquals("landlord@example.com", result["landlordEmail"])
+        assertEquals("landlord@example.com", result["landlordEmailAtStartOfJourney"])
     }
 
     @Test

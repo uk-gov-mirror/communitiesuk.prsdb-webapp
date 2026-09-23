@@ -31,6 +31,7 @@ import uk.gov.communities.prsdb.webapp.services.PropertyOwnershipService
 import uk.gov.communities.prsdb.webapp.services.UserToLandlordService
 import uk.gov.communities.prsdb.webapp.testHelpers.builders.PropertyComplianceBuilder
 import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.MockLandlordData
+import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.MockLandlordData.Companion.createAddress
 import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.MockLandlordData.Companion.createIndividualLandlord
 import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.MockLandlordData.Companion.createOrgLandlord
 import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.MockLandlordData.Companion.createPropertyOwnership
@@ -190,7 +191,11 @@ class PropertyDetailsControllerTests(
         @Test
         @WithMockUser(roles = ["LANDLORD"])
         fun `getPropertyDetails shows correspondence section when CORRESPONDENCE_ADDRESS flag is enabled`() {
-            val propertyOwnership = createPropertyOwnership()
+            val propertyOwnership =
+                createPropertyOwnership(
+                    correspondenceEmail = "correspondence@example.com",
+                    correspondenceAddress = createAddress("25 Contact Road, Bristol, BS1 2AB"),
+                )
 
             whenever(propertyOwnershipService.getPropertyOwnershipIfCurrentUserAuthorized(eq(propertyOwnership.id)))
                 .thenReturn(propertyOwnership)
@@ -203,15 +208,17 @@ class PropertyDetailsControllerTests(
                 .get(PropertyDetailsController.getPropertyDetailsPath(propertyOwnership.id, isLocalCouncilView = false))
                 .andExpect {
                     status { isOk() }
-                    content { string(containsString("landlord@example.com")) }
-                    content { string(containsString("11 Elm Drive")) }
+                    content { string(containsString("correspondence@example.com")) }
+                    content { string(containsString("25 Contact Road")) }
+                    content { string(containsString("Bristol")) }
+                    content { string(containsString("BS1 2AB")) }
                 }
         }
 
         @Test
         @WithMockUser(roles = ["LANDLORD"])
         fun `getPropertyDetails hides correspondence section when CORRESPONDENCE_ADDRESS flag is disabled`() {
-            val propertyOwnership = createPropertyOwnership()
+            val propertyOwnership = createPropertyOwnership(correspondenceEmail = "correspondence@example.com")
 
             whenever(propertyOwnershipService.getPropertyOwnershipIfCurrentUserAuthorized(eq(propertyOwnership.id)))
                 .thenReturn(propertyOwnership)
@@ -224,7 +231,7 @@ class PropertyDetailsControllerTests(
                 .get(PropertyDetailsController.getPropertyDetailsPath(propertyOwnership.id, isLocalCouncilView = false))
                 .andExpect {
                     status { isOk() }
-                    content { string(not(containsString("landlord@example.com"))) }
+                    content { string(not(containsString("correspondence@example.com"))) }
                 }
         }
 
@@ -669,11 +676,14 @@ class PropertyDetailsControllerTests(
             }
         }
 
-        // TODO PDJB-1680: Update this test
         @Test
         @WithMockUser(roles = ["LOCAL_COUNCIL_USER"])
-        fun `getPropertyDetailsLocalCouncilView does not show correspondence section even when CORRESPONDENCE_ADDRESS flag is enabled`() {
-            val propertyOwnership = createPropertyOwnership()
+        fun `getPropertyDetailsLocalCouncilView shows correspondence section when CORRESPONDENCE_ADDRESS flag is enabled`() {
+            val propertyOwnership =
+                createPropertyOwnership(
+                    correspondenceEmail = "correspondence@example.com",
+                    correspondenceAddress = createAddress("25 Contact Road, Bristol, BS1 2AB"),
+                )
 
             whenever(propertyOwnershipService.getPropertyOwnershipIfCurrentUserAuthorized(eq(1)))
                 .thenReturn(propertyOwnership)
@@ -684,7 +694,28 @@ class PropertyDetailsControllerTests(
 
             mvc.get(PropertyDetailsController.getPropertyDetailsPath(1L, isLocalCouncilView = true)).andExpect {
                 status { isOk() }
-                content { string(not(containsString("landlord@example.com"))) }
+                content { string(containsString("correspondence@example.com")) }
+                content { string(containsString("25 Contact Road")) }
+                content { string(containsString("Bristol")) }
+                content { string(containsString("BS1 2AB")) }
+            }
+        }
+
+        @Test
+        @WithMockUser(roles = ["LOCAL_COUNCIL_USER"])
+        fun `getPropertyDetailsLocalCouncilView hides correspondence section when CORRESPONDENCE_ADDRESS flag is disabled`() {
+            val propertyOwnership = createPropertyOwnership()
+
+            whenever(propertyOwnershipService.getPropertyOwnershipIfCurrentUserAuthorized(eq(1)))
+                .thenReturn(propertyOwnership)
+            whenever(jointLandlordInvitationService.getPendingAndExpiredInvitations(propertyOwnership))
+                .thenReturn(Pair(emptyList(), emptyList()))
+            whenever(featureFlagManager.checkFeature(PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING)).thenReturn(true)
+            whenever(featureFlagManager.checkFeature(CORRESPONDENCE_ADDRESS)).thenReturn(false)
+
+            mvc.get(PropertyDetailsController.getPropertyDetailsPath(1L, isLocalCouncilView = true)).andExpect {
+                status { isOk() }
+                content { string(not(containsString("correspondence@example.com"))) }
             }
         }
     }

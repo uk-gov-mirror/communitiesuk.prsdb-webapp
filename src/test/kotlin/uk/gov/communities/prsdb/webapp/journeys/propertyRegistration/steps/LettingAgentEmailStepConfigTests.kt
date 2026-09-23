@@ -12,7 +12,7 @@ import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.AlwaysTrueValidat
 @ExtendWith(MockitoExtension::class)
 class LettingAgentEmailStepConfigTests {
     @Test
-    fun `enrichSubmittedDataBeforeValidation injects the landlord email that was snapshotted at the start of the journey`() {
+    fun `enrichSubmittedDataBeforeValidation injects the landlord email snapshot taken at the start of the journey`() {
         val mockJourneyState = mock<WhoProvidesDetailsState>()
         val stepConfig = LettingAgentEmailStepConfig()
         stepConfig.urlPath = LettingAgentEmailStep.ROUTE_SEGMENT
@@ -22,7 +22,7 @@ class LettingAgentEmailStepConfigTests {
 
         val result = stepConfig.enrichSubmittedDataBeforeValidation(mockJourneyState, emptyMap())
 
-        assertEquals("original.landlord@example.com", result["landlordEmail"])
+        assertEquals("original.landlord@example.com", result["landlordEmailAtStartOfJourney"])
     }
 
     @Test

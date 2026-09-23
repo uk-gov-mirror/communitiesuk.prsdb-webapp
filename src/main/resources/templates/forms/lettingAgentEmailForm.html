@@ -39,7 +39,7 @@
         </th:block>
     </div>
 
-    <input type="hidden" th:field="*{landlordEmail}">
+    <input type="hidden" th:field="*{landlordEmailAtStartOfJourney}">
 
     <button th:replace="~{fragments/buttons/transactionSubmitButton :: transactionSubmitButton(#{registerProperty.lettingAgentEmail.submitButton})}"></button>
 </html>

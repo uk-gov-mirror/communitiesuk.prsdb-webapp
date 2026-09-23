@@ -28,20 +28,20 @@ class PropertyDetailsViewModel(
     val ownershipSection: List<SummaryListRowViewModel> =
         listOf(ownershipTypeRow("propertyDetails.propertyRecord.ownership.ownershipType"))
 
-    // TODO PDJB-1736: replace the placeholder email and address below with values
-    //  read from the correspondence entity once the DB schema and repository exist.
     val correspondenceSection: List<SummaryListRowViewModel>? =
         if (showCorrespondenceSection) {
             listOf(
                 SummaryListRowViewModel(
                     fieldHeading = "propertyDetails.propertyRecord.correspondence.emailAddress",
-                    fieldValue = "landlord@example.com",
-                    // TODO: PDJB-1595: Change link
+                    fieldValue = propertyOwnership.correspondenceEmail,
+                    // TODO PDJB-1595: when adding the landlord change link, build this row via
+                    //  PropertyDetailsViewModelBase.rowWithViewTypeSpecificChangeLink
                 ),
                 SummaryListRowViewModel(
                     fieldHeading = "propertyDetails.propertyRecord.correspondence.address",
-                    fieldValue = listOf("Flat 1", "11 Elm Drive", "London", "NW8 2DK"),
-                    // TODO: PDJB-1596: Change link
+                    fieldValue = propertyOwnership.correspondenceAddress.toMultiLineAddress().split("\n"),
+                    // TODO PDJB-1596: when adding the landlord change link, build this row via
+                    //  PropertyDetailsViewModelBase.rowWithViewTypeSpecificChangeLink
                 ),
             )
         } else {

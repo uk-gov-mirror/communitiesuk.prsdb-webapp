@@ -23,7 +23,7 @@ class LettingAgentEmailStepConfig : AbstractRequestableStepConfig<Complete, Allo
         formData: FormData,
     ): FormData =
         super.enrichSubmittedDataBeforeValidation(state, formData) +
-            (AllowLettingAgentEmailFormModel::landlordEmail.name to state.loggedInLandlordEmail)
+            (AllowLettingAgentEmailFormModel::landlordEmailAtStartOfJourney.name to state.loggedInLandlordEmail)
 }
 
 @JourneyFrameworkComponent

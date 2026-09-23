@@ -10,7 +10,7 @@ import uk.gov.communities.prsdb.webapp.validation.ValidatedBy
 
 @IsValidPrioritised
 class AllowLettingAgentEmailFormModel : FormModel {
-    var landlordEmail: String? = null
+    var landlordEmailAtStartOfJourney: String? = null
 
     @ValidatedBy(
         constraints = [
@@ -33,6 +33,6 @@ class AllowLettingAgentEmailFormModel : FormModel {
 
     fun isEmailNotLandlord(): Boolean {
         val submittedEmail = emailAddress ?: return true
-        return !submittedEmail.isSameEmailAs(landlordEmail)
+        return !submittedEmail.isSameEmailAs(landlordEmailAtStartOfJourney)
     }
 }
