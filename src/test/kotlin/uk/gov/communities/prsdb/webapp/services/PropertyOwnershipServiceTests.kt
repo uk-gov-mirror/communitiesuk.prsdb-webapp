@@ -55,6 +55,7 @@ import uk.gov.communities.prsdb.webapp.database.repository.LettingAgentAccessRep
 import uk.gov.communities.prsdb.webapp.database.repository.PropertyOwnershipRepository
 import uk.gov.communities.prsdb.webapp.exceptions.RepositoryQueryTimeoutException
 import uk.gov.communities.prsdb.webapp.exceptions.UpdateConflictException
+import uk.gov.communities.prsdb.webapp.models.dataModels.AddressDataModel
 import uk.gov.communities.prsdb.webapp.models.dataModels.RegistrationNumberDataModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.searchResultModels.PropertySearchResultViewModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.RegisteredPropertyLandlordViewModel
@@ -98,6 +99,9 @@ class PropertyOwnershipServiceTests {
 
     @Mock
     private lateinit var mockFeatureFlagManager: FeatureFlagManager
+
+    @Mock
+    private lateinit var mockAddressService: AddressService
 
     @InjectMocks
     private lateinit var propertyOwnershipService: PropertyOwnershipService
@@ -1901,6 +1905,71 @@ class PropertyOwnershipServiceTests {
 
             assertFalse(propertyOwnership.landlords.any { it == landlord })
             verify(mockEmailService).sendNotificationToRemainingLandlords(propertyOwnership, landlord)
+        }
+    }
+
+    @Nested
+    inner class UpdateCorrespondenceAddress {
+        @Test
+        fun `updateCorrespondenceAddress updates only the correspondence address`() {
+            // Arrange
+            val propertyAddress = MockLandlordData.createAddress("1 Property Road, AA1 1AA")
+            val oldCorrespondenceAddress = MockLandlordData.createAddress("2 Old Road, BB2 2BB")
+            val newAddress = MockLandlordData.createAddress("3 New Road, CC3 3CC")
+            val propertyOwnership =
+                MockLandlordData.createPropertyOwnership(
+                    address = propertyAddress,
+                    correspondenceAddress = oldCorrespondenceAddress,
+                )
+            val addressDataModel = AddressDataModel.fromAddress(newAddress)
+
+            whenever(mockPropertyOwnershipRepository.findByIdAndIsActiveTrue(propertyOwnership.id))
+                .thenReturn(propertyOwnership)
+            whenever(mockAddressService.findOrCreateAddress(addressDataModel)).thenReturn(newAddress)
+
+            // Act
+            propertyOwnershipService.updateCorrespondenceAddress(
+                id = propertyOwnership.id,
+                address = addressDataModel,
+                initialLastModifiedDate = propertyOwnership.getMostRecentlyUpdated(),
+            )
+
+            // Assert
+            assertSame(newAddress, propertyOwnership.correspondenceAddress)
+            assertSame(propertyAddress, propertyOwnership.address)
+            verify(mockAddressService).findOrCreateAddress(addressDataModel)
+            verify(mockPropertyOwnershipRepository).save(propertyOwnership)
+        }
+
+        @Test
+        fun `updateCorrespondenceAddress throws UpdateConflictException when initialLastModifiedDate does not match`() {
+            // Arrange
+            val propertyOwnership = MockLandlordData.createPropertyOwnership()
+            val newAddress = MockLandlordData.createAddress("3 New Road, CC3 3CC")
+            val addressDataModel = AddressDataModel.fromAddress(newAddress)
+
+            whenever(mockPropertyOwnershipRepository.findByIdAndIsActiveTrue(propertyOwnership.id))
+                .thenReturn(propertyOwnership)
+
+            // Act & Assert
+            val exception =
+                assertThrows<UpdateConflictException> {
+                    propertyOwnershipService.updateCorrespondenceAddress(
+                        id = propertyOwnership.id,
+                        address = addressDataModel,
+                        initialLastModifiedDate =
+                            propertyOwnership
+                                .getMostRecentlyUpdated()
+                                .minus(1, ChronoUnit.MINUTES),
+                    )
+                }
+
+            assertEquals(
+                "The property ownership record has been updated since this update session started.",
+                exception.message,
+            )
+            verifyNoInteractions(mockAddressService)
+            verify(mockPropertyOwnershipRepository, never()).save(any<PropertyOwnership>())
         }
     }
 }

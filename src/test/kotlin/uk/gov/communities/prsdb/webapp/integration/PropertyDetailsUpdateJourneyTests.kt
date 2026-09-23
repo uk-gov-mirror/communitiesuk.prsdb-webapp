@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import uk.gov.communities.prsdb.webapp.constants.CORRESPONDENCE_ADDRESS
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING
 import uk.gov.communities.prsdb.webapp.constants.enums.BillsIncluded
@@ -21,11 +22,16 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseCo
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.PropertyDetailsPageLandlordView
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.BillsIncludedFormPagePropertyDetailsUpdate
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.CheckCorrespondenceAddressAnswersPagePropertyDetailsUpdate
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.CheckHouseholdsAnswersPagePropertyDetailsUpdate
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.CheckLicensingAnswersPagePropertyDetailsUpdate
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.CheckOccupancyAnswersPagePropertyDetailsUpdate
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.CheckRentFrequencyAndAmountAnswersPagePropertyDetailsUpdate
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.CheckRentIncludesBillsAnswersPagePropertyDetailsUpdate
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.CorrespondenceLookupAddressFormPagePropertyDetailsUpdate
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.CorrespondenceManualAddressFormPagePropertyDetailsUpdate
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.CorrespondenceNoAddressFoundFormPagePropertyDetailsUpdate
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.CorrespondenceSelectAddressFormPagePropertyDetailsUpdate
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.FurnishedStatusFormPagePropertyDetailsUpdate
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.HmoAdditionalLicenceFormPagePropertyDetailsUpdate
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDetailsUpdateJourneyPages.HmoMandatoryLicenceFormPagePropertyDetailsUpdate
@@ -52,6 +58,7 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDet
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.update.occupancy.OccupancyLettingAgentInterruptionStep
 import java.util.UUID
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 
 class PropertyDetailsUpdateJourneyTests : IntegrationTestWithMutableData("data-local.sql") {
     @Autowired
@@ -147,6 +154,117 @@ class PropertyDetailsUpdateJourneyTests : IntegrationTestWithMutableData("data-l
                 // longer reachable and we are redirected out to the property details page - the earlier progress is gone.
                 page.navigate(numberOfPeopleStepUrl)
                 assertPageIs(page, PropertyDetailsPageLandlordView::class, urlArguments)
+            }
+        }
+
+        @Nested
+        inner class CorrespondenceAddressUpdates {
+            @BeforeEach
+            fun enableCorrespondenceAddressFlag() {
+                featureFlagManager.enableFeature(CORRESPONDENCE_ADDRESS)
+            }
+
+            @Test
+            fun `A property's correspondence address can be updated by selecting an address`(page: Page) {
+                var propertyDetailsPage = navigator.goToPropertyDetailsLandlordView(propertyOwnershipId)
+                propertyDetailsPage.propertyDetailsSummaryList.contactAddressRow.clickFirstActionLinkAndWait()
+                val lookupAddressPage =
+                    assertPageIs(page, CorrespondenceLookupAddressFormPagePropertyDetailsUpdate::class, urlArguments)
+
+                assertThat(lookupAddressPage.heading).containsText("Where the council should send post about this property")
+                lookupAddressPage.submitPostcodeAndBuildingNameOrNumber("FA1 1AA", "1")
+                val selectAddressPage =
+                    assertPageIs(page, CorrespondenceSelectAddressFormPagePropertyDetailsUpdate::class, urlArguments)
+
+                selectAddressPage.selectAddressAndSubmit("1 Fictional Road, FA1 1AA")
+                val checkAnswersPage =
+                    assertPageIs(page, CheckCorrespondenceAddressAnswersPagePropertyDetailsUpdate::class, urlArguments)
+
+                assertContains(
+                    checkAnswersPage.summaryName.getText(),
+                    "You updated who the council should contact for this property",
+                )
+                assertThat(checkAnswersPage.summaryList.postalAddressRow.value).containsText("1 Fictional Road")
+                assertThat(checkAnswersPage.summaryList.postalAddressRow.value).containsText("FA1 1AA")
+                assertThat(checkAnswersPage.warning).isVisible()
+                assertThat(checkAnswersPage.form.submitButton).containsText("Confirm and submit update")
+
+                checkAnswersPage.confirm()
+                assertPageIs(page, PropertyDetailsPageLandlordView::class, urlArguments)
+                assertThat(page.locator(".govuk-notification-banner--success")).isHidden()
+                assertEquals(
+                    "1 Fictional Road, FA1 1AA",
+                    propertyOwnershipRepository.findByIdAndIsActiveTrue(propertyOwnershipId)!!.correspondenceAddress!!.singleLineAddress,
+                )
+            }
+
+            @Test
+            fun `A property's correspondence address can be updated by manual address entry`(page: Page) {
+                val registeredAddressBefore =
+                    propertyOwnershipRepository.findByIdAndIsActiveTrue(propertyOwnershipId)!!.address.singleLineAddress
+
+                navigator
+                    .goToPropertyDetailsLandlordView(propertyOwnershipId)
+                    .propertyDetailsSummaryList.contactAddressRow
+                    .clickFirstActionLinkAndWait()
+                val lookupAddressPage =
+                    assertPageIs(page, CorrespondenceLookupAddressFormPagePropertyDetailsUpdate::class, urlArguments)
+
+                lookupAddressPage.submitPostcodeAndBuildingNameOrNumber("NOT A POSTCODE", "NOT A HOUSE NUMBER")
+                val noAddressFoundPage =
+                    assertPageIs(page, CorrespondenceNoAddressFoundFormPagePropertyDetailsUpdate::class, urlArguments)
+                assertThat(noAddressFoundPage.heading).containsText(
+                    "No matching address in England or Wales found for NOT A POSTCODE and NOT A HOUSE NUMBER",
+                )
+
+                noAddressFoundPage.form.submit()
+                val manualAddressPage =
+                    assertPageIs(page, CorrespondenceManualAddressFormPagePropertyDetailsUpdate::class, urlArguments)
+
+                manualAddressPage.submitAddress(
+                    addressLineOne = "24 Manual Street",
+                    townOrCity = "London",
+                    postcode = "SW1A 1AA",
+                )
+                val checkAnswersPage =
+                    assertPageIs(page, CheckCorrespondenceAddressAnswersPagePropertyDetailsUpdate::class, urlArguments)
+                assertThat(checkAnswersPage.summaryList.postalAddressRow.value).containsText("24 Manual Street")
+                assertThat(checkAnswersPage.summaryList.postalAddressRow.value).containsText("London")
+                assertThat(checkAnswersPage.summaryList.postalAddressRow.value).containsText("SW1A 1AA")
+
+                checkAnswersPage.confirm()
+                assertPageIs(page, PropertyDetailsPageLandlordView::class, urlArguments)
+                val propertyOwnership = propertyOwnershipRepository.findByIdAndIsActiveTrue(propertyOwnershipId)!!
+                assertEquals("24 Manual Street, London, SW1A 1AA", propertyOwnership.correspondenceAddress!!.singleLineAddress)
+                assertEquals(registeredAddressBefore, propertyOwnership.address.singleLineAddress)
+            }
+
+            @Test
+            fun `A property's correspondence address can be changed from the CYA page before confirming`(page: Page) {
+                navigator
+                    .goToPropertyDetailsLandlordView(propertyOwnershipId)
+                    .propertyDetailsSummaryList.contactAddressRow
+                    .clickFirstActionLinkAndWait()
+                var lookupAddressPage =
+                    assertPageIs(page, CorrespondenceLookupAddressFormPagePropertyDetailsUpdate::class, urlArguments)
+
+                lookupAddressPage.submitPostcodeAndBuildingNameOrNumber("FA1 1AA", "1")
+                assertPageIs(page, CorrespondenceSelectAddressFormPagePropertyDetailsUpdate::class, urlArguments)
+                    .selectAddressAndSubmit("1 Fictional Road, FA1 1AA")
+                val checkAnswersPage =
+                    assertPageIs(page, CheckCorrespondenceAddressAnswersPagePropertyDetailsUpdate::class, urlArguments)
+
+                checkAnswersPage.summaryList.postalAddressRow.clickFirstActionLinkAndWait()
+                lookupAddressPage =
+                    assertPageIs(page, CorrespondenceLookupAddressFormPagePropertyDetailsUpdate::class, urlArguments)
+                lookupAddressPage.submitPostcodeAndBuildingNameOrNumber("EG1 2AA", "1")
+                assertPageIs(page, CorrespondenceSelectAddressFormPagePropertyDetailsUpdate::class, urlArguments)
+                    .selectAddressAndSubmit("1 PRSDB Square, EG1 2AA")
+                val updatedCheckAnswersPage =
+                    assertPageIs(page, CheckCorrespondenceAddressAnswersPagePropertyDetailsUpdate::class, urlArguments)
+
+                assertThat(updatedCheckAnswersPage.summaryList.postalAddressRow.value).containsText("1 PRSDB Square")
+                assertThat(updatedCheckAnswersPage.summaryList.postalAddressRow.value).containsText("EG1 2AA")
             }
         }
 
@@ -373,7 +491,8 @@ class PropertyDetailsUpdateJourneyTests : IntegrationTestWithMutableData("data-l
                     var propertyDetailsPage = navigator.goToPropertyDetailsLandlordView(occupiedPropertyOwnershipId)
                     assertThat(propertyDetailsPage.propertyDetailsSummaryList.numberOfBedroomsRow).isVisible()
                     val originalNumberOfBedrooms =
-                        propertyDetailsPage.propertyDetailsSummaryList.numberOfBedroomsRow.value.textContent()
+                        propertyDetailsPage.propertyDetailsSummaryList.numberOfBedroomsRow.value
+                            .textContent()
                     assertThat(propertyDetailsPage.propertyDetailsSummaryList.numberOfBedroomsRow.value).containsText("1")
                     propertyDetailsPage.propertyDetailsSummaryList.occupancyRow.clickFirstActionLinkAndWait()
                     val updateOccupancyPage =
@@ -567,7 +686,8 @@ class PropertyDetailsUpdateJourneyTests : IntegrationTestWithMutableData("data-l
                 @Test
                 fun `the occupancy answer can be changed from the check answers page`(page: Page) {
                     // The property starts occupied and delegated; make it vacant to reach the check answers page
-                    navigator.goToPropertyDetailsLandlordView(occupiedPropertyOwnershipId)
+                    navigator
+                        .goToPropertyDetailsLandlordView(occupiedPropertyOwnershipId)
                         .propertyDetailsSummaryList.occupancyRow
                         .clickFirstActionLinkAndWait()
 

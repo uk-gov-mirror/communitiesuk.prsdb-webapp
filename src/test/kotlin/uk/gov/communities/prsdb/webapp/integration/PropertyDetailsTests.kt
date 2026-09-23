@@ -11,11 +11,13 @@ import uk.gov.communities.prsdb.webapp.constants.CORRESPONDENCE_ADDRESS
 import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_RESTRUCTURE_AND_SKIPPING
 import uk.gov.communities.prsdb.webapp.constants.PROVIDE_LATER_DEADLINE_DAYS
+import uk.gov.communities.prsdb.webapp.controllers.LandlordUpdateCorrespondenceAddressController
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LandlordDashboardPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LocalCouncilDashboardPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDeregistrationJourneyPages.DeregisterPropertyInfoPage
+import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.LookupAddressStep
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -310,7 +312,8 @@ class PropertyDetailsTests : IntegrationTestWithImmutableData("data-local.sql") 
         inner class CorrespondenceSection {
             @Test
             fun `shows the correspondence section when the CORRESPONDENCE_ADDRESS flag is enabled`(page: Page) {
-                navigator.goToPropertyDetailsLandlordView(1)
+                val propertyOwnershipId = 1L
+                val detailsPage = navigator.goToPropertyDetailsLandlordView(propertyOwnershipId)
 
                 assertThat(
                     page.getByRole(
@@ -322,6 +325,15 @@ class PropertyDetailsTests : IntegrationTestWithImmutableData("data-local.sql") 
                 assertThat(propertyDetails.getByText("email@example.com", Locator.GetByTextOptions().setExact(true))).isVisible()
                 assertThat(propertyDetails.getByText("1 Fictional Road", Locator.GetByTextOptions().setExact(true))).isVisible()
                 assertThat(propertyDetails.getByText("FA1 1AA", Locator.GetByTextOptions().setExact(true))).isVisible()
+                val changeAction =
+                    detailsPage.propertyDetailsSummaryList.contactAddressRow.actions
+                        .getActionLink("Change")
+                assertThat(changeAction).isVisible()
+                assertThat(changeAction.link).hasAttribute(
+                    "href",
+                    LandlordUpdateCorrespondenceAddressController.getUpdateCorrespondenceAddressRoute(propertyOwnershipId) +
+                        "/${LookupAddressStep.ROUTE_SEGMENT}",
+                )
             }
 
             @Test
@@ -415,6 +427,7 @@ class PropertyDetailsTests : IntegrationTestWithImmutableData("data-local.sql") 
                 assertThat(detailsPage.sectionHeading("Who the council should contact")).isVisible()
                 assertThat(detailsPage.propertyDetailsSummaryList.contactEmailAddressRow.value).containsText("email@example.com")
                 assertThat(detailsPage.propertyDetailsSummaryList.contactAddressRow.value).containsText("1 Fictional Road")
+                assertThat(detailsPage.propertyDetailsSummaryList.contactAddressRow.actions).isHidden()
             }
 
             @Test
