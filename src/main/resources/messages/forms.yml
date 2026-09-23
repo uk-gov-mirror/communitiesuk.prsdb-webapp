@@ -676,6 +676,9 @@ update:
       summaryName: You updated the tenancy and rent details for this property
     notOccupied:
       summaryName: You have updated whether the property is occupied by tenants
+  checkCorrespondenceAddress:
+    summaryName: You updated who the council should contact for this property
+    postalAddress: Postal address
   warning: 'You must not provide any false or misleading information. By submitting this information, you agree it’s accurate to the best of your knowledge at the time of updating.'
   cya:
     insetText: Changes made in another tab will not show here. Make all changes in one tab to continue.

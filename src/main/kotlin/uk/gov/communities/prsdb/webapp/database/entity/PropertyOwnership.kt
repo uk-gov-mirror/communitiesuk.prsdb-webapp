@@ -69,7 +69,6 @@ class PropertyOwnership() : ModifiableAuditableEntity() {
     @ManyToOne(optional = false)
     @JoinColumn(name = "correspondence_address_id", nullable = false)
     lateinit var correspondenceAddress: Address
-        private set
 
     @OneToOne(optional = true, orphanRemoval = true)
     @JoinColumn(name = "license_id", nullable = true, unique = true)
