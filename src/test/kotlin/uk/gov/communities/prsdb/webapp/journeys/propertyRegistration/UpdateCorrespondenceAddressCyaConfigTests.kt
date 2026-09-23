@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
+import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.verify
@@ -19,12 +20,16 @@ import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.LookupAddressS
 import uk.gov.communities.prsdb.webapp.journeys.shared.tasks.CorrespondenceAddressTask
 import uk.gov.communities.prsdb.webapp.models.dataModels.AddressDataModel
 import uk.gov.communities.prsdb.webapp.services.PropertyOwnershipService
+import uk.gov.communities.prsdb.webapp.services.PropertyUpdateEmailService
 
 @ExtendWith(MockitoExtension::class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class UpdateCorrespondenceAddressCyaConfigTests {
     @Mock
     private lateinit var mockPropertyOwnershipService: PropertyOwnershipService
+
+    @Mock
+    private lateinit var mockPropertyUpdateEmailService: PropertyUpdateEmailService
 
     @Mock
     private lateinit var mockState: UpdateCorrespondenceAddressJourneyState
@@ -44,7 +49,11 @@ class UpdateCorrespondenceAddressCyaConfigTests {
 
     @BeforeEach
     fun setUp() {
-        stepConfig = UpdateCorrespondenceAddressCyaConfig(propertyOwnershipService = mockPropertyOwnershipService)
+        stepConfig =
+            UpdateCorrespondenceAddressCyaConfig(
+                propertyOwnershipService = mockPropertyOwnershipService,
+                propertyUpdateEmailService = mockPropertyUpdateEmailService,
+            )
         whenever(mockState.propertyId).thenReturn(propertyId)
         whenever(mockState.lastModifiedDate).thenReturn(initialLastModifiedDate.toString())
         whenever(mockState.addressTask).thenReturn(mockAddressTask)
@@ -64,6 +73,16 @@ class UpdateCorrespondenceAddressCyaConfigTests {
     }
 
     @Test
+    fun `afterStepDataIsAdded sends update emails after a successful save`() {
+        stepConfig.afterStepDataIsAdded(mockState)
+
+        verify(mockPropertyUpdateEmailService).sendUpdateEmails(
+            propertyId,
+            listOf("The postal address the council should contact"),
+        )
+    }
+
+    @Test
     fun `afterStepDataIsAdded deletes the journey then rethrows when it gets an UpdateConflictException`() {
         whenever(
             mockPropertyOwnershipService.updateCorrespondenceAddress(
@@ -76,5 +95,6 @@ class UpdateCorrespondenceAddressCyaConfigTests {
         assertThrows<UpdateConflictException> { stepConfig.afterStepDataIsAdded(mockState) }
 
         verify(mockState).deleteJourney()
+        verifyNoInteractions(mockPropertyUpdateEmailService)
     }
 }

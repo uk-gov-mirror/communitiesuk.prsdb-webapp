@@ -9,10 +9,12 @@ import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.AbstractCheckY
 import uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig.AbstractCheckYourAnswersStepConfig
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.SummaryListRowViewModel
 import uk.gov.communities.prsdb.webapp.services.PropertyOwnershipService
+import uk.gov.communities.prsdb.webapp.services.PropertyUpdateEmailService
 
 @JourneyFrameworkComponent
 class UpdateCorrespondenceAddressCyaConfig(
     private val propertyOwnershipService: PropertyOwnershipService,
+    private val propertyUpdateEmailService: PropertyUpdateEmailService,
 ) : AbstractCheckYourAnswersStepConfig<UpdateCorrespondenceAddressJourneyState>() {
     override fun getStepSpecificContent(state: UpdateCorrespondenceAddressJourneyState): Map<String, Any> =
         mapOf(
@@ -35,6 +37,14 @@ class UpdateCorrespondenceAddressCyaConfig(
             state.deleteJourney()
             throw ex
         }
+        sendUpdateConfirmationEmail(state)
+    }
+
+    private fun sendUpdateConfirmationEmail(state: UpdateCorrespondenceAddressJourneyState) {
+        propertyUpdateEmailService.sendUpdateEmails(
+            state.propertyId,
+            listOf("The postal address the council should contact"),
+        )
     }
 
     private fun getSummaryList(state: UpdateCorrespondenceAddressJourneyState): List<SummaryListRowViewModel> {
