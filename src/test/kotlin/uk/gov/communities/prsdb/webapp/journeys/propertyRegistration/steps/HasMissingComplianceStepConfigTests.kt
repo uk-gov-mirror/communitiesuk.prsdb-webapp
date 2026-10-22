@@ -14,7 +14,6 @@ import org.mockito.kotlin.whenever
 import uk.gov.communities.prsdb.webapp.constants.enums.EpcExemptionReason
 import uk.gov.communities.prsdb.webapp.constants.enums.MeesExemptionReason
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.PropertyRegistrationJourneyState
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasCertOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.ElectricalSafetyDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.ElectricalSafetyTask
@@ -156,7 +155,6 @@ class HasMissingComplianceStepConfigTests {
         private fun setupGasCertMissing() {
             val mockDetailsTask: GasSafetyDetailsTask = mock()
             whenever(mockDetailsTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockDetailsTask.gasCertOutcome).thenReturn(null)
             whenever(mockDetailsTask.getGasSafetyCertificateIsOutdated()).thenReturn(null)
 
             val mockGasSafetyTask: GasSafetyTask = mock()
@@ -167,7 +165,6 @@ class HasMissingComplianceStepConfigTests {
         private fun setupGasCertPresent() {
             val mockDetailsTask: GasSafetyDetailsTask = mock()
             whenever(mockDetailsTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockDetailsTask.gasCertOutcome).thenReturn(null)
             whenever(mockDetailsTask.getGasSafetyCertificateIsOutdated()).thenReturn(false)
 
             val mockGasSafetyTask: GasSafetyTask = mock()
@@ -290,7 +287,6 @@ class HasMissingComplianceStepConfigTests {
         @Test
         fun `returns true when has gas supply and cert is missing`() {
             whenever(mockGasSafetyDetailTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockGasSafetyDetailTask.gasCertOutcome).thenReturn(null)
             whenever(mockGasSafetyDetailTask.getGasSafetyCertificateIsOutdated()).thenReturn(null)
 
             assertTrue(HasMissingComplianceStepConfig.isGasCertInvalid(mockGasSafetyTask))
@@ -299,7 +295,6 @@ class HasMissingComplianceStepConfigTests {
         @Test
         fun `returns true when has gas supply and cert is outdated`() {
             whenever(mockGasSafetyDetailTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockGasSafetyDetailTask.gasCertOutcome).thenReturn(null)
             whenever(mockGasSafetyDetailTask.getGasSafetyCertificateIsOutdated()).thenReturn(true)
 
             assertTrue(HasMissingComplianceStepConfig.isGasCertInvalid(mockGasSafetyTask))
@@ -308,16 +303,7 @@ class HasMissingComplianceStepConfigTests {
         @Test
         fun `returns false when has gas supply and cert is valid`() {
             whenever(mockGasSafetyDetailTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockGasSafetyDetailTask.gasCertOutcome).thenReturn(null)
             whenever(mockGasSafetyDetailTask.getGasSafetyCertificateIsOutdated()).thenReturn(false)
-
-            assertFalse(HasMissingComplianceStepConfig.isGasCertInvalid(mockGasSafetyTask))
-        }
-
-        @Test
-        fun `returns false when has gas supply and user chose provide this later on legacy gas cert step`() {
-            whenever(mockGasSafetyDetailTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockGasSafetyDetailTask.gasCertOutcome).thenReturn(GasCertOutcome.PROVIDE_LATER)
 
             assertFalse(HasMissingComplianceStepConfig.isGasCertInvalid(mockGasSafetyTask))
         }

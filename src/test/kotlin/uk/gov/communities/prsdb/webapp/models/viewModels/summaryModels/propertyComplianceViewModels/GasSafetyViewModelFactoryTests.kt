@@ -9,13 +9,10 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.context.MessageSource
-import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
-import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.PROVIDE_LATER_DEADLINE_DAYS
 import uk.gov.communities.prsdb.webapp.constants.enums.FileUploadStatus
 import uk.gov.communities.prsdb.webapp.database.entity.FileUpload
@@ -32,7 +29,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class GasSafetyViewModelFactoryTests : ComplianceViewModelFactoryTests() {
-    private val gasSafetyViewModelFactory = GasSafetyViewModelFactory(mock(), mock(), mock())
+    private val gasSafetyViewModelFactory = GasSafetyViewModelFactory(mock(), mock())
 
     override fun createRows(
         uploadService: UploadService,
@@ -47,7 +44,6 @@ class GasSafetyViewModelFactoryTests : ComplianceViewModelFactoryTests() {
         return GasSafetyViewModelFactory(
             uploadService,
             messageSource,
-            mockFeatureFlagManager(delegateToLettingAgentEnabled = false),
         ).fromEntity(propertyCompliance)
     }
 
@@ -95,7 +91,6 @@ class GasSafetyViewModelFactoryTests : ComplianceViewModelFactoryTests() {
             GasSafetyViewModelFactory(
                 mock(),
                 messageSource,
-                mockFeatureFlagManager(delegateToLettingAgentEnabled = true),
             )
         val rows = factory.fromEntity(missingOccupiedProvideLater)
 
@@ -120,7 +115,6 @@ class GasSafetyViewModelFactoryTests : ComplianceViewModelFactoryTests() {
             GasSafetyViewModelFactory(
                 mock(),
                 mock(),
-                mockFeatureFlagManager(delegateToLettingAgentEnabled = true),
             )
         val rows = factory.fromEntity(missingUnoccupiedProvideLater)
 
@@ -141,7 +135,6 @@ class GasSafetyViewModelFactoryTests : ComplianceViewModelFactoryTests() {
             GasSafetyViewModelFactory(
                 mock(),
                 mock(),
-                mockFeatureFlagManager(delegateToLettingAgentEnabled = true),
             )
         val rows = factory.fromEntity(missingOccupiedNoCert)
 
@@ -160,78 +153,9 @@ class GasSafetyViewModelFactoryTests : ComplianceViewModelFactoryTests() {
         )
     }
 
-    // TODO PDJB-1617: delete this class when the DELEGATE_TO_LETTING_AGENT feature flag is removed. Flag off
-    @Nested
-    inner class WhenDelegateToLettingAgentDisabled {
-        @Test
-        fun `occupied provide-later still renders both gas-supply and cert rows`() {
-            val messageSource = mock<MessageSource>()
-            whenever(messageSource.getMessage(eq(PROVIDE_LATER_WITH_DEADLINE_KEY), any(), any<Locale>()))
-                .thenAnswer { invocation ->
-                    val args = invocation.getArgument<Array<Any>>(1)
-                    "Provide this later (before ${args[0]})"
-                }
-            val factory =
-                GasSafetyViewModelFactory(
-                    mock(),
-                    messageSource,
-                    mockFeatureFlagManager(delegateToLettingAgentEnabled = false),
-                )
-            val rows = factory.fromEntity(missingOccupiedProvideLater)
-
-            val expectedDeadline =
-                occupiedAtRegistrationDate
-                    .plusDays(PROVIDE_LATER_DEADLINE_DAYS.toLong())
-                    .format(DATE_FORMATTER)
-            assertEquals(
-                listOf(
-                    SummaryListRowViewModel(
-                        "propertyDetails.complianceInformation.gasSafety.hasGasSupply",
-                        "commonText.yes",
-                    ),
-                    SummaryListRowViewModel(
-                        "propertyDetails.complianceInformation.gasSafety.hasCert",
-                        "Provide this later (before $expectedDeadline)",
-                    ),
-                ),
-                rows,
-            )
-        }
-
-        @Test
-        fun `unoccupied provide-later still renders both gas-supply and cert rows`() {
-            val factory =
-                GasSafetyViewModelFactory(
-                    mock(),
-                    mock(),
-                    mockFeatureFlagManager(delegateToLettingAgentEnabled = false),
-                )
-            val rows = factory.fromEntity(missingUnoccupiedProvideLater)
-
-            assertEquals(
-                listOf(
-                    SummaryListRowViewModel(
-                        "propertyDetails.complianceInformation.gasSafety.hasGasSupply",
-                        "commonText.yes",
-                    ),
-                    SummaryListRowViewModel(
-                        "propertyDetails.complianceInformation.gasSafety.hasCert",
-                        "checkGasSafety.provideThisLater.unoccupied",
-                    ),
-                ),
-                rows,
-            )
-        }
-    }
-
     companion object {
         private val DATE_FORMATTER = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.UK)
         private const val PROVIDE_LATER_WITH_DEADLINE_KEY = "checkGasSafety.provideThisLater.occupiedWithDeadline"
-
-        private fun mockFeatureFlagManager(delegateToLettingAgentEnabled: Boolean): FeatureFlagManager =
-            mock {
-                on { checkFeature(DELEGATE_TO_LETTING_AGENT) } doReturn delegateToLettingAgentEnabled
-            }
 
         // A property "occupied when registered" has a lastOccupiedDate matching its registration (created) date.
         private val occupiedAtRegistrationDate = LocalDate.of(2025, 1, 1)
@@ -597,10 +521,6 @@ class GasSafetyViewModelFactoryTests : ComplianceViewModelFactoryTests() {
                     listOf(
                         SummaryListRowViewModel(
                             "propertyDetails.complianceInformation.gasSafety.hasGasSupply",
-                            "commonText.yes",
-                        ),
-                        SummaryListRowViewModel(
-                            "propertyDetails.complianceInformation.gasSafety.hasCert",
                             "Provide this later (before ${
                                 occupiedAtRegistrationDate
                                     .plusDays(PROVIDE_LATER_DEADLINE_DAYS.toLong())
@@ -617,10 +537,6 @@ class GasSafetyViewModelFactoryTests : ComplianceViewModelFactoryTests() {
                     listOf(
                         SummaryListRowViewModel(
                             "propertyDetails.complianceInformation.gasSafety.hasGasSupply",
-                            "commonText.yes",
-                        ),
-                        SummaryListRowViewModel(
-                            "propertyDetails.complianceInformation.gasSafety.hasCert",
                             "checkGasSafety.provideThisLater.occupiedNoDeadline",
                         ),
                     ),

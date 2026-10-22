@@ -26,7 +26,6 @@ import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
 import uk.gov.communities.prsdb.webapp.constants.enums.MeesExemptionReason
 import uk.gov.communities.prsdb.webapp.constants.enums.OwnershipType
 import uk.gov.communities.prsdb.webapp.constants.enums.PropertyType
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasCertOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BedroomsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CorrespondenceEmailStep
@@ -252,22 +251,6 @@ class PropertyRegistrationDataModelFactoryTests {
         // Assert
         assertEquals(false, result.hasGasSupply)
         assertEquals(false, result.gasSafetyCertProvideLater)
-        assertEquals(false, result.tenancyProvideLater)
-    }
-
-    @Test
-    fun `fromJourneyState returns true when user chose provide later on legacy gas cert step`() {
-        // Arrange
-        setupStateForPropertyRegistration()
-        setupStateForComplianceDataWithNullValues()
-        whenever(mockState.gasSafetyTask.gasSafetyDetailsTask.gasCertOutcome).thenReturn(GasCertOutcome.PROVIDE_LATER)
-
-        // Act
-        val result = factory.fromJourneyState(mockState)
-
-        // Assert
-        assertEquals(true, result.hasGasSupply)
-        assertEquals(true, result.gasSafetyCertProvideLater)
         assertEquals(false, result.tenancyProvideLater)
     }
 
@@ -531,7 +514,6 @@ class PropertyRegistrationDataModelFactoryTests {
         whenever(electricalSafetyDetailsTask.mapElectricalCertificateTypeToGlobalCertificateType()).thenReturn(electricalCertType)
 
         whenever(gasSafetyTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-        whenever(gasSafetyTask.gasCertOutcome).thenReturn(GasCertOutcome.HAS_CERTIFICATE)
 
         val mockHasElectricalCertStep = mock<HasElectricalCertStep>()
         whenever(electricalSafetyDetailsTask.hasElectricalCertStep).thenReturn(mockHasElectricalCertStep)

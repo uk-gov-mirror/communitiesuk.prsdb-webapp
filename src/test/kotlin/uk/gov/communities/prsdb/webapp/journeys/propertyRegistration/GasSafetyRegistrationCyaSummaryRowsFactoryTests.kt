@@ -19,10 +19,10 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.Cert
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasCertOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSafetyDetailState
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasCertStep
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasSupplyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CheckGasCertUploadsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertIssueDateStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasCertStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyStep
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.SummaryListRowViewModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.UploadedFileUrl
 import uk.gov.communities.prsdb.webapp.services.UploadService
@@ -32,8 +32,8 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
     @Mock
     lateinit var mockState: GasSafetyDetailState
 
-    private val mockHasGasSupplyStep: BeforePdjb1022HasGasSupplyStep = mock()
-    private val mockHasGasCertStep: BeforePdjb1022HasGasCertStep = mock()
+    private val mockHasGasSupplyStep: HasGasSupplyStep = mock()
+    private val mockHasGasCertStep: HasGasCertStep = mock()
     private val mockGasCertIssueDateStep: GasCertIssueDateStep = mock()
     private val mockCheckGasCertUploadsStep: CheckGasCertUploadsStep = mock()
     private val mockUploadService: UploadService = mock()
@@ -264,55 +264,5 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
         assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
 
         assertNull(factory.getInsetTextKey())
-    }
-
-    // TODO PDJB-1617: delete this class when the DELEGATE_TO_LETTING_AGENT feature flag is removed. Flag off
-    @Nested
-    inner class WhenDelegateToLettingAgentDisabled {
-        @Test
-        fun `factory shows a gas supply row plus a deferred gas cert row when occupied`() {
-            setupCommonStateMocks()
-            whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.PROVIDE_LATER)
-            whenever(mockState.isOccupied).thenReturn(true)
-
-            val destinationSteps = mutableListOf<Any>()
-            val factory =
-                GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService, destinationProvider = {
-                    destinationSteps.add(it)
-                    Destination(it)
-                })
-
-            val gasSupplyRows = factory.createGasSupplyRows()
-            assertEquals(2, gasSupplyRows.size)
-            assertEquals(true, gasSupplyRows[0].fieldValue)
-            assertEquals("checkGasSafety.provideThisLater.occupied", gasSupplyRows[1].fieldValue)
-            assertEquals(mockHasGasCertStep, destinationSteps[1])
-
-            val certRows = factory.createCertRows()
-            assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
-
-            assertNull(factory.getInsetTextKey())
-        }
-
-        @Test
-        fun `factory shows a gas supply row plus a deferred gas cert row when unoccupied`() {
-            setupCommonStateMocks()
-            whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-            whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.PROVIDE_LATER)
-            whenever(mockState.isOccupied).thenReturn(false)
-
-            val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
-
-            val gasSupplyRows = factory.createGasSupplyRows()
-            assertEquals(2, gasSupplyRows.size)
-            assertEquals(true, gasSupplyRows[0].fieldValue)
-            assertEquals("checkGasSafety.provideThisLater.unoccupied", gasSupplyRows[1].fieldValue)
-
-            val certRows = factory.createCertRows()
-            assertEquals(emptyList<SummaryListRowViewModel>(), certRows)
-
-            assertNull(factory.getInsetTextKey())
-        }
     }
 }

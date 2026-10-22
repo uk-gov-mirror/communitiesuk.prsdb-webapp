@@ -8,8 +8,8 @@ import uk.gov.communities.prsdb.webapp.controllers.LettingAgentUpdateElectricalS
 import uk.gov.communities.prsdb.webapp.controllers.LettingAgentUpdateEpcController
 import uk.gov.communities.prsdb.webapp.controllers.LettingAgentUpdateGasSafetyController
 import uk.gov.communities.prsdb.webapp.database.entity.PropertyCompliance
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasSupplyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasElectricalCertStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.StartEpcStep
 import uk.gov.communities.prsdb.webapp.models.dataModels.ComplianceStatusDataModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.ComplianceActionInsetViewModel
@@ -57,7 +57,7 @@ class PropertyComplianceViewModelFactory(
                 LandlordUpdateGasSafetyController.getUpdateGasSafetyFirstStepRoute(propertyOwnershipId),
                 lettingAgentAccessToken?.let {
                     LettingAgentUpdateGasSafetyController.getUpdateGasSafetyRoute(it) +
-                        "/${BeforePdjb1022HasGasSupplyStep.ROUTE_SEGMENT}"
+                        "/${HasGasSupplyStep.ROUTE_SEGMENT}"
                 },
             )
 

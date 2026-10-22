@@ -23,7 +23,7 @@ import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.ModelAndView
 import uk.gov.communities.prsdb.webapp.helpers.CertificateUploadHelper
 import uk.gov.communities.prsdb.webapp.journeys.StepLifecycleOrchestrator
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasSupplyStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.UploadGasCertStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.update.gasSafety.UpdateGasSafetyJourneyFactory
 import uk.gov.communities.prsdb.webapp.services.FileUploadCookieService.Companion.FILE_UPLOAD_COOKIE_NAME
@@ -52,7 +52,7 @@ class LettingAgentUpdateGasSafetyControllerTests(
 
     private val updateStepRoute =
         LettingAgentUpdateGasSafetyController.getUpdateGasSafetyRoute(token) +
-            "/${BeforePdjb1022HasGasSupplyStep.ROUTE_SEGMENT}"
+            "/${HasGasSupplyStep.ROUTE_SEGMENT}"
 
     private val formContent = "hasGasSupply=true"
 
@@ -61,7 +61,7 @@ class LettingAgentUpdateGasSafetyControllerTests(
         whenever(lettingAgentAccessService.getInvitationByTokenOrNull(eq(token)))
             .thenReturn(MockLettingAgentData.createLettingAgentAccess(token = token, propertyOwnership = propertyOwnership))
         whenever(journeyFactory.createJourneySteps(eq(propertyOwnership.id), any()))
-            .thenReturn(mapOf(BeforePdjb1022HasGasSupplyStep.ROUTE_SEGMENT to stepLifecycleOrchestrator))
+            .thenReturn(mapOf(HasGasSupplyStep.ROUTE_SEGMENT to stepLifecycleOrchestrator))
     }
 
     @Test

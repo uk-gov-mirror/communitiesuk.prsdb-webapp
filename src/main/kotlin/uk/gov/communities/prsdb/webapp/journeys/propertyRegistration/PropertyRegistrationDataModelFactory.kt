@@ -5,7 +5,6 @@ import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbWebCompon
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
 import uk.gov.communities.prsdb.webapp.constants.enums.PropertyType
 import uk.gov.communities.prsdb.webapp.exceptions.NotNullFormModelValueIsNullException.Companion.notNullValue
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasCertOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasElectricalCertMode
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasEpcMode
@@ -124,8 +123,7 @@ class PropertyRegistrationDataModelFactory(
             gasSafetyFileUploadIds = state.gasSafetyTask.gasSafetyDetailsTask.gasUploadIds,
             gasSafetyCertProvideLater =
                 isDelegatedToLettingAgent ||
-                    state.gasSafetyTask.gasSafetyDetailsTask.gasSupplyOutcome == GasSupplyOutcome.PROVIDE_LATER ||
-                    state.gasSafetyTask.gasSafetyDetailsTask.gasCertOutcome == GasCertOutcome.PROVIDE_LATER,
+                    state.gasSafetyTask.gasSafetyDetailsTask.gasSupplyOutcome == GasSupplyOutcome.PROVIDE_LATER,
             electricalSafetyFileUploadIds = state.electricalSafetyTask.electricalSafetyDetailsTask.electricalUploadIds,
             electricalSafetyExpiryDate =
                 state.electricalSafetyTask.electricalSafetyDetailsTask

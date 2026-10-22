@@ -5,7 +5,6 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.communities.prsdb.webapp.constants.COMPLIANCE_INFO_FRAGMENT
-import uk.gov.communities.prsdb.webapp.constants.DELEGATE_TO_LETTING_AGENT
 import uk.gov.communities.prsdb.webapp.constants.PROVIDE_LATER_DEADLINE_DAYS
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LandlordDashboardPage
@@ -201,24 +200,13 @@ class PropertyDetailsTests : IntegrationTestWithImmutableData("data-local.sql") 
             }
 
             @Test
-            fun `gas card shows a single provide-later row and hides the cert row when the delegate flag is enabled`(page: Page) {
+            fun `gas card shows a single provide-later row and hides the cert row`(page: Page) {
                 // Property 39: occupied, gas cert "provide later" (with deadline)
                 val detailsPage = navigator.goToPropertyDetailsLandlordView(39)
                 detailsPage.tabs.goToComplianceInformation()
 
                 assertThat(detailsPage.gasSafetyCard.summaryList.hasGasSupplyRow.value).containsText("Provide this later")
                 assertThat(detailsPage.gasSafetyCard.summaryList.hasCertRow).isHidden()
-            }
-
-            @Test
-            fun `gas card shows both the gas-supply and cert rows when the delegate flag is disabled`(page: Page) {
-                featureFlagManager.disableFeature(DELEGATE_TO_LETTING_AGENT)
-                // Property 39: occupied, gas cert "provide later" (with deadline)
-                val detailsPage = navigator.goToPropertyDetailsLandlordView(39)
-                detailsPage.tabs.goToComplianceInformation()
-
-                assertThat(detailsPage.gasSafetyCard.summaryList.hasGasSupplyRow.value).containsText("Yes")
-                assertThat(detailsPage.gasSafetyCard.summaryList.hasCertRow.value).containsText("Provide this later")
             }
         }
 
@@ -331,24 +319,13 @@ class PropertyDetailsTests : IntegrationTestWithImmutableData("data-local.sql") 
         @Nested
         inner class ComplianceTab {
             @Test
-            fun `gas card shows a single provide-later row and hides the cert row when the delegate flag is enabled`(page: Page) {
+            fun `gas card shows a single provide-later row and hides the cert row`(page: Page) {
                 // Property 39: occupied, gas cert "provide later" (with deadline)
                 val detailsPage = navigator.goToPropertyDetailsLocalCouncilView(39)
                 detailsPage.tabs.goToComplianceInformation()
 
                 assertThat(detailsPage.gasSafetyCard.summaryList.hasGasSupplyRow.value).containsText("Provide this later")
                 assertThat(detailsPage.gasSafetyCard.summaryList.hasCertRow).isHidden()
-            }
-
-            @Test
-            fun `gas card shows both the gas-supply and cert rows when the delegate flag is disabled`(page: Page) {
-                featureFlagManager.disableFeature(DELEGATE_TO_LETTING_AGENT)
-                // Property 39: occupied, gas cert "provide later" (with deadline)
-                val detailsPage = navigator.goToPropertyDetailsLocalCouncilView(39)
-                detailsPage.tabs.goToComplianceInformation()
-
-                assertThat(detailsPage.gasSafetyCard.summaryList.hasGasSupplyRow.value).containsText("Yes")
-                assertThat(detailsPage.gasSafetyCard.summaryList.hasCertRow.value).containsText("Provide this later")
             }
         }
 

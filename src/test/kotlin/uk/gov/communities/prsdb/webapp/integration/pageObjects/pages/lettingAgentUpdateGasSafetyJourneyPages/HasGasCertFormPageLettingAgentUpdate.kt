@@ -5,7 +5,7 @@ import com.microsoft.playwright.Page
 import uk.gov.communities.prsdb.webapp.constants.PROVIDE_THIS_LATER_BUTTON_ACTION_NAME
 import uk.gov.communities.prsdb.webapp.controllers.LettingAgentUpdateGasSafetyController
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.HasGasCertFormBasePage
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasCertStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasCertStep
 import java.util.UUID
 
 class HasGasCertFormPageLettingAgentUpdate(
@@ -14,7 +14,7 @@ class HasGasCertFormPageLettingAgentUpdate(
 ) : HasGasCertFormBasePage(
         page,
         LettingAgentUpdateGasSafetyController.getUpdateGasSafetyRoute(UUID.fromString(urlArguments["token"]!!)) +
-            "/${BeforePdjb1022HasGasCertStep.ROUTE_SEGMENT}",
+            "/${HasGasCertStep.ROUTE_SEGMENT}",
     ) {
     val provideThisLaterButton: Locator =
         page.locator("button[name='action'][value='$PROVIDE_THIS_LATER_BUTTON_ACTION_NAME']")

@@ -3,7 +3,7 @@ package uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.lettingAge
 import com.microsoft.playwright.Page
 import uk.gov.communities.prsdb.webapp.controllers.LettingAgentUpdateGasSafetyController
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.HasGasSupplyFormBasePage
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasSupplyStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyStep
 import java.util.UUID
 
 class HasGasSupplyFormPageLettingAgentUpdate(
@@ -12,5 +12,5 @@ class HasGasSupplyFormPageLettingAgentUpdate(
 ) : HasGasSupplyFormBasePage(
         page,
         LettingAgentUpdateGasSafetyController.getUpdateGasSafetyRoute(UUID.fromString(urlArguments["token"]!!)) +
-            "/${BeforePdjb1022HasGasSupplyStep.ROUTE_SEGMENT}",
+            "/${HasGasSupplyStep.ROUTE_SEGMENT}",
     )

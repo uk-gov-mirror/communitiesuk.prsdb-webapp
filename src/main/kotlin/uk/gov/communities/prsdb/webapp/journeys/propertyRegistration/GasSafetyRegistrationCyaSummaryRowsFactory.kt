@@ -19,10 +19,6 @@ class GasSafetyRegistrationCyaSummaryRowsFactory(
         DEFERRED_ON_GAS_SUPPLY_QUESTION,
         NO_CERTIFICATE,
         VALID_CERTIFICATE,
-
-        // TODO PDJB-1617: delete this outcome (and its branches below) when we remove the delegation feature flag -
-        //  deferring on the gas-certificate question is the flag-off (legacy) behaviour only.
-        DEFERRED_ON_GAS_CERTIFICATE_QUESTION,
     }
 
     private val outcome: Outcome = determineOutcome()
@@ -31,7 +27,6 @@ class GasSafetyRegistrationCyaSummaryRowsFactory(
         when (outcome) {
             Outcome.NO_GAS_SUPPLY -> listOf(gasSupplyRow(hasSupply = false))
             Outcome.DEFERRED_ON_GAS_SUPPLY_QUESTION -> listOf(deferredOnGasSupplyRow())
-            Outcome.DEFERRED_ON_GAS_CERTIFICATE_QUESTION -> listOf(gasSupplyRow(hasSupply = true), deferredOnGasCertificateRow())
             Outcome.NO_CERTIFICATE -> listOf(gasSupplyRow(hasSupply = true), noCertificateRow())
             Outcome.VALID_CERTIFICATE -> listOf(gasSupplyRow(hasSupply = true))
         }
@@ -59,8 +54,6 @@ class GasSafetyRegistrationCyaSummaryRowsFactory(
 
     private fun determineCertificateOutcome(): Outcome =
         when (state.gasCertOutcome) {
-            // TODO PDJB-1617: remove with the delegation feature flag
-            GasCertOutcome.PROVIDE_LATER -> Outcome.DEFERRED_ON_GAS_CERTIFICATE_QUESTION
             GasCertOutcome.NO_CERTIFICATE -> Outcome.NO_CERTIFICATE
             GasCertOutcome.HAS_CERTIFICATE ->
                 if (state.getGasSafetyCertificateIsOutdated() == true) Outcome.NO_CERTIFICATE else Outcome.VALID_CERTIFICATE
@@ -79,14 +72,6 @@ class GasSafetyRegistrationCyaSummaryRowsFactory(
             fieldHeading = "checkGasSafety.gasSupply.fieldHeading",
             fieldValue = provideLaterKey,
             step = state.gasSupplyOutcomeStep,
-        )
-
-    // TODO PDJB-1617: remove this row builder with the delegation feature flag (flag-off/legacy behaviour only).
-    private fun deferredOnGasCertificateRow(): SummaryListRowViewModel =
-        row(
-            fieldHeading = "checkGasSafety.gasCert.fieldHeading",
-            fieldValue = provideLaterKey,
-            step = state.gasCertOutcomeStep,
         )
 
     private fun noCertificateRow(): SummaryListRowViewModel =

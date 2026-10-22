@@ -8,14 +8,10 @@ import uk.gov.communities.prsdb.webapp.journeys.OrParents
 import uk.gov.communities.prsdb.webapp.journeys.Task
 import uk.gov.communities.prsdb.webapp.journeys.hasOutcome
 import uk.gov.communities.prsdb.webapp.journeys.isComplete
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.GasSupplyProvideLaterStrategy
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.CertificateUpload
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasCertOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSafetyDetailState
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasCertMode
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasCertStep
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasSupplyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CheckGasCertUploadsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertExpiredStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertIssueDateMode
@@ -31,14 +27,11 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.Provi
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.RemoveGasCertUploadStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.UploadGasCertStep
 import uk.gov.communities.prsdb.webapp.journeys.shared.AnyMembers
-import uk.gov.communities.prsdb.webapp.journeys.shared.YesOrNo
 import uk.gov.communities.prsdb.webapp.journeys.shared.states.CheckYourAnswersJourneyState
 
 @JourneyFrameworkComponent("propertyRegistrationGasSafetyDetailsTask")
 class GasSafetyDetailsTask(
     override val hasUploadedCert: HasAnyInCollectionStep,
-    override val beforePdjb1022HasGasSupplyStep: BeforePdjb1022HasGasSupplyStep,
-    override val beforePdjb1022HasGasCertStep: BeforePdjb1022HasGasCertStep,
     override val hasGasSupplyStep: HasGasSupplyStep,
     override val hasGasCertStep: HasGasCertStep,
     override val gasCertIssueDateStep: GasCertIssueDateStep,
@@ -49,7 +42,6 @@ class GasSafetyDetailsTask(
     override val gasCertMissingStep: GasCertMissingStep,
     override val provideGasCertLaterStep: ProvideGasCertLaterStep,
     journeyStateService: JourneyStateService,
-    private val gasSupplyProvideLaterStrategy: GasSupplyProvideLaterStrategy,
 ) : Task<GasSafetyDetailState, GasSafetyDependencies>(journeyStateService),
     GasSafetyDetailState {
     override val taskState: GasSafetyDetailState
@@ -66,78 +58,56 @@ class GasSafetyDetailsTask(
     override var highestAssignedGasMemberId: Int? by delegateProvider.nullableDelegate("highestGasUploadMemberId")
 
     override val gasSupplyOutcome: GasSupplyOutcome?
-        get() = gasSupplyProvideLaterStrategy.gasSupplyOutcome(this)
+        get() =
+            when (hasGasSupplyStep.outcome) {
+                HasGasSupplyMode.HAS_SUPPLY -> GasSupplyOutcome.HAS_SUPPLY
+                HasGasSupplyMode.NO_SUPPLY -> GasSupplyOutcome.NO_SUPPLY
+                HasGasSupplyMode.PROVIDE_LATER -> GasSupplyOutcome.PROVIDE_LATER
+                null -> null
+            }
 
     override val gasSupplyOutcomeStep: JourneyStep.RequestableStep<*, *, *>
-        get() = gasSupplyProvideLaterStrategy.gasSupplyOutcomeStep(this)
+        get() = hasGasSupplyStep
 
     override val gasCertOutcome: GasCertOutcome?
-        get() = gasSupplyProvideLaterStrategy.gasCertOutcome(this)
+        get() =
+            when (hasGasCertStep.outcome) {
+                HasGasCertMode.YES -> GasCertOutcome.HAS_CERTIFICATE
+                HasGasCertMode.NO -> GasCertOutcome.NO_CERTIFICATE
+                null -> null
+            }
 
     override val gasCertOutcomeStep: JourneyStep.RequestableStep<*, *, *>
-        get() = gasSupplyProvideLaterStrategy.gasCertOutcomeStep(this)
+        get() = hasGasCertStep
 
     override fun makeSubJourney(state: GasSafetyDetailState) =
         subJourney(state) {
-            gasSupplyProvideLaterStrategy.ifEnabledOrElse {
-                ifEnabled {
-                    step(journey.hasGasSupplyStep) {
-                        routeSegment(HasGasSupplyStep.ROUTE_SEGMENT)
-                        nextStep { mode ->
-                            when (mode) {
-                                HasGasSupplyMode.HAS_SUPPLY -> journey.hasGasCertStep
-                                HasGasSupplyMode.NO_SUPPLY -> exitStep
-                                HasGasSupplyMode.PROVIDE_LATER -> journey.provideGasCertLaterStep
-                            }
-                        }
-                        savable()
-                    }
-                    step(journey.hasGasCertStep) {
-                        routeSegment(HasGasCertStep.ROUTE_SEGMENT)
-                        parents { journey.hasGasSupplyStep.hasOutcome(HasGasSupplyMode.HAS_SUPPLY) }
-                        nextStep { mode ->
-                            when (mode) {
-                                HasGasCertMode.YES -> journey.gasCertIssueDateStep
-                                HasGasCertMode.NO -> journey.gasCertMissingStep
-                            }
-                        }
-                        savable()
+            step(journey.hasGasSupplyStep) {
+                routeSegment(HasGasSupplyStep.ROUTE_SEGMENT)
+                nextStep { mode ->
+                    when (mode) {
+                        HasGasSupplyMode.HAS_SUPPLY -> journey.hasGasCertStep
+                        HasGasSupplyMode.NO_SUPPLY -> exitStep
+                        HasGasSupplyMode.PROVIDE_LATER -> journey.provideGasCertLaterStep
                     }
                 }
-                ifDisabled {
-                    step(journey.beforePdjb1022HasGasSupplyStep) {
-                        routeSegment(BeforePdjb1022HasGasSupplyStep.ROUTE_SEGMENT)
-                        nextStep { mode ->
-                            when (mode) {
-                                YesOrNo.YES -> journey.beforePdjb1022HasGasCertStep
-                                YesOrNo.NO -> exitStep
-                            }
-                        }
-                        savable()
-                    }
-                    step(journey.beforePdjb1022HasGasCertStep) {
-                        routeSegment(BeforePdjb1022HasGasCertStep.ROUTE_SEGMENT)
-                        parents { journey.beforePdjb1022HasGasSupplyStep.hasOutcome(YesOrNo.YES) }
-                        nextStep { mode ->
-                            when (mode) {
-                                BeforePdjb1022HasGasCertMode.HAS_CERTIFICATE -> journey.gasCertIssueDateStep
-                                BeforePdjb1022HasGasCertMode.NO_CERTIFICATE -> journey.gasCertMissingStep
-                                BeforePdjb1022HasGasCertMode.PROVIDE_THIS_LATER -> journey.provideGasCertLaterStep
-                            }
-                        }
-                        savable()
+                savable()
+            }
+            step(journey.hasGasCertStep) {
+                routeSegment(HasGasCertStep.ROUTE_SEGMENT)
+                parents { journey.hasGasSupplyStep.hasOutcome(HasGasSupplyMode.HAS_SUPPLY) }
+                nextStep { mode ->
+                    when (mode) {
+                        HasGasCertMode.YES -> journey.gasCertIssueDateStep
+                        HasGasCertMode.NO -> journey.gasCertMissingStep
                     }
                 }
+                savable()
             }
 
             step(journey.gasCertIssueDateStep) {
                 routeSegment(GasCertIssueDateStep.ROUTE_SEGMENT)
-                parents {
-                    gasSupplyProvideLaterStrategy.ifEnabledOrElse {
-                        ifEnabled { journey.hasGasCertStep.hasOutcome(HasGasCertMode.YES) }
-                        ifDisabled { journey.beforePdjb1022HasGasCertStep.hasOutcome(BeforePdjb1022HasGasCertMode.HAS_CERTIFICATE) }
-                    }
-                }
+                parents { journey.hasGasCertStep.hasOutcome(HasGasCertMode.YES) }
                 nextStep { mode ->
                     when (mode) {
                         GasCertIssueDateMode.GAS_SAFETY_CERTIFICATE_IN_DATE -> journey.hasUploadedCert
@@ -200,33 +170,20 @@ class GasSafetyDetailsTask(
             }
             step(journey.gasCertMissingStep) {
                 routeSegment(GasCertMissingStep.ROUTE_SEGMENT)
-                parents {
-                    gasSupplyProvideLaterStrategy.ifEnabledOrElse {
-                        ifEnabled { journey.hasGasCertStep.hasOutcome(HasGasCertMode.NO) }
-                        ifDisabled { journey.beforePdjb1022HasGasCertStep.hasOutcome(BeforePdjb1022HasGasCertMode.NO_CERTIFICATE) }
-                    }
-                }
+                parents { journey.hasGasCertStep.hasOutcome(HasGasCertMode.NO) }
                 nextStep { exitStep }
                 savable()
             }
             step(journey.provideGasCertLaterStep) {
                 routeSegment(ProvideGasCertLaterStep.ROUTE_SEGMENT)
-                parents {
-                    gasSupplyProvideLaterStrategy.ifEnabledOrElse {
-                        ifEnabled { journey.hasGasSupplyStep.hasOutcome(HasGasSupplyMode.PROVIDE_LATER) }
-                        ifDisabled { journey.beforePdjb1022HasGasCertStep.hasOutcome(BeforePdjb1022HasGasCertMode.PROVIDE_THIS_LATER) }
-                    }
-                }
+                parents { journey.hasGasSupplyStep.hasOutcome(HasGasSupplyMode.PROVIDE_LATER) }
                 nextStep { exitStep }
                 savable()
             }
             exitStep {
                 parents {
                     OrParents(
-                        gasSupplyProvideLaterStrategy.ifEnabledOrElse {
-                            ifEnabled { journey.hasGasSupplyStep.hasOutcome(HasGasSupplyMode.NO_SUPPLY) }
-                            ifDisabled { journey.beforePdjb1022HasGasSupplyStep.hasOutcome(YesOrNo.NO) }
-                        },
+                        journey.hasGasSupplyStep.hasOutcome(HasGasSupplyMode.NO_SUPPLY),
                         journey.provideGasCertLaterStep.isComplete(),
                         journey.gasCertMissingStep.isComplete(),
                         journey.gasCertExpiredStep.isComplete(),

@@ -116,13 +116,7 @@ class UpdateGasSafetyJourneyFactory(
         }
 
     private fun JourneyBuilder<UpdateGasSafetyJourney>.replaceButtons() {
-        configureStep(journey.gasSafetyDetailsTask.beforePdjb1022HasGasSupplyStep) {
-            withAdditionalContentProperty { "submitButtonText" to "forms.buttons.continue" }
-        }
         configureStep(journey.gasSafetyDetailsTask.hasGasSupplyStep) {
-            withAdditionalContentProperty { "submitButtonText" to "forms.buttons.continue" }
-        }
-        configureStep(journey.gasSafetyDetailsTask.beforePdjb1022HasGasCertStep) {
             withAdditionalContentProperty { "submitButtonText" to "forms.buttons.continue" }
         }
         configureStep(journey.gasSafetyDetailsTask.hasGasCertStep) {

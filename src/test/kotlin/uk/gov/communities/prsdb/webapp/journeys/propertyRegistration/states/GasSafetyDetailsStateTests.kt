@@ -11,8 +11,6 @@ import org.mockito.kotlin.whenever
 import uk.gov.communities.prsdb.webapp.constants.GAS_SAFETY_CERT_VALIDITY_YEARS
 import uk.gov.communities.prsdb.webapp.journeys.AbstractJourneyState
 import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasCertStep
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasSupplyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CheckGasCertUploadsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertExpiredStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertIssueDateStep
@@ -102,14 +100,12 @@ class GasSafetyDetailsStateTests {
             override val propertyOwnershipId: Long? = null
             override var gasUploadMap: Map<Int, CertificateUpload> = emptyMap()
             override var highestAssignedGasMemberId: Int? = null
-            override val beforePdjb1022HasGasSupplyStep = mock<BeforePdjb1022HasGasSupplyStep>()
-            override val beforePdjb1022HasGasCertStep = mock<BeforePdjb1022HasGasCertStep>()
             override val hasGasSupplyStep = mock<HasGasSupplyStep>()
             override val hasGasCertStep = mock<HasGasCertStep>()
             override val gasSupplyOutcome: GasSupplyOutcome? = null
-            override val gasSupplyOutcomeStep: JourneyStep.RequestableStep<*, *, *> = beforePdjb1022HasGasSupplyStep
+            override val gasSupplyOutcomeStep: JourneyStep.RequestableStep<*, *, *> = hasGasSupplyStep
             override val gasCertOutcome: GasCertOutcome? = null
-            override val gasCertOutcomeStep: JourneyStep.RequestableStep<*, *, *> = beforePdjb1022HasGasCertStep
+            override val gasCertOutcomeStep: JourneyStep.RequestableStep<*, *, *> = hasGasCertStep
             override val uploadGasCertStep = mock<UploadGasCertStep>()
             override val checkGasCertUploadsStep = mock<CheckGasCertUploadsStep>()
             override val removeGasCertUploadStep = mock<RemoveGasCertUploadStep>()

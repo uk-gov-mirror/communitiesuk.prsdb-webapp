@@ -6,8 +6,6 @@ import uk.gov.communities.prsdb.webapp.constants.GAS_SAFETY_CERT_VALIDITY_YEARS
 import uk.gov.communities.prsdb.webapp.helpers.DateTimeHelper
 import uk.gov.communities.prsdb.webapp.journeys.JourneyState
 import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasCertStep
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BeforePdjb1022HasGasSupplyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CheckGasCertUploadsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CheckGasSafetyAnswersStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertExpiredStep
@@ -28,8 +26,6 @@ interface GasSafetyState : JourneyState {
 }
 
 interface GasSafetyDetailState : JourneyState {
-    val beforePdjb1022HasGasSupplyStep: BeforePdjb1022HasGasSupplyStep
-    val beforePdjb1022HasGasCertStep: BeforePdjb1022HasGasCertStep
     val hasGasSupplyStep: HasGasSupplyStep
     val hasGasCertStep: HasGasCertStep
     val gasCertIssueDateStep: GasCertIssueDateStep
@@ -45,9 +41,9 @@ interface GasSafetyDetailState : JourneyState {
     val allowProvideCertificateLaterRoute: Boolean
     val propertyOwnershipId: Long?
 
-    // Unified accessors: resolve to the old (letting agent flag-off) or new (letting agent flag-on) step pair, so downstream
-    // consumers (CYA rows, save-step persistence, missing-compliance check) don't need to know which
-    // pair is active. See GasSafetyDetailsTask for the concrete implementation.
+    // Unified accessors: map the step-specific answer modes onto a shared outcome vocabulary, so downstream
+    // consumers (CYA rows, save-step persistence, missing-compliance check) don't depend on the step enums.
+    // See GasSafetyDetailsTask for the concrete implementation.
     val gasSupplyOutcome: GasSupplyOutcome?
     val gasSupplyOutcomeStep: JourneyStep.RequestableStep<*, *, *>
     val gasCertOutcome: GasCertOutcome?
@@ -85,5 +81,4 @@ enum class GasSupplyOutcome {
 enum class GasCertOutcome {
     HAS_CERTIFICATE,
     NO_CERTIFICATE,
-    PROVIDE_LATER,
 }

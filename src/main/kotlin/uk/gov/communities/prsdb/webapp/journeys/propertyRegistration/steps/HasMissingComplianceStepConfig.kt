@@ -6,7 +6,6 @@ import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.PropertyRegistrationJourneyState
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.ElectricalSafetyState
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.EpcState
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasCertOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSafetyState
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
 
@@ -32,7 +31,6 @@ class HasMissingComplianceStepConfig :
             ) {
                 return false
             }
-            if (state.gasSafetyDetailsTask.gasCertOutcome == GasCertOutcome.PROVIDE_LATER) return false
             val isOutdated = state.gasSafetyDetailsTask.getGasSafetyCertificateIsOutdated()
             return isOutdated == null || isOutdated
         }
