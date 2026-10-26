@@ -192,11 +192,11 @@ class MessageKeyConverter {
 
         private fun convertComplianceCertStatus(complianceCertStatus: ComplianceCertStatus): String =
             when (complianceCertStatus) {
-                ComplianceCertStatus.HAS_FAULTS -> "complianceActions.status.hasFaults"
+                ComplianceCertStatus.HAS_FAULTS -> "outstandingActions.status.hasFaults"
 
-                ComplianceCertStatus.PROVIDE_LATER -> "complianceActions.status.provideLater"
+                ComplianceCertStatus.PROVIDE_LATER -> "outstandingActions.status.provideLater"
 
-                ComplianceCertStatus.EXPIRED -> "complianceActions.status.expired"
+                ComplianceCertStatus.EXPIRED -> "outstandingActions.status.expired"
 
                 else -> throw IllegalStateException(
                     "${complianceCertStatus.name} should not be shown on the page and hence should not be converted to a message key",

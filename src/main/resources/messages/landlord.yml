@@ -15,8 +15,8 @@ dashboard:
     button: View your landlord record
   complianceInformation:
     heading: Add compliance information for your properties
-  complianceActions:
-    button: Compliance actions
+  outstandingActions:
+    button: Outstanding actions
   notificationBanner:
     title: Important
     heading: 'You have {0,,number} outstanding property actions'

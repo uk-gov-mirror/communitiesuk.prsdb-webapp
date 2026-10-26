@@ -1,4 +1,4 @@
-<div th:fragment="landlordDashboardNotificationBanner(viewModel, viewIncompletePropertiesUrl, addComplianceUrl)">
+<div th:fragment="landlordDashboardNotificationBanner(viewModel, viewIncompletePropertiesUrl, outstandingActionsUrl)">
     <div id="notification-banner" th:replace="${viewModel.showOutstandingActionsHeading} ? ~{fragments/banners/notificationBanner :: notificationBanner(#{landlord.dashboard.notificationBanner.title}, ~{::#notification-banner/content()})} : ~{}">
         <p class="govuk-notification-banner__heading" th:text="#{landlord.dashboard.notificationBanner.heading(${viewModel.numberOfOutstandingActions})}">landlord.dashboard.notificationBanner.heading</p>
         <ul class="govuk-list govuk-list--bullet">
@@ -8,7 +8,7 @@
             </li>
             <li>
                 <span th:text="#{landlord.dashboard.notificationBanner.complianceActions.subheading(${viewModel.numberOfComplianceActions}, #{${viewModel.numberOfComplianceActions == 1 ? 'landlord.dashboard.notificationBanner.property' : 'landlord.dashboard.notificationBanner.properties'}})}">landlord.dashboard.notificationBanner.complianceActions.subheading</span>
-                <a class="govuk-notification-banner__link" th:href="@{${addComplianceUrl}}" th:text="#{landlord.dashboard.notificationBanner.complianceActions.linkText}">landlord.dashboard.notificationBanner.complianceActions.linkText</a>
+                <a class="govuk-notification-banner__link" th:href="@{${outstandingActionsUrl}}" th:text="#{landlord.dashboard.notificationBanner.complianceActions.linkText}">landlord.dashboard.notificationBanner.complianceActions.linkText</a>
             </li>
         </ul>
     </div>
@@ -23,7 +23,7 @@
     <div id="notification-banner-incomplete-compliance" th:replace="${viewModel.onlyComplianceActions} ? ~{fragments/banners/notificationBanner :: notificationBanner(#{landlord.dashboard.notificationBanner.title}, ~{::#notification-banner-incomplete-compliance/content()})} : ~{}">
         <p class="govuk-notification-banner__heading">
             <span th:remove="tag" th:text="#{landlord.dashboard.notificationBanner.complianceActions.subheading(${viewModel.numberOfComplianceActions}, #{${viewModel.numberOfComplianceActions == 1 ? 'landlord.dashboard.notificationBanner.property' : 'landlord.dashboard.notificationBanner.properties'}})}">landlord.dashboard.notificationBanner.complianceActions.subheading</span>
-            <a class="govuk-notification-banner__link" th:href="@{${addComplianceUrl}}" th:text="#{landlord.dashboard.notificationBanner.complianceActions.linkText}">landlord.dashboard.notificationBanner.complianceActions.linkText</a>
+            <a class="govuk-notification-banner__link" th:href="@{${outstandingActionsUrl}}" th:text="#{landlord.dashboard.notificationBanner.complianceActions.linkText}">landlord.dashboard.notificationBanner.complianceActions.linkText</a>
         </p>
     </div>
 </div>

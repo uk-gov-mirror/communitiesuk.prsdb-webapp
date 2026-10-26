@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout(#{outstandingActions.heading},~{::main/content()}, false, ${backUrl}, null)}">
+<main>
+    <header>
+        <h1 class="govuk-heading-l" th:text="#{outstandingActions.heading}">outstandingActions.heading</h1>
+        <p class="govuk-body" th:unless="${#lists.isEmpty(outstandingActions)}" th:text="#{outstandingActions.subtitle}">outstandingActions.subtitle</p>
+    </header>
+
+    <th:block th:unless="${#lists.isEmpty(outstandingActions)}" th:each="outstandingAction: ${outstandingActions}">
+        <div th:replace="~{fragments/summaryCard :: summaryCardWithAdditionalContent(${outstandingAction.title}, null, ${outstandingAction.actions}, ${outstandingAction.summaryList}, ~{fragments/outstandingActionsInset :: epcExpiredInset(${outstandingAction.insetViewModel})})}"></div>
+    </th:block>
+
+    <th:block th:if="${#lists.isEmpty(outstandingActions)}">
+        <div class="govuk-inset-text" th:text="#{outstandingActions.none.inset}">outstandingActions.none.inset</div>
+    </th:block>
+
+    <nav th:replace="~{fragments/pagination/pagination :: pagination(${paginationViewModel})}"></nav>
+
+</main>
+</html>

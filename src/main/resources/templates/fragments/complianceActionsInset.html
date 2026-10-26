@@ -1,7 +1,0 @@
-<div th:fragment="epcExpiredInset(insetViewModel)" th:if="${insetViewModel != null}" class="govuk-inset-text">
-    <span th:utext="#{complianceActions.inset.epcExpired.beforeLink(${insetViewModel.expiryDate})}"></span>
-    <a class="govuk-link"
-       th:href="@{${insetViewModel.linkUrl}}"
-       target="_blank" rel="noreferrer noopener"
-       th:text="#{complianceActions.inset.epcExpired.link}"></a><span th:utext="#{complianceActions.inset.epcExpired.afterLink}"></span>
-</div>

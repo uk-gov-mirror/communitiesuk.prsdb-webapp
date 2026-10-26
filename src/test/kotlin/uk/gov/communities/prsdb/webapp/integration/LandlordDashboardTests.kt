@@ -3,9 +3,9 @@ package uk.gov.communities.prsdb.webapp.integration
 import com.microsoft.playwright.Page
 import org.junit.jupiter.api.Nested
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
-import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.ComplianceActionsPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LandlordDetailsPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LandlordIncompletePropertiesPage
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.OutstandingActionsPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.RegisterPropertyStartPage
 import kotlin.test.Test
@@ -50,10 +50,10 @@ class LandlordDashboardTests : IntegrationTestWithImmutableData("data-local.sql"
     }
 
     @Test
-    fun `the add compliance information button links to the compliance actions page`(page: Page) {
+    fun `the outstanding actions button links to the outstanding actions page`(page: Page) {
         val dashboard = navigator.goToLandlordDashboard()
-        dashboard.addComplianceInformationButton.clickAndWait()
-        assertPageIs(page, ComplianceActionsPage::class)
+        dashboard.outstandingActionsButton.clickAndWait()
+        assertPageIs(page, OutstandingActionsPage::class)
     }
 
     @Nested
@@ -125,7 +125,7 @@ class LandlordDashboardTests : IntegrationTestWithImmutableData("data-local.sql"
                 fun `the add compliance information link redirects to the compliance actions page`(page: Page) {
                     val dashboard = navigator.goToLandlordDashboard()
                     dashboard.notificationBanner.addComplianceInformationLink.clickAndWait()
-                    assertPageIs(page, ComplianceActionsPage::class)
+                    assertPageIs(page, OutstandingActionsPage::class)
                 }
             }
         }
@@ -150,7 +150,7 @@ class LandlordDashboardTests : IntegrationTestWithImmutableData("data-local.sql"
             fun `the add compliance information link redirects to the compliance actions page`(page: Page) {
                 val dashboard = navigator.goToLandlordDashboard()
                 dashboard.notificationBanner.addComplianceInformationLink.clickAndWait()
-                assertPageIs(page, ComplianceActionsPage::class)
+                assertPageIs(page, OutstandingActionsPage::class)
             }
         }
     }

@@ -4,7 +4,7 @@
     <div id="page-content">
         <th:block
                 th:if="${landlordDashboardNotificationBannerViewModel.numberOfOutstandingActions != 0}"
-                  th:replace="~{fragments/banners/landlordDashboardNotificationBanner ::  landlordDashboardNotificationBanner(${landlordDashboardNotificationBannerViewModel}, ${viewIncompletePropertiesUrl}, ${addComplianceUrl})}">
+                  th:replace="~{fragments/banners/landlordDashboardNotificationBanner ::  landlordDashboardNotificationBanner(${landlordDashboardNotificationBannerViewModel}, ${viewIncompletePropertiesUrl}, ${outstandingActionsUrl})}">
             </th:block>
         <div id="dashboard-banner"
              th:replace="~{fragments/banners/dashboardBanner :: dashboardBanner(${landlordName}, ~{::#dashboard-banner/content()})}">
@@ -40,8 +40,8 @@
                     </a>
                 </div>
                 <div class="govuk-grid-column-one-third prsd-dashboard__stretched-button-container">
-                    <a th:replace="~{fragments/buttons/secondaryButtonLink :: secondaryButtonLink(${addComplianceUrl}, #{landlord.dashboard.complianceActions.button})}">
-                        landlord.dashboard.addComplianceInformation.button
+                    <a th:replace="~{fragments/buttons/secondaryButtonLink :: secondaryButtonLink(${outstandingActionsUrl}, #{landlord.dashboard.outstandingActions.button})}">
+                        landlord.dashboard.outstandingActions.button
                     </a>
                 </div>
             </div>

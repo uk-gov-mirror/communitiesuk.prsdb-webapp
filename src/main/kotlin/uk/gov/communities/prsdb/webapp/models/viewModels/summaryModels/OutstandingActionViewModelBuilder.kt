@@ -1,23 +1,18 @@
 package uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels
 
 import uk.gov.communities.prsdb.webapp.constants.GET_NEW_EPC_URL
-import uk.gov.communities.prsdb.webapp.constants.TAG_COLOUR_GREY
-import uk.gov.communities.prsdb.webapp.constants.TAG_COLOUR_PINK
 import uk.gov.communities.prsdb.webapp.constants.enums.ComplianceCertStatus
 import uk.gov.communities.prsdb.webapp.controllers.PropertyDetailsController
 import uk.gov.communities.prsdb.webapp.exceptions.PrsdbWebException
 import uk.gov.communities.prsdb.webapp.helpers.converters.MessageKeyConverter
-import uk.gov.communities.prsdb.webapp.helpers.extensions.addRow
 import uk.gov.communities.prsdb.webapp.models.dataModels.ComplianceStatusDataModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-class ComplianceActionViewModelBuilder {
+class OutstandingActionViewModelBuilder {
     companion object {
         val DATE_FORMATTER = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.UK)
-        val OCCUPIED_TAG_COLOUR = TAG_COLOUR_PINK
-        val UNOCCUPIED_TAG_COLOUR = TAG_COLOUR_GREY
 
         fun fromDataModel(dataModel: ComplianceStatusDataModel): SummaryCardViewModel =
             SummaryCardViewModel(
@@ -30,25 +25,9 @@ class ComplianceActionViewModelBuilder {
         private fun getSummaryList(dataModel: ComplianceStatusDataModel): List<SummaryListRowViewModel> =
             mutableListOf<SummaryListRowViewModel>()
                 .apply {
-                    addRow(
-                        "complianceActions.summaryRow.registrationNumber",
-                        dataModel.registrationNumber,
-                    )
-                    add(
-                        SummaryListRowViewModel(
-                            fieldHeading = "complianceActions.summaryRow.status",
-                            fieldValue =
-                                if (dataModel.isOccupied) {
-                                    "complianceActions.summaryRow.occupied"
-                                } else {
-                                    "complianceActions.summaryRow.unoccupied"
-                                },
-                            tagColour = if (dataModel.isOccupied) OCCUPIED_TAG_COLOUR else UNOCCUPIED_TAG_COLOUR,
-                        ),
-                    )
                     if (dataModel.shouldShowGasSafetyAction()) {
                         addCertRow(
-                            "complianceActions.summaryRow.gasSafety",
+                            "outstandingActions.summaryRow.gasSafety",
                             dataModel.gasSafetyStatus,
                             "gasSafety",
                             dataModel.provideLaterDeadline,
@@ -57,7 +36,7 @@ class ComplianceActionViewModelBuilder {
                     }
                     if (dataModel.shouldShowElectricalSafetyAction()) {
                         addCertRow(
-                            "complianceActions.summaryRow.electricalSafety",
+                            "outstandingActions.summaryRow.electricalSafety",
                             dataModel.electricalSafetyStatus,
                             "electricalSafety",
                             dataModel.provideLaterDeadline,
@@ -66,7 +45,7 @@ class ComplianceActionViewModelBuilder {
                     }
                     if (dataModel.shouldShowEpcAction()) {
                         addCertRow(
-                            "complianceActions.summaryRow.energyPerformance",
+                            "outstandingActions.summaryRow.energyPerformance",
                             dataModel.epcStatus,
                             "epc",
                             dataModel.provideLaterDeadline,
@@ -103,7 +82,7 @@ class ComplianceActionViewModelBuilder {
                 }
 
                 ComplianceCertStatus.PROVIDE_LATER -> {
-                    if (provideLaterDeadline == null) "complianceActions.status.provideLaterNoDeadline" else baseKey
+                    if (provideLaterDeadline == null) "outstandingActions.status.provideLaterNoDeadline" else baseKey
                 }
 
                 ComplianceCertStatus.EXPIRED -> {
@@ -151,7 +130,7 @@ class ComplianceActionViewModelBuilder {
         private fun getActions(dataModel: ComplianceStatusDataModel): List<SummaryCardActionViewModel> =
             listOf(
                 SummaryCardActionViewModel(
-                    "complianceActions.action.goToProperty",
+                    "outstandingActions.action.goToProperty",
                     PropertyDetailsController.getPropertyCompliancePath(dataModel.propertyOwnershipId),
                 ),
             )

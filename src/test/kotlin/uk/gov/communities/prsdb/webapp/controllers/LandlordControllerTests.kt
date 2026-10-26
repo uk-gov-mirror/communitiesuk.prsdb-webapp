@@ -16,11 +16,11 @@ import org.springframework.web.server.ResponseStatusException
 import uk.gov.communities.prsdb.webapp.constants.LANDLORD_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.REGISTERED_PROPERTIES_FRAGMENT
 import uk.gov.communities.prsdb.webapp.constants.enums.ComplianceCertStatus
-import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.COMPLIANCE_ACTIONS_URL
 import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.LANDLORD_DASHBOARD_URL
+import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.OUTSTANDING_ACTIONS_URL
 import uk.gov.communities.prsdb.webapp.models.dataModels.ComplianceStatusDataModel
-import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.ComplianceActionViewModelBuilder
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.LandlordDashboardNotificationBannerViewModel
+import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.OutstandingActionViewModelBuilder
 import uk.gov.communities.prsdb.webapp.services.LocalCouncilService
 import uk.gov.communities.prsdb.webapp.services.PropertyComplianceService
 import uk.gov.communities.prsdb.webapp.services.PropertyOwnershipService
@@ -142,6 +142,7 @@ class LandlordControllerTests(
             .get(LANDLORD_DASHBOARD_URL)
             .andExpect {
                 status { isOk() }
+                model { attribute("outstandingActionsUrl", OUTSTANDING_ACTIONS_URL) }
             }
     }
 
@@ -199,9 +200,9 @@ class LandlordControllerTests(
     }
 
     @Test
-    fun `getComplianceActions returns a redirect for unauthenticated user`() {
+    fun `getOutstandingActions returns a redirect for unauthenticated user`() {
         mvc
-            .get(COMPLIANCE_ACTIONS_URL)
+            .get(OUTSTANDING_ACTIONS_URL)
             .andExpect {
                 status { is3xxRedirection() }
             }
@@ -209,9 +210,9 @@ class LandlordControllerTests(
 
     @Test
     @WithMockUser
-    fun `getComplianceActions returns 403 for unauthorized user`() {
+    fun `getOutstandingActions returns 403 for unauthorized user`() {
         mvc
-            .get(COMPLIANCE_ACTIONS_URL)
+            .get(OUTSTANDING_ACTIONS_URL)
             .andExpect {
                 status { isForbidden() }
             }
@@ -219,7 +220,7 @@ class LandlordControllerTests(
 
     @Test
     @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"], username = "user")
-    fun `getComplianceActions returns 200 for authorised landlord user`() {
+    fun `getOutstandingActions returns 200 for authorised landlord user`() {
         val nonCompliantDataModel =
             ComplianceStatusDataModel(
                 propertyOwnershipId = 2,
@@ -237,17 +238,17 @@ class LandlordControllerTests(
         )
 
         // Act and Assert
-        val expectedComplianceActions =
+        val expectedOutstandingActions =
             listOf(
-                ComplianceActionViewModelBuilder.fromDataModel(nonCompliantDataModel),
+                OutstandingActionViewModelBuilder.fromDataModel(nonCompliantDataModel),
             )
 
         mvc
-            .get(COMPLIANCE_ACTIONS_URL)
+            .get(OUTSTANDING_ACTIONS_URL)
             .andExpect {
                 status { isOk() }
                 model {
-                    attribute("complianceActions", expectedComplianceActions)
+                    attribute("outstandingActions", expectedOutstandingActions)
                     attribute(
                         "viewRegisteredPropertiesUrl",
                         "${LandlordDetailsController.LANDLORD_DETAILS_FOR_LANDLORD_ROUTE}#$REGISTERED_PROPERTIES_FRAGMENT",
@@ -259,30 +260,30 @@ class LandlordControllerTests(
 
     @Test
     @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"], username = "user")
-    fun `getComplianceActions returns complianceActions view`() {
+    fun `getOutstandingActions returns outstandingActions view`() {
         whenever(userToLandlordService.getCurrentLandlordForUser()).thenReturn(createIndividualLandlord())
         whenever(propertyComplianceService.getNonCompliantPropertiesForLandlord(any(), any())).thenReturn(
             PageImpl(emptyList()),
         )
 
         mvc
-            .get(COMPLIANCE_ACTIONS_URL)
+            .get(OUTSTANDING_ACTIONS_URL)
             .andExpect {
                 status { isOk() }
-                view { name("complianceActions") }
+                view { name("outstandingActions") }
             }
     }
 
     @Test
     @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"], username = "user")
-    fun `getComplianceActions redirects to first page when requested page exceeds total pages`() {
+    fun `getOutstandingActions redirects to first page when requested page exceeds total pages`() {
         whenever(userToLandlordService.getCurrentLandlordForUser()).thenReturn(createIndividualLandlord())
         whenever(propertyComplianceService.getNonCompliantPropertiesForLandlord(any(), any())).thenReturn(
             PageImpl(emptyList(), PageRequest.of(5, 10), 10),
         )
 
         mvc
-            .get("$COMPLIANCE_ACTIONS_URL?page=6")
+            .get("$OUTSTANDING_ACTIONS_URL?page=6")
             .andExpect {
                 status { is3xxRedirection() }
             }
@@ -290,14 +291,14 @@ class LandlordControllerTests(
 
     @Test
     @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"], username = "user")
-    fun `getComplianceActions includes paginationViewModel`() {
+    fun `getOutstandingActions includes paginationViewModel`() {
         whenever(userToLandlordService.getCurrentLandlordForUser()).thenReturn(createIndividualLandlord())
         whenever(propertyComplianceService.getNonCompliantPropertiesForLandlord(any(), any())).thenReturn(
             PageImpl(emptyList(), PageRequest.of(0, 10), 20),
         )
 
         mvc
-            .get(COMPLIANCE_ACTIONS_URL)
+            .get(OUTSTANDING_ACTIONS_URL)
             .andExpect {
                 status { isOk() }
                 model { attributeExists("paginationViewModel") }

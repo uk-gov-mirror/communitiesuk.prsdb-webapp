@@ -8,16 +8,16 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.AllowIfLandlord
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbController
-import uk.gov.communities.prsdb.webapp.constants.COMPLIANCE_ACTIONS_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.DASHBOARD_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.INCOMPLETE_PROPERTIES_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.LANDLORD_PATH_SEGMENT
+import uk.gov.communities.prsdb.webapp.constants.OUTSTANDING_ACTIONS_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.REGISTERED_PROPERTIES_FRAGMENT
 import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.LANDLORD_BASE_URL
 import uk.gov.communities.prsdb.webapp.models.dataModels.RegistrationNumberDataModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.PaginationViewModel
-import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.ComplianceActionViewModelBuilder
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.LandlordDashboardNotificationBannerViewModel
+import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.OutstandingActionViewModelBuilder
 import uk.gov.communities.prsdb.webapp.services.PropertyComplianceService
 import uk.gov.communities.prsdb.webapp.services.PropertyOwnershipService
 import uk.gov.communities.prsdb.webapp.services.UserToLandlordService
@@ -62,13 +62,13 @@ class LandlordController(
             "${LandlordDetailsController.LANDLORD_DETAILS_FOR_LANDLORD_ROUTE}#$REGISTERED_PROPERTIES_FRAGMENT",
         )
         model.addAttribute("viewLandlordRecordUrl", LandlordDetailsController.LANDLORD_DETAILS_FOR_LANDLORD_ROUTE)
-        model.addAttribute("addComplianceUrl", COMPLIANCE_ACTIONS_URL)
+        model.addAttribute("outstandingActionsUrl", OUTSTANDING_ACTIONS_URL)
 
         return "landlordDashboard"
     }
 
-    @GetMapping("/$COMPLIANCE_ACTIONS_PATH_SEGMENT")
-    fun getComplianceActions(
+    @GetMapping("/$OUTSTANDING_ACTIONS_PATH_SEGMENT")
+    fun getOutstandingActions(
         model: Model,
         @RequestParam(value = "page", required = false) @Min(1) page: Int = 1,
         request: HttpServletRequest,
@@ -78,15 +78,15 @@ class LandlordController(
             propertyComplianceService.getNonCompliantPropertiesForLandlord(landlord, page - 1)
 
         if (pagedNonCompliantProperties.totalPages != 0 && pagedNonCompliantProperties.totalPages < page) {
-            return "redirect:$COMPLIANCE_ACTIONS_URL"
+            return "redirect:$OUTSTANDING_ACTIONS_URL"
         }
 
-        val complianceActions =
+        val outstandingActions =
             pagedNonCompliantProperties.content.map {
-                ComplianceActionViewModelBuilder.fromDataModel(it)
+                OutstandingActionViewModelBuilder.fromDataModel(it)
             }
 
-        model.addAttribute("complianceActions", complianceActions)
+        model.addAttribute("outstandingActions", outstandingActions)
         model.addAttribute("paginationViewModel", PaginationViewModel(page, pagedNonCompliantProperties.totalPages, request))
 
         model.addAttribute(
@@ -95,13 +95,13 @@ class LandlordController(
         )
         model.addAttribute("backUrl", LANDLORD_DASHBOARD_URL)
 
-        return "complianceActions"
+        return "outstandingActions"
     }
 
     companion object {
         const val LANDLORD_DASHBOARD_URL = "/$LANDLORD_PATH_SEGMENT/$DASHBOARD_PATH_SEGMENT"
         const val LANDLORD_BASE_URL = "/$LANDLORD_PATH_SEGMENT"
         const val INCOMPLETE_PROPERTIES_URL = "/$LANDLORD_PATH_SEGMENT/$INCOMPLETE_PROPERTIES_PATH_SEGMENT"
-        const val COMPLIANCE_ACTIONS_URL = "/$LANDLORD_PATH_SEGMENT/$COMPLIANCE_ACTIONS_PATH_SEGMENT"
+        const val OUTSTANDING_ACTIONS_URL = "/$LANDLORD_PATH_SEGMENT/$OUTSTANDING_ACTIONS_PATH_SEGMENT"
     }
 }

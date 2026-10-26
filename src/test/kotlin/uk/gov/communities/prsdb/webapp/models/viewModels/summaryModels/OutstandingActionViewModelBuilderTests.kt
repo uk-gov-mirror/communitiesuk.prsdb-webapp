@@ -1,8 +1,6 @@
 package uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import uk.gov.communities.prsdb.webapp.constants.TAG_COLOUR_GREY
-import uk.gov.communities.prsdb.webapp.constants.TAG_COLOUR_PINK
 import uk.gov.communities.prsdb.webapp.constants.enums.ComplianceCertStatus
 import uk.gov.communities.prsdb.webapp.controllers.PropertyDetailsController
 import uk.gov.communities.prsdb.webapp.models.dataModels.ComplianceStatusDataModel
@@ -11,7 +9,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class ComplianceActionViewModelBuilderTests {
+class OutstandingActionViewModelBuilderTests {
     @Test
     fun `fromDataModel returns a SummaryCardViewModel with the correct title and summary list for an occupied property`() {
         val epcExpiryDate = LocalDate.of(2025, 3, 1)
@@ -28,77 +26,23 @@ class ComplianceActionViewModelBuilderTests {
                 isOccupied = true,
             )
 
-        val viewModel = ComplianceActionViewModelBuilder.fromDataModel(dataModel)
+        val viewModel = OutstandingActionViewModelBuilder.fromDataModel(dataModel)
 
         assertEquals(dataModel.singleLineAddress, viewModel.title)
 
         val expectedSummaryList =
             listOf(
                 SummaryListRowViewModel(
-                    "complianceActions.summaryRow.registrationNumber",
-                    dataModel.registrationNumber,
+                    fieldHeading = "outstandingActions.summaryRow.electricalSafety",
+                    fieldValue = "outstandingActions.status.hasFaults.electricalSafety",
                 ),
                 SummaryListRowViewModel(
-                    fieldHeading = "complianceActions.summaryRow.status",
-                    fieldValue = "complianceActions.summaryRow.occupied",
-                    tagColour = TAG_COLOUR_PINK,
-                ),
-                SummaryListRowViewModel(
-                    fieldHeading = "complianceActions.summaryRow.electricalSafety",
-                    fieldValue = "complianceActions.status.hasFaults.electricalSafety",
-                ),
-                SummaryListRowViewModel(
-                    fieldHeading = "complianceActions.summaryRow.energyPerformance",
-                    fieldValue = "complianceActions.status.expired",
-                    optionalFieldValueParam = epcExpiryDate.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                    fieldHeading = "outstandingActions.summaryRow.energyPerformance",
+                    fieldValue = "outstandingActions.status.expired",
+                    optionalFieldValueParam = epcExpiryDate.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 ),
             )
         assertEquals(expectedSummaryList, viewModel.summaryList)
-    }
-
-    @Test
-    fun `fromDataModel includes status row with pink tag when property is occupied`() {
-        val dataModel =
-            ComplianceStatusDataModel(
-                propertyOwnershipId = 1L,
-                singleLineAddress = "123 Test Street",
-                registrationNumber = "P-XXXX-XXXX",
-                gasSafetyStatus = ComplianceCertStatus.ADDED,
-                electricalSafetyStatus = ComplianceCertStatus.HAS_FAULTS,
-                epcStatus = ComplianceCertStatus.EXPIRED,
-                epcExpiryDate = LocalDate.of(2025, 3, 1),
-                isComplete = true,
-                isOccupied = true,
-            )
-
-        val viewModel = ComplianceActionViewModelBuilder.fromDataModel(dataModel)
-
-        val statusRow = viewModel.summaryList[1]
-        assertEquals("complianceActions.summaryRow.status", statusRow.fieldHeading)
-        assertEquals("complianceActions.summaryRow.occupied", statusRow.fieldValue)
-        assertEquals(TAG_COLOUR_PINK, statusRow.tagColour)
-    }
-
-    @Test
-    fun `fromDataModel includes status row with grey tag when and property is unoccupied`() {
-        val dataModel =
-            ComplianceStatusDataModel(
-                propertyOwnershipId = 1L,
-                singleLineAddress = "123 Test Street",
-                registrationNumber = "P-XXXX-XXXX",
-                gasSafetyStatus = ComplianceCertStatus.EXPIRED,
-                electricalSafetyStatus = ComplianceCertStatus.HAS_FAULTS,
-                epcStatus = ComplianceCertStatus.ADDED,
-                isComplete = true,
-                isOccupied = false,
-            )
-
-        val viewModel = ComplianceActionViewModelBuilder.fromDataModel(dataModel)
-
-        val statusRow = viewModel.summaryList[1]
-        assertEquals("complianceActions.summaryRow.status", statusRow.fieldHeading)
-        assertEquals("complianceActions.summaryRow.unoccupied", statusRow.fieldValue)
-        assertEquals(TAG_COLOUR_GREY, statusRow.tagColour)
     }
 
     @Test
@@ -115,12 +59,10 @@ class ComplianceActionViewModelBuilderTests {
                 isOccupied = false,
             )
 
-        val viewModel = ComplianceActionViewModelBuilder.fromDataModel(dataModel)
+        val viewModel = OutstandingActionViewModelBuilder.fromDataModel(dataModel)
 
-        assertEquals(3, viewModel.summaryList.size)
-        assertEquals("complianceActions.summaryRow.registrationNumber", viewModel.summaryList[0].fieldHeading)
-        assertEquals("complianceActions.summaryRow.status", viewModel.summaryList[1].fieldHeading)
-        assertEquals("complianceActions.summaryRow.gasSafety", viewModel.summaryList[2].fieldHeading)
+        assertEquals(1, viewModel.summaryList.size)
+        assertEquals("outstandingActions.summaryRow.gasSafety", viewModel.summaryList[0].fieldHeading)
     }
 
     @Test
@@ -137,10 +79,10 @@ class ComplianceActionViewModelBuilderTests {
                 isOccupied = true,
             )
 
-        val viewModel = ComplianceActionViewModelBuilder.fromDataModel(dataModel)
+        val viewModel = OutstandingActionViewModelBuilder.fromDataModel(dataModel)
 
         assertEquals(1, viewModel.actions?.size)
-        assertEquals("complianceActions.action.goToProperty", viewModel.actions?.first()?.text)
+        assertEquals("outstandingActions.action.goToProperty", viewModel.actions?.first()?.text)
         assertEquals(
             PropertyDetailsController.getPropertyCompliancePath(dataModel.propertyOwnershipId),
             viewModel.actions?.first()?.url,
@@ -171,12 +113,12 @@ class ComplianceActionViewModelBuilderTests {
         )
 
         private fun getGasSafetyRow(viewModel: SummaryCardViewModel) =
-            viewModel.summaryList.find { it.fieldHeading == "complianceActions.summaryRow.gasSafety" }
+            viewModel.summaryList.find { it.fieldHeading == "outstandingActions.summaryRow.gasSafety" }
 
         @Test
         fun `occupied property with provide later status shows gas row with provide later message`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.PROVIDE_LATER,
                         isOccupied = true,
@@ -186,9 +128,9 @@ class ComplianceActionViewModelBuilderTests {
 
             val gasSafetyRow = getGasSafetyRow(viewModel)
             assertNotNull(gasSafetyRow)
-            assertEquals("complianceActions.status.provideLater", gasSafetyRow.fieldValue)
+            assertEquals("outstandingActions.status.provideLater", gasSafetyRow.fieldValue)
             assertEquals(
-                provideLaterDeadline.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                provideLaterDeadline.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 gasSafetyRow.optionalFieldValueParam,
             )
         }
@@ -196,7 +138,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with provide later status but no deadline shows gas row with undated provide later message`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.PROVIDE_LATER,
                         isOccupied = true,
@@ -206,14 +148,14 @@ class ComplianceActionViewModelBuilderTests {
 
             val gasSafetyRow = getGasSafetyRow(viewModel)
             assertNotNull(gasSafetyRow)
-            assertEquals("complianceActions.status.provideLaterNoDeadline", gasSafetyRow.fieldValue)
+            assertEquals("outstandingActions.status.provideLaterNoDeadline", gasSafetyRow.fieldValue)
             assertNull(gasSafetyRow.optionalFieldValueParam)
         }
 
         @Test
         fun `unoccupied property with provide later status does not show gas row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.PROVIDE_LATER,
                         isOccupied = false,
@@ -227,7 +169,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with expired cert shows gas row with expired message and date`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.EXPIRED,
                         isOccupied = true,
@@ -237,9 +179,9 @@ class ComplianceActionViewModelBuilderTests {
 
             val gasSafetyRow = getGasSafetyRow(viewModel)
             assertNotNull(gasSafetyRow)
-            assertEquals("complianceActions.status.expired", gasSafetyRow.fieldValue)
+            assertEquals("outstandingActions.status.expired", gasSafetyRow.fieldValue)
             assertEquals(
-                gasSafetyExpiryDate.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                gasSafetyExpiryDate.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 gasSafetyRow.optionalFieldValueParam,
             )
         }
@@ -247,7 +189,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `unoccupied property with expired cert shows gas row with expired message and date`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.EXPIRED,
                         isOccupied = false,
@@ -257,9 +199,9 @@ class ComplianceActionViewModelBuilderTests {
 
             val gasSafetyRow = getGasSafetyRow(viewModel)
             assertNotNull(gasSafetyRow)
-            assertEquals("complianceActions.status.expired", gasSafetyRow.fieldValue)
+            assertEquals("outstandingActions.status.expired", gasSafetyRow.fieldValue)
             assertEquals(
-                gasSafetyExpiryDate.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                gasSafetyExpiryDate.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 gasSafetyRow.optionalFieldValueParam,
             )
         }
@@ -267,7 +209,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with no certificate shows gas row with not added message`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.HAS_FAULTS,
                         isOccupied = true,
@@ -276,14 +218,14 @@ class ComplianceActionViewModelBuilderTests {
 
             val gasSafetyRow = getGasSafetyRow(viewModel)
             assertNotNull(gasSafetyRow)
-            assertEquals("complianceActions.status.hasFaults.gasSafety", gasSafetyRow.fieldValue)
+            assertEquals("outstandingActions.status.hasFaults.gasSafety", gasSafetyRow.fieldValue)
             assertNull(gasSafetyRow.optionalFieldValueParam)
         }
 
         @Test
         fun `unoccupied property with no certificate does not show gas row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.HAS_FAULTS,
                         isOccupied = false,
@@ -296,7 +238,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with valid cert does not show gas row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.ADDED,
                         isOccupied = true,
@@ -309,7 +251,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `unoccupied property with valid cert does not show gas row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.ADDED,
                         isOccupied = false,
@@ -322,7 +264,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with no gas does not show gas row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.NOT_REQUIRED,
                         isOccupied = true,
@@ -335,7 +277,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `unoccupied property with no gas does not show gas row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         gasSafetyStatus = ComplianceCertStatus.NOT_REQUIRED,
                         isOccupied = false,
@@ -370,12 +312,12 @@ class ComplianceActionViewModelBuilderTests {
         )
 
         private fun getElectricalSafetyRow(viewModel: SummaryCardViewModel) =
-            viewModel.summaryList.find { it.fieldHeading == "complianceActions.summaryRow.electricalSafety" }
+            viewModel.summaryList.find { it.fieldHeading == "outstandingActions.summaryRow.electricalSafety" }
 
         @Test
         fun `occupied property with provide later status shows eicr row with provide later message`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         eicrStatus = ComplianceCertStatus.PROVIDE_LATER,
                         isOccupied = true,
@@ -385,9 +327,9 @@ class ComplianceActionViewModelBuilderTests {
 
             val eicrRow = getElectricalSafetyRow(viewModel)
             assertNotNull(eicrRow)
-            assertEquals("complianceActions.status.provideLater", eicrRow.fieldValue)
+            assertEquals("outstandingActions.status.provideLater", eicrRow.fieldValue)
             assertEquals(
-                provideLaterDeadline.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                provideLaterDeadline.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 eicrRow.optionalFieldValueParam,
             )
         }
@@ -395,7 +337,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with provide later status but no deadline shows eicr row with undated provide later message`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         eicrStatus = ComplianceCertStatus.PROVIDE_LATER,
                         isOccupied = true,
@@ -405,14 +347,14 @@ class ComplianceActionViewModelBuilderTests {
 
             val eicrRow = getElectricalSafetyRow(viewModel)
             assertNotNull(eicrRow)
-            assertEquals("complianceActions.status.provideLaterNoDeadline", eicrRow.fieldValue)
+            assertEquals("outstandingActions.status.provideLaterNoDeadline", eicrRow.fieldValue)
             assertNull(eicrRow.optionalFieldValueParam)
         }
 
         @Test
         fun `unoccupied property with provide later status does not show eicr row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         eicrStatus = ComplianceCertStatus.PROVIDE_LATER,
                         isOccupied = false,
@@ -426,7 +368,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with expired cert shows eicr row with expired message and date`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         eicrStatus = ComplianceCertStatus.EXPIRED,
                         isOccupied = true,
@@ -436,9 +378,9 @@ class ComplianceActionViewModelBuilderTests {
 
             val eicrRow = getElectricalSafetyRow(viewModel)
             assertNotNull(eicrRow)
-            assertEquals("complianceActions.status.expired", eicrRow.fieldValue)
+            assertEquals("outstandingActions.status.expired", eicrRow.fieldValue)
             assertEquals(
-                eicrExpiryDate.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                eicrExpiryDate.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 eicrRow.optionalFieldValueParam,
             )
         }
@@ -446,7 +388,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `unoccupied property with expired cert shows eicr row with expired message and date`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         eicrStatus = ComplianceCertStatus.EXPIRED,
                         isOccupied = false,
@@ -456,9 +398,9 @@ class ComplianceActionViewModelBuilderTests {
 
             val eicrRow = getElectricalSafetyRow(viewModel)
             assertNotNull(eicrRow)
-            assertEquals("complianceActions.status.expired", eicrRow.fieldValue)
+            assertEquals("outstandingActions.status.expired", eicrRow.fieldValue)
             assertEquals(
-                eicrExpiryDate.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                eicrExpiryDate.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 eicrRow.optionalFieldValueParam,
             )
         }
@@ -466,7 +408,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with no certificate shows eicr row with not added message`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         eicrStatus = ComplianceCertStatus.HAS_FAULTS,
                         isOccupied = true,
@@ -475,14 +417,14 @@ class ComplianceActionViewModelBuilderTests {
 
             val eicrRow = getElectricalSafetyRow(viewModel)
             assertNotNull(eicrRow)
-            assertEquals("complianceActions.status.hasFaults.electricalSafety", eicrRow.fieldValue)
+            assertEquals("outstandingActions.status.hasFaults.electricalSafety", eicrRow.fieldValue)
             assertNull(eicrRow.optionalFieldValueParam)
         }
 
         @Test
         fun `unoccupied property with no certificate does not show eicr row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         eicrStatus = ComplianceCertStatus.HAS_FAULTS,
                         isOccupied = false,
@@ -495,7 +437,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with valid cert does not show eicr row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         eicrStatus = ComplianceCertStatus.ADDED,
                         isOccupied = true,
@@ -508,7 +450,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `unoccupied property with valid cert does not show eicr row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         eicrStatus = ComplianceCertStatus.ADDED,
                         isOccupied = false,
@@ -545,12 +487,12 @@ class ComplianceActionViewModelBuilderTests {
         )
 
         private fun getEpcRow(viewModel: SummaryCardViewModel) =
-            viewModel.summaryList.find { it.fieldHeading == "complianceActions.summaryRow.energyPerformance" }
+            viewModel.summaryList.find { it.fieldHeading == "outstandingActions.summaryRow.energyPerformance" }
 
         @Test
         fun `occupied property with provide later status shows epc row with provide later message`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.PROVIDE_LATER,
                         isOccupied = true,
@@ -560,9 +502,9 @@ class ComplianceActionViewModelBuilderTests {
 
             val epcRow = getEpcRow(viewModel)
             assertNotNull(epcRow)
-            assertEquals("complianceActions.status.provideLater", epcRow.fieldValue)
+            assertEquals("outstandingActions.status.provideLater", epcRow.fieldValue)
             assertEquals(
-                provideLaterDeadline.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                provideLaterDeadline.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 epcRow.optionalFieldValueParam,
             )
         }
@@ -570,7 +512,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with provide later status but no deadline shows epc row with undated provide later message`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.PROVIDE_LATER,
                         isOccupied = true,
@@ -580,14 +522,14 @@ class ComplianceActionViewModelBuilderTests {
 
             val epcRow = getEpcRow(viewModel)
             assertNotNull(epcRow)
-            assertEquals("complianceActions.status.provideLaterNoDeadline", epcRow.fieldValue)
+            assertEquals("outstandingActions.status.provideLaterNoDeadline", epcRow.fieldValue)
             assertNull(epcRow.optionalFieldValueParam)
         }
 
         @Test
         fun `unoccupied property with provide later status does not show epc row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.PROVIDE_LATER,
                         isOccupied = false,
@@ -601,7 +543,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with expired epc shows epc row with expired message and date`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.EXPIRED,
                         isOccupied = true,
@@ -611,9 +553,9 @@ class ComplianceActionViewModelBuilderTests {
 
             val epcRow = getEpcRow(viewModel)
             assertNotNull(epcRow)
-            assertEquals("complianceActions.status.expired", epcRow.fieldValue)
+            assertEquals("outstandingActions.status.expired", epcRow.fieldValue)
             assertEquals(
-                epcExpiryDate.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                epcExpiryDate.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 epcRow.optionalFieldValueParam,
             )
         }
@@ -621,7 +563,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `unoccupied property with expired epc shows epc row with expired message and date`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.EXPIRED,
                         isOccupied = false,
@@ -631,9 +573,9 @@ class ComplianceActionViewModelBuilderTests {
 
             val epcRow = getEpcRow(viewModel)
             assertNotNull(epcRow)
-            assertEquals("complianceActions.status.expired", epcRow.fieldValue)
+            assertEquals("outstandingActions.status.expired", epcRow.fieldValue)
             assertEquals(
-                epcExpiryDate.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                epcExpiryDate.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 epcRow.optionalFieldValueParam,
             )
         }
@@ -641,7 +583,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with no valid epc shows epc row with not added message`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.HAS_FAULTS,
                         isOccupied = true,
@@ -650,14 +592,14 @@ class ComplianceActionViewModelBuilderTests {
 
             val epcRow = getEpcRow(viewModel)
             assertNotNull(epcRow)
-            assertEquals("complianceActions.status.hasFaults.epc", epcRow.fieldValue)
+            assertEquals("outstandingActions.status.hasFaults.epc", epcRow.fieldValue)
             assertNull(epcRow.optionalFieldValueParam)
         }
 
         @Test
         fun `unoccupied property with no valid epc does not show epc row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.HAS_FAULTS,
                         isOccupied = false,
@@ -670,7 +612,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with valid epc does not show epc row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.ADDED,
                         isOccupied = true,
@@ -683,7 +625,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `unoccupied property with valid epc does not show epc row`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.ADDED,
                         isOccupied = false,
@@ -696,7 +638,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with expired epc not in date at tenancy start does not has inset view model with expiry date`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.EXPIRED,
                         isOccupied = true,
@@ -711,7 +653,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with expired epc in date at tenancy start has inset view model with expiry date`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.EXPIRED,
                         isOccupied = true,
@@ -722,7 +664,7 @@ class ComplianceActionViewModelBuilderTests {
 
             assertNotNull(viewModel.insetViewModel)
             assertEquals(
-                epcExpiryDate.format(ComplianceActionViewModelBuilder.DATE_FORMATTER),
+                epcExpiryDate.format(OutstandingActionViewModelBuilder.DATE_FORMATTER),
                 viewModel.insetViewModel!!.expiryDate,
             )
         }
@@ -730,7 +672,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `unoccupied property with expired epc does not have inset view model`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.EXPIRED,
                         isOccupied = false,
@@ -744,7 +686,7 @@ class ComplianceActionViewModelBuilderTests {
         @Test
         fun `occupied property with non-expired epc with compliance actions does not have inset view model`() {
             val viewModel =
-                ComplianceActionViewModelBuilder.fromDataModel(
+                OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
                         epcStatus = ComplianceCertStatus.HAS_FAULTS,
                         isOccupied = true,
