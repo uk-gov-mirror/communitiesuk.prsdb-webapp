@@ -5,9 +5,9 @@ import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbWebCompon
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
 import uk.gov.communities.prsdb.webapp.constants.enums.PropertyType
 import uk.gov.communities.prsdb.webapp.exceptions.NotNullFormModelValueIsNullException.Companion.notNullValue
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasElectricalCertMode
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasEpcMode
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyMode
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.LicensingTypeMode
 import uk.gov.communities.prsdb.webapp.models.dataModels.PropertyRegistrationDataModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.NewNumberOfPeopleFormModel
@@ -103,16 +103,16 @@ class PropertyRegistrationDataModelFactory(
             lettingAgentEmail = lettingAgentEmail,
             markedJointLandlord = markedJointLandlord,
             hasGasSupply =
-                when (state.gasSafetyTask.gasSafetyDetailsTask.gasSupplyOutcome) {
-                    GasSupplyOutcome.HAS_SUPPLY -> true
-                    GasSupplyOutcome.NO_SUPPLY -> false
-                    GasSupplyOutcome.PROVIDE_LATER -> null
+                when (state.gasSafetyTask.gasSafetyDetailsTask.hasGasSupplyStep.outcome) {
+                    HasGasSupplyMode.HAS_SUPPLY -> true
+                    HasGasSupplyMode.NO_SUPPLY -> false
+                    HasGasSupplyMode.PROVIDE_LATER -> null
                     null ->
                         if (isDelegatedToLettingAgent) {
                             null
                         } else {
                             throw IllegalStateException(
-                                "gasSupplyOutcome must be answered before registration unless it is delegated to a letting agent",
+                                "hasGasSupply must be answered before registration unless it is delegated to a letting agent",
                             )
                         }
                 },
@@ -123,7 +123,7 @@ class PropertyRegistrationDataModelFactory(
             gasSafetyFileUploadIds = state.gasSafetyTask.gasSafetyDetailsTask.gasUploadIds,
             gasSafetyCertProvideLater =
                 isDelegatedToLettingAgent ||
-                    state.gasSafetyTask.gasSafetyDetailsTask.gasSupplyOutcome == GasSupplyOutcome.PROVIDE_LATER,
+                    state.gasSafetyTask.gasSafetyDetailsTask.hasGasSupplyStep.outcome == HasGasSupplyMode.PROVIDE_LATER,
             electricalSafetyFileUploadIds = state.electricalSafetyTask.electricalSafetyDetailsTask.electricalUploadIds,
             electricalSafetyExpiryDate =
                 state.electricalSafetyTask.electricalSafetyDetailsTask

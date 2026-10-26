@@ -2,9 +2,9 @@ package uk.gov.communities.prsdb.webapp.journeys.propertyRegistration
 
 import uk.gov.communities.prsdb.webapp.journeys.Destination
 import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasCertOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSafetyDetailState
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasCertMode
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyMode
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.SummaryListRowViewModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.propertyComplianceViewModels.toUploadedFileUrls
 import uk.gov.communities.prsdb.webapp.services.UploadService
@@ -45,17 +45,17 @@ class GasSafetyRegistrationCyaSummaryRowsFactory(
         }
 
     private fun determineOutcome(): Outcome =
-        when (state.gasSupplyOutcome) {
-            GasSupplyOutcome.NO_SUPPLY -> Outcome.NO_GAS_SUPPLY
-            GasSupplyOutcome.PROVIDE_LATER -> Outcome.DEFERRED_ON_GAS_SUPPLY_QUESTION
-            GasSupplyOutcome.HAS_SUPPLY -> determineCertificateOutcome()
+        when (state.hasGasSupplyStep.outcome) {
+            HasGasSupplyMode.NO_SUPPLY -> Outcome.NO_GAS_SUPPLY
+            HasGasSupplyMode.PROVIDE_LATER -> Outcome.DEFERRED_ON_GAS_SUPPLY_QUESTION
+            HasGasSupplyMode.HAS_SUPPLY -> determineCertificateOutcome()
             null -> throw IllegalStateException("CheckGasSafetyAnswersStep is not reachable before hasGasSupply is answered")
         }
 
     private fun determineCertificateOutcome(): Outcome =
-        when (state.gasCertOutcome) {
-            GasCertOutcome.NO_CERTIFICATE -> Outcome.NO_CERTIFICATE
-            GasCertOutcome.HAS_CERTIFICATE ->
+        when (state.hasGasCertStep.outcome) {
+            HasGasCertMode.NO -> Outcome.NO_CERTIFICATE
+            HasGasCertMode.YES ->
                 if (state.getGasSafetyCertificateIsOutdated() == true) Outcome.NO_CERTIFICATE else Outcome.VALID_CERTIFICATE
             null -> throw IllegalStateException("CheckGasSafetyAnswersStep is not reachable before hasGasCert is answered")
         }
@@ -64,21 +64,21 @@ class GasSafetyRegistrationCyaSummaryRowsFactory(
         row(
             fieldHeading = "checkGasSafety.gasSupply.fieldHeading",
             fieldValue = hasSupply,
-            step = state.gasSupplyOutcomeStep,
+            step = state.hasGasSupplyStep,
         )
 
     private fun deferredOnGasSupplyRow(): SummaryListRowViewModel =
         row(
             fieldHeading = "checkGasSafety.gasSupply.fieldHeading",
             fieldValue = provideLaterKey,
-            step = state.gasSupplyOutcomeStep,
+            step = state.hasGasSupplyStep,
         )
 
     private fun noCertificateRow(): SummaryListRowViewModel =
         row(
             fieldHeading = "checkGasSafety.gasCert.fieldHeading",
             fieldValue = if (state.isOccupied) false else provideLaterKey,
-            step = state.gasCertOutcomeStep,
+            step = state.hasGasCertStep,
         )
 
     private fun uploadedCertificateRows(): List<SummaryListRowViewModel> =
@@ -86,7 +86,7 @@ class GasSafetyRegistrationCyaSummaryRowsFactory(
             row(
                 fieldHeading = "checkGasSafety.validGasCert.fieldHeading",
                 fieldValue = true,
-                step = state.gasCertOutcomeStep,
+                step = state.hasGasCertStep,
             ),
             row(
                 fieldHeading = "checkGasSafety.issueDate.fieldHeading",

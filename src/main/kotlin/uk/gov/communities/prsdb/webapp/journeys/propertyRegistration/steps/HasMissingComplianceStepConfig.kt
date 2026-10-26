@@ -7,7 +7,6 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.PropertyReg
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.ElectricalSafetyState
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.EpcState
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSafetyState
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
 
 @JourneyFrameworkComponent
 class HasMissingComplianceStepConfig :
@@ -26,8 +25,8 @@ class HasMissingComplianceStepConfig :
 
     companion object {
         fun isGasCertInvalid(state: GasSafetyState): Boolean {
-            if (state.gasSafetyDetailsTask.gasSupplyOutcome in
-                listOf(GasSupplyOutcome.NO_SUPPLY, GasSupplyOutcome.PROVIDE_LATER, null)
+            if (state.gasSafetyDetailsTask.hasGasSupplyStep.outcome in
+                listOf(HasGasSupplyMode.NO_SUPPLY, HasGasSupplyMode.PROVIDE_LATER, null)
             ) {
                 return false
             }

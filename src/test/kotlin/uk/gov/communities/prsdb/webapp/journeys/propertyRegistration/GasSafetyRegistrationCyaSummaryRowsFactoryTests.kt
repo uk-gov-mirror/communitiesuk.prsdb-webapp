@@ -16,12 +16,12 @@ import uk.gov.communities.prsdb.webapp.constants.enums.FileUploadStatus
 import uk.gov.communities.prsdb.webapp.database.entity.FileUpload
 import uk.gov.communities.prsdb.webapp.journeys.Destination
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.CertificateUpload
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasCertOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSafetyDetailState
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CheckGasCertUploadsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertIssueDateStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasCertMode
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasCertStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyMode
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyStep
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.SummaryListRowViewModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.UploadedFileUrl
@@ -52,8 +52,8 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
     }
 
     private fun setupCommonStateMocks() {
-        whenever(mockState.gasSupplyOutcomeStep).thenReturn(mockHasGasSupplyStep)
-        whenever(mockState.gasCertOutcomeStep).thenReturn(mockHasGasCertStep)
+        whenever(mockState.hasGasSupplyStep).thenReturn(mockHasGasSupplyStep)
+        whenever(mockState.hasGasCertStep).thenReturn(mockHasGasCertStep)
         whenever(mockHasGasSupplyStep.currentJourneyId).thenReturn("test-journey-id")
         whenever(mockHasGasCertStep.currentJourneyId).thenReturn("test-journey-id")
     }
@@ -64,9 +64,9 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
         inner class NoGasSupply {
             @Test
             fun `factory returns a single no-gas-supply row`() {
-                whenever(mockState.gasSupplyOutcomeStep).thenReturn(mockHasGasSupplyStep)
+                whenever(mockState.hasGasSupplyStep).thenReturn(mockHasGasSupplyStep)
                 whenever(mockHasGasSupplyStep.currentJourneyId).thenReturn("test-journey-id")
-                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.NO_SUPPLY)
+                whenever(mockHasGasSupplyStep.outcome).thenReturn(HasGasSupplyMode.NO_SUPPLY)
 
                 val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
 
@@ -86,8 +86,8 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
             @Test
             fun `factory returns correct content when no certificate provided and occupied`() {
                 setupCommonStateMocks()
-                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-                whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.NO_CERTIFICATE)
+                whenever(mockHasGasSupplyStep.outcome).thenReturn(HasGasSupplyMode.HAS_SUPPLY)
+                whenever(mockHasGasCertStep.outcome).thenReturn(HasGasCertMode.NO)
                 whenever(mockState.isOccupied).thenReturn(true)
 
                 val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
@@ -106,8 +106,8 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
             @Test
             fun `factory returns correct content when no certificate provided and unoccupied`() {
                 setupCommonStateMocks()
-                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-                whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.NO_CERTIFICATE)
+                whenever(mockHasGasSupplyStep.outcome).thenReturn(HasGasSupplyMode.HAS_SUPPLY)
+                whenever(mockHasGasCertStep.outcome).thenReturn(HasGasCertMode.NO)
                 whenever(mockState.isOccupied).thenReturn(false)
 
                 val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)
@@ -126,8 +126,8 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
             @Test
             fun `factory returns correct content when certificate expired and occupied`() {
                 setupCommonStateMocks()
-                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-                whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.HAS_CERTIFICATE)
+                whenever(mockHasGasSupplyStep.outcome).thenReturn(HasGasSupplyMode.HAS_SUPPLY)
+                whenever(mockHasGasCertStep.outcome).thenReturn(HasGasCertMode.YES)
                 whenever(mockState.getGasSafetyCertificateIsOutdated()).thenReturn(true)
                 whenever(mockState.isOccupied).thenReturn(true)
 
@@ -147,8 +147,8 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
             @Test
             fun `factory returns correct content when certificate expired and unoccupied`() {
                 setupCommonStateMocks()
-                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-                whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.HAS_CERTIFICATE)
+                whenever(mockHasGasSupplyStep.outcome).thenReturn(HasGasSupplyMode.HAS_SUPPLY)
+                whenever(mockHasGasCertStep.outcome).thenReturn(HasGasCertMode.YES)
                 whenever(mockState.getGasSafetyCertificateIsOutdated()).thenReturn(true)
                 whenever(mockState.isOccupied).thenReturn(false)
 
@@ -171,8 +171,8 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
             @Test
             fun `factory wires up gas download messageKey and sorts uploads by map index`() {
                 setupCommonStateMocks()
-                whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
-                whenever(mockState.gasCertOutcome).thenReturn(GasCertOutcome.HAS_CERTIFICATE)
+                whenever(mockHasGasSupplyStep.outcome).thenReturn(HasGasSupplyMode.HAS_SUPPLY)
+                whenever(mockHasGasCertStep.outcome).thenReturn(HasGasCertMode.YES)
                 whenever(mockState.getGasSafetyCertificateIsOutdated()).thenReturn(false)
 
                 val issueDate = LocalDate(2024, 6, 15)
@@ -224,9 +224,9 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
 
     @Test
     fun `factory shows a single deferred gas supply row when occupied`() {
-        whenever(mockState.gasSupplyOutcomeStep).thenReturn(mockHasGasSupplyStep)
+        whenever(mockState.hasGasSupplyStep).thenReturn(mockHasGasSupplyStep)
         whenever(mockHasGasSupplyStep.currentJourneyId).thenReturn("test-journey-id")
-        whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.PROVIDE_LATER)
+        whenever(mockHasGasSupplyStep.outcome).thenReturn(HasGasSupplyMode.PROVIDE_LATER)
         whenever(mockState.isOccupied).thenReturn(true)
 
         val destinationSteps = mutableListOf<Any>()
@@ -249,9 +249,9 @@ class GasSafetyRegistrationCyaSummaryRowsFactoryTests {
 
     @Test
     fun `factory shows a single deferred gas supply row when unoccupied`() {
-        whenever(mockState.gasSupplyOutcomeStep).thenReturn(mockHasGasSupplyStep)
+        whenever(mockState.hasGasSupplyStep).thenReturn(mockHasGasSupplyStep)
         whenever(mockHasGasSupplyStep.currentJourneyId).thenReturn("test-journey-id")
-        whenever(mockState.gasSupplyOutcome).thenReturn(GasSupplyOutcome.PROVIDE_LATER)
+        whenever(mockHasGasSupplyStep.outcome).thenReturn(HasGasSupplyMode.PROVIDE_LATER)
         whenever(mockState.isOccupied).thenReturn(false)
 
         val factory = GasSafetyRegistrationCyaSummaryRowsFactory(mockState, mockUploadService)

@@ -3,15 +3,12 @@ package uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.JourneyFrameworkComponent
 import uk.gov.communities.prsdb.webapp.journeys.Destination
 import uk.gov.communities.prsdb.webapp.journeys.JourneyStateService
-import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
 import uk.gov.communities.prsdb.webapp.journeys.OrParents
 import uk.gov.communities.prsdb.webapp.journeys.Task
 import uk.gov.communities.prsdb.webapp.journeys.hasOutcome
 import uk.gov.communities.prsdb.webapp.journeys.isComplete
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.CertificateUpload
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasCertOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSafetyDetailState
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CheckGasCertUploadsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertExpiredStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertIssueDateMode
@@ -56,29 +53,6 @@ class GasSafetyDetailsTask(
 
     override var gasUploadMap: Map<Int, CertificateUpload> by delegateProvider.requiredDelegate("gasUploadMap", mapOf())
     override var highestAssignedGasMemberId: Int? by delegateProvider.nullableDelegate("highestGasUploadMemberId")
-
-    override val gasSupplyOutcome: GasSupplyOutcome?
-        get() =
-            when (hasGasSupplyStep.outcome) {
-                HasGasSupplyMode.HAS_SUPPLY -> GasSupplyOutcome.HAS_SUPPLY
-                HasGasSupplyMode.NO_SUPPLY -> GasSupplyOutcome.NO_SUPPLY
-                HasGasSupplyMode.PROVIDE_LATER -> GasSupplyOutcome.PROVIDE_LATER
-                null -> null
-            }
-
-    override val gasSupplyOutcomeStep: JourneyStep.RequestableStep<*, *, *>
-        get() = hasGasSupplyStep
-
-    override val gasCertOutcome: GasCertOutcome?
-        get() =
-            when (hasGasCertStep.outcome) {
-                HasGasCertMode.YES -> GasCertOutcome.HAS_CERTIFICATE
-                HasGasCertMode.NO -> GasCertOutcome.NO_CERTIFICATE
-                null -> null
-            }
-
-    override val gasCertOutcomeStep: JourneyStep.RequestableStep<*, *, *>
-        get() = hasGasCertStep
 
     override fun makeSubJourney(state: GasSafetyDetailState) =
         subJourney(state) {

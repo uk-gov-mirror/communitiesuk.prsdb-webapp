@@ -10,7 +10,6 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 import uk.gov.communities.prsdb.webapp.constants.GAS_SAFETY_CERT_VALIDITY_YEARS
 import uk.gov.communities.prsdb.webapp.journeys.AbstractJourneyState
-import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CheckGasCertUploadsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertExpiredStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertIssueDateStep
@@ -102,10 +101,6 @@ class GasSafetyDetailsStateTests {
             override var highestAssignedGasMemberId: Int? = null
             override val hasGasSupplyStep = mock<HasGasSupplyStep>()
             override val hasGasCertStep = mock<HasGasCertStep>()
-            override val gasSupplyOutcome: GasSupplyOutcome? = null
-            override val gasSupplyOutcomeStep: JourneyStep.RequestableStep<*, *, *> = hasGasSupplyStep
-            override val gasCertOutcome: GasCertOutcome? = null
-            override val gasCertOutcomeStep: JourneyStep.RequestableStep<*, *, *> = hasGasCertStep
             override val uploadGasCertStep = mock<UploadGasCertStep>()
             override val checkGasCertUploadsStep = mock<CheckGasCertUploadsStep>()
             override val removeGasCertUploadStep = mock<RemoveGasCertUploadStep>()

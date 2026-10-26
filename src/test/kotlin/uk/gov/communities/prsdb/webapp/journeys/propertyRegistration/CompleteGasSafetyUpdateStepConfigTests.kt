@@ -11,12 +11,14 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.communities.prsdb.webapp.exceptions.NotNullFormModelValueIsNullException
 import uk.gov.communities.prsdb.webapp.exceptions.UpdateConflictException
 import uk.gov.communities.prsdb.webapp.journeys.Destination
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyMode
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.GasSafetyDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.update.gasSafety.CompleteGasSafetyUpdateStepConfig
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.update.gasSafety.UpdateGasSafetyJourneyState
@@ -49,6 +51,13 @@ class CompleteGasSafetyUpdateStepConfigTests {
         @Mock
         private lateinit var mockDetailTask: GasSafetyDetailsTask
 
+        private val mockHasGasSupplyStep: HasGasSupplyStep = mock()
+
+        private fun stubGasSupplyOutcome(mode: HasGasSupplyMode?) {
+            whenever(mockDetailTask.hasGasSupplyStep).thenReturn(mockHasGasSupplyStep)
+            whenever(mockHasGasSupplyStep.outcome).thenReturn(mode)
+        }
+
         @BeforeEach
         fun setUp() {
             whenever(mockState.propertyId).thenReturn(propertyId)
@@ -62,7 +71,7 @@ class CompleteGasSafetyUpdateStepConfigTests {
 
             whenever(mockState.previousUploadIds).thenReturn(emptyList())
             whenever(mockState.lastModifiedDate).thenReturn(initialLastModifiedDate.toString())
-            whenever(mockDetailTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.HAS_SUPPLY)
+            stubGasSupplyOutcome(HasGasSupplyMode.HAS_SUPPLY)
             whenever(mockDetailTask.getGasSafetyCertificateIssueDateIfReachable()).thenReturn(issueDate)
             whenever(mockDetailTask.gasUploadIds).thenReturn(uploadIds)
 
@@ -81,7 +90,7 @@ class CompleteGasSafetyUpdateStepConfigTests {
         fun `calls updateGasSafety with no gas supply and null issue date`() {
             whenever(mockState.previousUploadIds).thenReturn(emptyList())
             whenever(mockState.lastModifiedDate).thenReturn(initialLastModifiedDate.toString())
-            whenever(mockDetailTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.NO_SUPPLY)
+            stubGasSupplyOutcome(HasGasSupplyMode.NO_SUPPLY)
             whenever(mockDetailTask.getGasSafetyCertificateIssueDateIfReachable()).thenReturn(null)
             whenever(mockDetailTask.gasUploadIds).thenReturn(emptyList())
 
@@ -99,7 +108,7 @@ class CompleteGasSafetyUpdateStepConfigTests {
         @Test
         fun `throws NotNullFormModelValueIsNullException when hasGasSupply is null`() {
             whenever(mockState.lastModifiedDate).thenReturn(initialLastModifiedDate.toString())
-            whenever(mockDetailTask.gasSupplyOutcome).thenReturn(null)
+            stubGasSupplyOutcome(null)
 
             assertThrows<NotNullFormModelValueIsNullException> {
                 stepConfig.afterStepIsReached(mockState)
@@ -110,7 +119,7 @@ class CompleteGasSafetyUpdateStepConfigTests {
         fun `deletes the journey then rethrows when it gets an UpdateConflictException`() {
             // Arrange
             whenever(mockState.lastModifiedDate).thenReturn(initialLastModifiedDate.toString())
-            whenever(mockDetailTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.NO_SUPPLY)
+            stubGasSupplyOutcome(HasGasSupplyMode.NO_SUPPLY)
 
             whenever(
                 mockPropertyComplianceService.updateGasSafety(
@@ -133,7 +142,7 @@ class CompleteGasSafetyUpdateStepConfigTests {
             whenever(mockState.previousUploadIds).thenReturn(mutableListOf(10L, 20L))
 
             whenever(mockState.lastModifiedDate).thenReturn(initialLastModifiedDate.toString())
-            whenever(mockDetailTask.gasSupplyOutcome).thenReturn(GasSupplyOutcome.NO_SUPPLY)
+            stubGasSupplyOutcome(HasGasSupplyMode.NO_SUPPLY)
             whenever(mockDetailTask.getGasSafetyCertificateIssueDateIfReachable()).thenReturn(null)
             whenever(mockDetailTask.gasUploadIds).thenReturn(emptyList())
 

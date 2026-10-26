@@ -5,7 +5,6 @@ import kotlinx.datetime.plus
 import uk.gov.communities.prsdb.webapp.constants.GAS_SAFETY_CERT_VALIDITY_YEARS
 import uk.gov.communities.prsdb.webapp.helpers.DateTimeHelper
 import uk.gov.communities.prsdb.webapp.journeys.JourneyState
-import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CheckGasCertUploadsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CheckGasSafetyAnswersStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertExpiredStep
@@ -41,14 +40,6 @@ interface GasSafetyDetailState : JourneyState {
     val allowProvideCertificateLaterRoute: Boolean
     val propertyOwnershipId: Long?
 
-    // Unified accessors: map the step-specific answer modes onto a shared outcome vocabulary, so downstream
-    // consumers (CYA rows, save-step persistence, missing-compliance check) don't depend on the step enums.
-    // See GasSafetyDetailsTask for the concrete implementation.
-    val gasSupplyOutcome: GasSupplyOutcome?
-    val gasSupplyOutcomeStep: JourneyStep.RequestableStep<*, *, *>
-    val gasCertOutcome: GasCertOutcome?
-    val gasCertOutcomeStep: JourneyStep.RequestableStep<*, *, *>
-
     fun getGasSafetyCertificateIssueDateIfReachable() =
         gasCertIssueDateStep.formModelIfReachableOrNull?.let { date ->
             DateTimeHelper.parseDateOrNull(date.day, date.month, date.year)
@@ -70,15 +61,4 @@ interface GasSafetyDetailState : JourneyState {
     var highestAssignedGasMemberId: Int?
 
     fun getNextGasUploadMemberId(): Int = highestAssignedGasMemberId?.let { it + 1 } ?: 1
-}
-
-enum class GasSupplyOutcome {
-    HAS_SUPPLY,
-    NO_SUPPLY,
-    PROVIDE_LATER,
-}
-
-enum class GasCertOutcome {
-    HAS_CERTIFICATE,
-    NO_CERTIFICATE,
 }

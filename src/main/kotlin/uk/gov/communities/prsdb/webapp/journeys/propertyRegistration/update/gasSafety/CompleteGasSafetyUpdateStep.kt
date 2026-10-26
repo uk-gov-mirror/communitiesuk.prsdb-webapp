@@ -9,7 +9,7 @@ import uk.gov.communities.prsdb.webapp.exceptions.UpdateConflictException
 import uk.gov.communities.prsdb.webapp.journeys.AbstractInternalStepConfig
 import uk.gov.communities.prsdb.webapp.journeys.Destination
 import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.GasSupplyOutcome
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasGasSupplyMode
 import uk.gov.communities.prsdb.webapp.journeys.shared.Complete
 import uk.gov.communities.prsdb.webapp.services.PropertyComplianceService
 import uk.gov.communities.prsdb.webapp.services.UploadService
@@ -27,9 +27,9 @@ class CompleteGasSafetyUpdateStepConfig(
                 propertyOwnershipId = state.propertyId,
                 initialLastModifiedDate = Instant.parse(state.lastModifiedDate).toJavaInstant(),
                 hasGasSupply =
-                    when (state.gasSafetyDetailsTask.gasSupplyOutcome) {
-                        GasSupplyOutcome.HAS_SUPPLY, GasSupplyOutcome.PROVIDE_LATER -> true
-                        GasSupplyOutcome.NO_SUPPLY -> false
+                    when (state.gasSafetyDetailsTask.hasGasSupplyStep.outcome) {
+                        HasGasSupplyMode.HAS_SUPPLY, HasGasSupplyMode.PROVIDE_LATER -> true
+                        HasGasSupplyMode.NO_SUPPLY -> false
                         null -> throw NotNullFormModelValueIsNullException("hasGasSupply is null")
                     },
                 gasSafetyCertIssueDate = state.gasSafetyDetailsTask.getGasSafetyCertificateIssueDateIfReachable()?.toJavaLocalDate(),
