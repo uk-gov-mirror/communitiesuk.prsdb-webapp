@@ -45,6 +45,7 @@ class LandlordController(
     @GetMapping("/$DASHBOARD_PATH_SEGMENT")
     fun landlordDashboard(model: Model): String {
         val landlord = userToLandlordService.getCurrentLandlordForUser()
+        // TODO PDJB-1606: Include properties with outstanding licensing or tenancy details in the dashboard banner count
         val numberOfComplianceActions =
             propertyOwnershipService.getNumberOfIncompleteCompliancesForLandlord(landlord) +
                 propertyComplianceService.getNumberOfNonCompliantPropertiesForLandlord(landlord)
