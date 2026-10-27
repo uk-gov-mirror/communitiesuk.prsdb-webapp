@@ -3,6 +3,7 @@ package uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps
 import jakarta.servlet.http.HttpServletRequest
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.JourneyFrameworkComponent
 import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
+import uk.gov.communities.prsdb.webapp.constants.ASSOCIATED_PARTIES
 import uk.gov.communities.prsdb.webapp.constants.PAYMENTS
 import uk.gov.communities.prsdb.webapp.constants.WITH_BACK_URL_PARAMETER_NAME
 import uk.gov.communities.prsdb.webapp.constants.enums.TaskStatus
@@ -66,7 +67,12 @@ class PropertyRegistrationTaskListStepConfig(
                     add(
                         TaskListItemViewModel.fromTask(
                             "registerProperty.taskList.aboutYourProperty.ownershipAndLandlords",
-                            state.ownershipAndLandlordsTask,
+                            // TODO PDJB-955: use ownershipAndLandlordsTask directly once ASSOCIATED_PARTIES is released
+                            if (featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) {
+                                state.ownershipAndLandlordsTask
+                            } else {
+                                state.ownershipAndLandlordsTaskBeforeAssociatedParties
+                            },
                         ),
                     )
                     add(

@@ -2,7 +2,10 @@ package uk.gov.communities.prsdb.webapp.journeys.propertyRegistration
 
 import kotlinx.datetime.toJavaLocalDate
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbWebComponent
+import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
+import uk.gov.communities.prsdb.webapp.constants.ASSOCIATED_PARTIES
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
+import uk.gov.communities.prsdb.webapp.constants.enums.OwnershipType
 import uk.gov.communities.prsdb.webapp.constants.enums.PropertyType
 import uk.gov.communities.prsdb.webapp.exceptions.NotNullFormModelValueIsNullException.Companion.notNullValue
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.HasElectricalCertMode
@@ -21,6 +24,7 @@ import uk.gov.communities.prsdb.webapp.services.EpcCertificateUrlProvider
 @PrsdbWebComponent
 class PropertyRegistrationDataModelFactory(
     private val epcCertificateUrlProvider: EpcCertificateUrlProvider,
+    private val featureFlagManager: FeatureFlagManager,
 ) {
     fun fromJourneyState(state: PropertyRegistrationJourneyState): PropertyRegistrationDataModel {
         val isOccupied = state.occupied.formModel.notNullValue(OccupancyFormModel::occupied)
@@ -33,7 +37,7 @@ class PropertyRegistrationDataModelFactory(
             }
         val shouldRequireTenancyDetails = isOccupied && !state.provideTenancyDetailsLater && !isDelegatedToLettingAgent
         val billsIncludedDataModel = state.rentIncludesBillsTask.getBillsIncludedOrNull()
-        val jointLandlordsTask = state.ownershipAndLandlordsTask.jointLandlordsTask
+        val jointLandlordsTask = state.getJointLandlordsTask(featureFlagManager)
         val jointLandlordEmails: List<String>? =
             jointLandlordsTask.inviteJointLandlordsTask.invitedJointLandlordEmailsMap
                 ?.values
@@ -53,9 +57,14 @@ class PropertyRegistrationDataModelFactory(
                 },
             licenseType = if (isDelegatedToLettingAgent) LicensingType.PROVIDE_LATER else state.licensingTask.getLicensingType(),
             licenceNumber = state.licensingTask.getLicenceNumberOrNull() ?: "",
+            // TODO PDJB-2015: derive the ownership type from the associated parties answers
             ownershipType =
-                state.ownershipAndLandlordsTask.ownershipTypeStep.formModel
-                    .notNullValue(OwnershipTypeFormModel::ownershipType),
+                if (featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) {
+                    OwnershipType.FREEHOLD
+                } else {
+                    state.ownershipAndLandlordsTaskBeforeAssociatedParties.ownershipTypeStep.formModel
+                        .notNullValue(OwnershipTypeFormModel::ownershipType)
+                },
             isOccupied = isOccupied,
             numberOfHouseholds =
                 if (shouldRequireTenancyDetails) {
@@ -104,10 +113,19 @@ class PropertyRegistrationDataModelFactory(
             markedJointLandlord = markedJointLandlord,
             hasGasSupply =
                 when (state.gasSafetyTask.gasSafetyDetailsTask.hasGasSupplyStep.outcome) {
-                    HasGasSupplyMode.HAS_SUPPLY -> true
-                    HasGasSupplyMode.NO_SUPPLY -> false
-                    HasGasSupplyMode.PROVIDE_LATER -> null
-                    null ->
+                    HasGasSupplyMode.HAS_SUPPLY -> {
+                        true
+                    }
+
+                    HasGasSupplyMode.NO_SUPPLY -> {
+                        false
+                    }
+
+                    HasGasSupplyMode.PROVIDE_LATER -> {
+                        null
+                    }
+
+                    null -> {
                         if (isDelegatedToLettingAgent) {
                             null
                         } else {
@@ -115,6 +133,7 @@ class PropertyRegistrationDataModelFactory(
                                 "hasGasSupply must be answered before registration unless it is delegated to a letting agent",
                             )
                         }
+                    }
                 },
             gasSafetyCertIssueDate =
                 state.gasSafetyTask.gasSafetyDetailsTask
@@ -140,8 +159,12 @@ class PropertyRegistrationDataModelFactory(
                 state.epcTask.epcDetailsTask.acceptedEpcIfStillAccepted?.let {
                     epcCertificateUrlProvider.getEpcCertificateUrl(it.certificateNumber)
                 },
-            epcExpiryDate = state.epcTask.epcDetailsTask.acceptedEpcIfStillAccepted?.expiryDateAsJavaLocalDate,
-            epcEnergyRating = state.epcTask.epcDetailsTask.acceptedEpcIfStillAccepted?.energyRating,
+            epcExpiryDate =
+                state.epcTask.epcDetailsTask.acceptedEpcIfStillAccepted
+                    ?.expiryDateAsJavaLocalDate,
+            epcEnergyRating =
+                state.epcTask.epcDetailsTask.acceptedEpcIfStillAccepted
+                    ?.energyRating,
             tenancyStartedBeforeEpcExpiry =
                 state.epcTask.epcDetailsTask.epcInDateAtStartOfTenancyCheckStep
                     .formModelIfReachableOrNull

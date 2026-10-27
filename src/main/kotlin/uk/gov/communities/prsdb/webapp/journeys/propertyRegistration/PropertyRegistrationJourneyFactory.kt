@@ -4,6 +4,8 @@ import kotlinx.datetime.Instant
 import org.springframework.beans.factory.ObjectFactory
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.JourneyFrameworkComponent
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbWebService
+import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
+import uk.gov.communities.prsdb.webapp.constants.ASSOCIATED_PARTIES
 import uk.gov.communities.prsdb.webapp.constants.CONFIRMATION_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.TASK_LIST_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.enums.WhoProvidesRentalDetails
@@ -87,9 +89,11 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.EpcTa
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.GasSafetyDependencies
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.GasSafetyTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.HouseHoldsAndTenantsDependencies
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.JointLandlordsPropertyRegistrationTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.LicensingDependencies
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.LicensingTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.OwnershipAndLandlordsTask
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.OwnershipAndLandlordsTaskBeforeAssociatedParties
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.PropertyDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.TenancyDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.WhoProvidesDetailsDependencies
@@ -113,6 +117,7 @@ class PropertyRegistrationJourneyFactory(
     private val stateFactory: ObjectFactory<PropertyRegistrationJourneyState>,
     private val currentUserService: CurrentUserService,
     private val paymentsStrategy: PaymentsPropertyRegistrationStrategy,
+    private val featureFlagManager: FeatureFlagManager,
 ) {
     final fun createJourneySteps(): Map<String, StepLifecycleOrchestrator> {
         val state = stateFactory.getObject()
@@ -174,7 +179,7 @@ class PropertyRegistrationJourneyFactory(
                 }
 
                 OwnershipTypeStep.ROUTE_SEGMENT -> {
-                    fromTask(journey.ownershipAndLandlordsTask) {
+                    fromTask(journey.ownershipAndLandlordsTaskBeforeAssociatedParties) {
                         checkAnswerStep(task.ownershipTypeStep, OwnershipTypeStep.ROUTE_SEGMENT)
                     }
                 }
@@ -250,8 +255,9 @@ class PropertyRegistrationJourneyFactory(
                 HasJointLandlordsStep.ROUTE_SEGMENT,
                 CheckJointLandlordsStep.ROUTE_SEGMENT,
                 -> {
-                    checkAnswerTask(journey.ownershipAndLandlordsTask.jointLandlordsTask, { journey })
-                    configureStep(journey.ownershipAndLandlordsTask.jointLandlordsTask.inviteJointLandlordsTask.checkJointLandlordsStep) {
+                    val jointLandlordsTask = journey.getJointLandlordsTask(featureFlagManager)
+                    checkAnswerTask(jointLandlordsTask, { journey })
+                    configureStep(jointLandlordsTask.inviteJointLandlordsTask.checkJointLandlordsStep) {
                         backDestination { journey.returnToCyaPageDestination }
                     }
                 }
@@ -376,28 +382,51 @@ class PropertyRegistrationJourneyFactory(
                 initialStep()
                 noNextDestination()
             }
+            // TODO PDJB-955: remove the flag check and the task before associated parties once ASSOCIATED_PARTIES is released
+            val associatedPartiesEnabled = featureFlagManager.checkFeature(ASSOCIATED_PARTIES)
             section {
                 withHeadingMessageKey("registerProperty.taskList.aboutYourProperty.propertyDetails", shouldUseNumbering = false)
                 task(journey.propertyDetailsTask) {
                     parents { journey.taskListStep.always() }
-                    nextStep { journey.ownershipAndLandlordsTask.firstStep }
+                    nextStep {
+                        if (associatedPartiesEnabled) {
+                            journey.ownershipAndLandlordsTask.firstStep
+                        } else {
+                            journey.ownershipAndLandlordsTaskBeforeAssociatedParties.firstStep
+                        }
+                    }
                     saveProgress()
                 }
             }
             section {
                 withHeadingMessageKey("registerProperty.taskList.aboutYourProperty.ownershipAndLandlords", shouldUseNumbering = false)
-                task(journey.ownershipAndLandlordsTask) {
-                    withDependencies { journey }
-                    parents { journey.propertyDetailsTask.isComplete() }
-                    nextStep { journey.correspondenceTask.firstStep }
-                    saveProgress()
+                if (associatedPartiesEnabled) {
+                    task(journey.ownershipAndLandlordsTask) {
+                        withDependencies { journey }
+                        parents { journey.propertyDetailsTask.isComplete() }
+                        nextStep { journey.correspondenceTask.firstStep }
+                        saveProgress()
+                    }
+                } else {
+                    task(journey.ownershipAndLandlordsTaskBeforeAssociatedParties) {
+                        withDependencies { journey }
+                        parents { journey.propertyDetailsTask.isComplete() }
+                        nextStep { journey.correspondenceTask.firstStep }
+                        saveProgress()
+                    }
                 }
             }
             section {
                 withHeadingMessageKey("registerProperty.taskList.aboutYourProperty.correspondence", shouldUseNumbering = false)
                 task(journey.correspondenceTask) {
                     withDependencies { journey }
-                    parents { journey.ownershipAndLandlordsTask.isComplete() }
+                    parents {
+                        if (associatedPartiesEnabled) {
+                            journey.ownershipAndLandlordsTask.isComplete()
+                        } else {
+                            journey.ownershipAndLandlordsTaskBeforeAssociatedParties.isComplete()
+                        }
+                    }
                     nextStep { journey.occupied }
                     saveProgress()
                 }
@@ -645,6 +674,7 @@ class PropertyRegistrationJourney(
     // ===== Journey-structure tasks (grouping tasks for the task-list structure) =====
     override val propertyDetailsTask: PropertyDetailsTask,
     override val ownershipAndLandlordsTask: OwnershipAndLandlordsTask,
+    override val ownershipAndLandlordsTaskBeforeAssociatedParties: OwnershipAndLandlordsTaskBeforeAssociatedParties,
     override val correspondenceTask: CorrespondenceTask,
     override val tenancyDetailsTask: TenancyDetailsTask,
     override val whoProvidesDetailsTask: WhoProvidesDetailsTask,
@@ -777,6 +807,9 @@ interface PropertyRegistrationJourneyState :
     val propertyDetailsTask: PropertyDetailsTask
     val ownershipAndLandlordsTask: OwnershipAndLandlordsTask
 
+    // TODO PDJB-955: remove once ASSOCIATED_PARTIES is released
+    val ownershipAndLandlordsTaskBeforeAssociatedParties: OwnershipAndLandlordsTaskBeforeAssociatedParties
+
     val correspondenceTask: CorrespondenceTask
     val tenancyDetailsTask: TenancyDetailsTask
     val whoProvidesDetailsTask: WhoProvidesDetailsTask
@@ -806,4 +839,12 @@ interface PropertyRegistrationJourneyState :
 
     fun isDelegatedToLettingAgent(): Boolean =
         whoProvidesDetailsTask.whoProvidesRentalDetailsStep.outcome == WhoProvidesRentalDetailsMode.LETTING_AGENT_PROVIDES
+
+    // TODO PDJB-955: replace with ownershipAndLandlordsTask.jointLandlordsTask once ASSOCIATED_PARTIES is released
+    fun getJointLandlordsTask(featureFlagManager: FeatureFlagManager): JointLandlordsPropertyRegistrationTask =
+        if (featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) {
+            ownershipAndLandlordsTask.jointLandlordsTask
+        } else {
+            ownershipAndLandlordsTaskBeforeAssociatedParties.jointLandlordsTask
+        }
 }
