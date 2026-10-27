@@ -1,7 +1,7 @@
 package uk.gov.communities.prsdb.webapp.journeys
 
+import kotlinx.datetime.Instant
 import uk.gov.communities.prsdb.webapp.database.entity.SavedJourneyState
-import java.time.Instant
 
 interface JourneyState : DelegateKeysOwner {
     fun getStepData(key: String): FormData?

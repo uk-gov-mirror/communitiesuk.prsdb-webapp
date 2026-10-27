@@ -1,5 +1,6 @@
 package uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig
 
+import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Nested
@@ -11,7 +12,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.communities.prsdb.webapp.exceptions.CyaDataHasChangedException
 import uk.gov.communities.prsdb.webapp.journeys.shared.states.CheckYourAnswersJourneyState
-import java.time.Instant
 
 class AbstractCheckYourAnswersStepConfigTests {
     private val mockState = mock<CheckYourAnswersJourneyState>()

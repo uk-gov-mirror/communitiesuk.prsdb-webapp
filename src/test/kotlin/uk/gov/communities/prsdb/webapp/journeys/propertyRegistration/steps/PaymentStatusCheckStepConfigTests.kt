@@ -1,5 +1,6 @@
 package uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps
 
+import kotlinx.datetime.Clock
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -33,8 +34,8 @@ import uk.gov.communities.prsdb.webapp.models.dataModels.PaymentStatusCheckDataM
 import uk.gov.communities.prsdb.webapp.services.AddressAvailabilityService
 import uk.gov.communities.prsdb.webapp.services.PaymentService
 import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.MockPropertyRegistrationData
-import java.time.Instant
 import kotlin.test.assertIs
+import kotlin.time.Duration.Companion.seconds
 
 @ExtendWith(MockitoExtension::class)
 class PaymentStatusCheckStepConfigTests {
@@ -358,7 +359,7 @@ class PaymentStatusCheckStepConfigTests {
     fun `afterStepIsReached finalises a capturable payment when answers are unchanged since they were confirmed`() {
         // Arrange
         stubFinalisedPaymentStatus(PaymentStatus.SUCCEEDED)
-        val confirmedAt = Instant.now()
+        val confirmedAt = Clock.System.now()
         whenever(mockState.answersLastChanged).thenReturn(confirmedAt)
         whenever(mockState.answersConfirmedAt).thenReturn(confirmedAt)
 
@@ -371,8 +372,8 @@ class PaymentStatusCheckStepConfigTests {
     }
 
     private fun stubAnswersChangedSinceConfirmation() {
-        whenever(mockState.answersLastChanged).thenReturn(Instant.now())
-        whenever(mockState.answersConfirmedAt).thenReturn(Instant.now().minusSeconds(60))
+        whenever(mockState.answersLastChanged).thenReturn(Clock.System.now())
+        whenever(mockState.answersConfirmedAt).thenReturn(Clock.System.now() - 60.seconds)
     }
 
     private fun stubGovUkPayStatus(status: PaymentStatus) {

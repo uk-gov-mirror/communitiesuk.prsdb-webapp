@@ -1,7 +1,9 @@
 package uk.gov.communities.prsdb.webapp.journeys
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import uk.gov.communities.prsdb.webapp.database.entity.SavedJourneyState
-import java.time.Instant
+import kotlin.time.Duration.Companion.nanoseconds
 
 abstract class AbstractJourneyState(
     private val journeyStateService: JourneyStateService,
@@ -56,8 +58,8 @@ abstract class AbstractJourneyState(
         set(value) = journeyStateService.setValue(ANSWERS_CONFIRMED_AT_KEY, value?.toString())
 
     override fun markAnswersChanged() {
-        val now = Instant.now()
-        val newValue = if (now == answersLastChanged) now.plusNanos(1) else now
+        val now = Clock.System.now()
+        val newValue = if (now == answersLastChanged) now + 1.nanoseconds else now
         journeyStateService.setValue(ANSWERS_LAST_CHANGED_KEY, newValue.toString())
     }
 

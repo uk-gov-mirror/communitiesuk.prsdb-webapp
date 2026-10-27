@@ -1,6 +1,7 @@
 package uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps
 
 import jakarta.persistence.EntityExistsException
+import kotlinx.datetime.Clock
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,8 +23,8 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.Prope
 import uk.gov.communities.prsdb.webapp.journeys.shared.Complete
 import uk.gov.communities.prsdb.webapp.services.PropertyRegistrationService
 import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.MockPropertyRegistrationData
-import java.time.Instant
 import kotlin.test.assertNotEquals
+import kotlin.time.Duration.Companion.seconds
 
 @ExtendWith(MockitoExtension::class)
 class SavePropertyRegistrationDataStepConfigTests {
@@ -79,8 +80,8 @@ class SavePropertyRegistrationDataStepConfigTests {
     @Test
     fun `afterStepIsReached throws and does not register the property when answers changed since they were confirmed`() {
         // Arrange
-        whenever(mockState.answersLastChanged).thenReturn(Instant.now())
-        whenever(mockState.answersConfirmedAt).thenReturn(Instant.now().minusSeconds(60))
+        whenever(mockState.answersLastChanged).thenReturn(Clock.System.now())
+        whenever(mockState.answersConfirmedAt).thenReturn(Clock.System.now() - 60.seconds)
 
         // Act & Assert
         assertThrows<CyaDataHasChangedException> { stepConfig.afterStepIsReached(mockState) }
@@ -90,7 +91,7 @@ class SavePropertyRegistrationDataStepConfigTests {
     @Test
     fun `afterStepIsReached registers the property when answers are unchanged since they were confirmed`() {
         // Arrange
-        val confirmedAt = Instant.now()
+        val confirmedAt = Clock.System.now()
         whenever(mockState.answersLastChanged).thenReturn(confirmedAt)
         whenever(mockState.answersConfirmedAt).thenReturn(confirmedAt)
         whenever(mockPropertyRegistrationDataModelFactory.fromJourneyState(mockState)).thenReturn(registrationData)
