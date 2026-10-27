@@ -1,6 +1,7 @@
 package uk.gov.communities.prsdb.webapp.journeys
 
 import uk.gov.communities.prsdb.webapp.database.entity.SavedJourneyState
+import java.time.Instant
 
 abstract class AbstractJourneyState(
     private val journeyStateService: JourneyStateService,
@@ -46,4 +47,24 @@ abstract class AbstractJourneyState(
     override fun setJourneyId(newJourneyId: String) = journeyStateService.setJourneyId(newJourneyId)
 
     override fun copyJourneyTo(newJourneyId: String) = journeyStateService.copyJourneyTo(newJourneyId)
+
+    override val answersLastChanged: Instant?
+        get() = readInstant(ANSWERS_LAST_CHANGED_KEY)
+
+    override var answersConfirmedAt: Instant?
+        get() = readInstant(ANSWERS_CONFIRMED_AT_KEY)
+        set(value) = journeyStateService.setValue(ANSWERS_CONFIRMED_AT_KEY, value?.toString())
+
+    override fun markAnswersChanged() {
+        val now = Instant.now()
+        val newValue = if (now == answersLastChanged) now.plusNanos(1) else now
+        journeyStateService.setValue(ANSWERS_LAST_CHANGED_KEY, newValue.toString())
+    }
+
+    private fun readInstant(key: String): Instant? = (journeyStateService.getValue(key) as? String)?.let { Instant.parse(it) }
+
+    companion object {
+        private const val ANSWERS_LAST_CHANGED_KEY = "answersLastChanged"
+        private const val ANSWERS_CONFIRMED_AT_KEY = "answersConfirmedAt"
+    }
 }

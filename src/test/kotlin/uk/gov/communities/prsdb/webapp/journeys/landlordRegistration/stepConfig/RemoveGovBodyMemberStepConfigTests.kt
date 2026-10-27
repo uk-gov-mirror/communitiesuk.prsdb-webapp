@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.communities.prsdb.webapp.constants.enums.GoverningBodyMemberType
 import uk.gov.communities.prsdb.webapp.journeys.landlordRegistration.states.OrgGovBodyMembersState
@@ -69,6 +72,37 @@ class RemoveGovBodyMemberStepConfigTests {
         whenever(mockState.allowRemovingLastMember).thenReturn(true)
 
         assertTrue(stepConfig.beforeAttemptingToReachStep(mockState))
+    }
+
+    @Test
+    fun `afterStepIsReached removes the member and marks answers changed`() {
+        // Arrange
+        val stepConfig = setupStepConfig()
+        whenever(collectionKeyParameterService.getParameterOrNull()).thenReturn(1)
+        whenever(
+            mockState.governingBodyMembersMap,
+        ).thenReturn(mapOf(1 to createMember("Alex Example"), 2 to createMember("Jamie Example")))
+
+        // Act
+        stepConfig.afterStepIsReached(mockState)
+
+        // Assert
+        val inOrder = inOrder(mockState)
+        inOrder.verify(mockState).governingBodyMembersMap = mapOf(2 to createMember("Jamie Example"))
+        inOrder.verify(mockState).markAnswersChanged()
+    }
+
+    @Test
+    fun `afterStepIsReached does not mark answers changed when there is no key to remove`() {
+        // Arrange
+        val stepConfig = setupStepConfig()
+        whenever(collectionKeyParameterService.getParameterOrNull()).thenReturn(null)
+
+        // Act
+        stepConfig.afterStepIsReached(mockState)
+
+        // Assert
+        verify(mockState, never()).markAnswersChanged()
     }
 
     private fun setupStepConfig(): RemoveGovBodyMemberStepConfig {

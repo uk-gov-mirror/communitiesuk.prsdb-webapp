@@ -306,6 +306,63 @@ class JourneyStepTests {
     }
 
     @Test
+    fun `submitFormData marks answers changed before afterStepDataIsAdded when the step config changes answers`() {
+        // Arrange
+        val (step, stepConfig, state) = initialisedStepWithChangesAnswers(true)
+
+        // Act
+        step.submitFormData(bindingResultFor(TestFormModel()))
+
+        // Assert
+        val inOrder = org.mockito.kotlin.inOrder(stepConfig, state)
+        inOrder.verify(state).addStepData(any(), any())
+        inOrder.verify(state).markAnswersChanged()
+        inOrder.verify(stepConfig).afterStepDataIsAdded(state)
+    }
+
+    @Test
+    fun `submitFormData does not mark answers changed when the step config does not change answers`() {
+        // Arrange
+        val (step, _, state) = initialisedStepWithChangesAnswers(false)
+
+        // Act
+        step.submitFormData(bindingResultFor(TestFormModel()))
+
+        // Assert
+        verify(state, org.mockito.kotlin.never()).markAnswersChanged()
+    }
+
+    private fun bindingResultFor(formModel: TestFormModel): BindingResult {
+        val bindingResult: BindingResult = mock()
+        whenever(bindingResult.target).thenReturn(formModel)
+        return bindingResult
+    }
+
+    @Suppress("ktlint:standard:max-line-length")
+    private fun initialisedStepWithChangesAnswers(
+        changesAnswers: Boolean,
+    ): Triple<JourneyStep.RequestableStep<TestEnum, TestFormModel, JourneyState>, AbstractRequestableStepConfig<TestEnum, TestFormModel, JourneyState>, JourneyState> {
+        val stepConfig = mock<AbstractRequestableStepConfig<TestEnum, TestFormModel, JourneyState>>()
+        val step = JourneyStep.RequestableStep(stepConfig)
+        whenever(stepConfig.formModelClass).thenReturn(TestFormModel::class)
+        whenever(stepConfig.urlPath).thenReturn("stepId")
+        whenever(stepConfig.stepDataKey).thenReturn("stepId")
+        whenever(stepConfig.changesAnswers).thenReturn(changesAnswers)
+        whenever(stepConfig.enrichStepDataBeforeItIsAdded(any(), any())).thenReturn(mapOf("complete" to true))
+        val state = mock<JourneyState>()
+        step.initialize(
+            "stepId",
+            state,
+            mock(),
+            { Destination.ExternalUrl("redirect") },
+            mock(),
+            { Destination.ExternalUrl("unreachable") },
+            false,
+        )
+        return Triple(step, stepConfig, state)
+    }
+
+    @Test
     fun `submitFormData saves does nothing for a InternalStep`() {
         // Arrange
         val internalStepConfig: AbstractInternalStepConfig<TestEnum, JourneyState> = mock()

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.atLeastOnce
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -79,6 +80,31 @@ class FinishCyaJourneyConfigTests {
             config.afterStepIsReached(mockState)
 
             verify(mockOriginalState).clearCyaFields()
+        }
+
+        @Test
+        fun `marks answers changed on the base journey after copying and before clearing CYA fields`() {
+            val metadata = JourneyMetadata(baseJourneyId, timestamp)
+            whenever(mockOriginalState.journeyMetadata).thenReturn(metadata)
+            whenever(mockState.originalJourneyUpdated).thenReturn(timestamp)
+
+            config.afterStepIsReached(mockState)
+
+            val inOrder = inOrder(mockState, mockOriginalState)
+            inOrder.verify(mockState).copyJourneyTo(baseJourneyId)
+            inOrder.verify(mockOriginalState).markAnswersChanged()
+            inOrder.verify(mockOriginalState).clearCyaFields()
+        }
+
+        @Test
+        fun `does not mark answers changed when journey data has changed since the user started cya`() {
+            val metadata = JourneyMetadata(baseJourneyId, timestamp)
+            whenever(mockOriginalState.journeyMetadata).thenReturn(metadata)
+            whenever(mockState.originalJourneyUpdated).thenReturn(Instant.fromEpochMilliseconds(2000))
+
+            runCatching { config.afterStepIsReached(mockState) }
+
+            verify(mockOriginalState, never()).markAnswersChanged()
         }
     }
 

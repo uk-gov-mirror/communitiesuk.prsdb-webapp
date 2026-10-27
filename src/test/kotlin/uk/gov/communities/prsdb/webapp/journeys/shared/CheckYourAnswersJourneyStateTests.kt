@@ -240,6 +240,11 @@ class CheckYourAnswersJourneyStateTests {
 
         override fun clearStepData(key: String) {}
 
+        override val answersLastChanged: java.time.Instant? = null
+        override var answersConfirmedAt: java.time.Instant? = null
+
+        override fun markAnswersChanged() {}
+
         override fun getSubmittedStepData(): Map<String, Any?> = emptyMap()
 
         override fun deleteJourney() {}

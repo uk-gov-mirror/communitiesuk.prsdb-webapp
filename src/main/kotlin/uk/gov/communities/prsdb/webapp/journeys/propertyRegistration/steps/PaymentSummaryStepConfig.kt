@@ -24,6 +24,8 @@ class PaymentSummaryStepConfig(
 ) : AbstractRequestableStepConfig<Complete, NoInputFormModel, PropertyRegistrationJourneyState>() {
     override val formModelClass = NoInputFormModel::class
 
+    override val changesAnswers = false
+
     override fun getStepSpecificContent(state: PropertyRegistrationJourneyState): Map<String, Any?> {
         val quote = paymentService.getPropertyRegistrationPaymentQuote()
         state.paymentQuote = quote

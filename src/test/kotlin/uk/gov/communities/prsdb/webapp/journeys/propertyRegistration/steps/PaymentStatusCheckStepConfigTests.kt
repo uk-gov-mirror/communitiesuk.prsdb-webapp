@@ -22,6 +22,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.communities.prsdb.webapp.constants.enums.PaymentStatus
+import uk.gov.communities.prsdb.webapp.exceptions.CyaDataHasChangedException
 import uk.gov.communities.prsdb.webapp.journeys.Destination
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.PropertyRegistrationDataModelFactory
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.PropertyRegistrationJourneyState
@@ -32,6 +33,7 @@ import uk.gov.communities.prsdb.webapp.models.dataModels.PaymentStatusCheckDataM
 import uk.gov.communities.prsdb.webapp.services.AddressAvailabilityService
 import uk.gov.communities.prsdb.webapp.services.PaymentService
 import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.MockPropertyRegistrationData
+import java.time.Instant
 import kotlin.test.assertIs
 
 @ExtendWith(MockitoExtension::class)
@@ -322,6 +324,55 @@ class PaymentStatusCheckStepConfigTests {
 
         // Assert
         assertEquals(defaultDestination, result)
+    }
+
+    @Test
+    fun `afterStepIsReached cancels a capturable payment and throws when answers changed since they were confirmed`() {
+        // Arrange
+        stubGovUkPayStatus(PaymentStatus.CAPTURABLE)
+        stubAnswersChangedSinceConfirmation()
+        whenever(mockPaymentService.cancelUnfinalisedPayment(paymentId)).thenReturn(PaymentStatus.CANCELLED)
+
+        // Act & Assert
+        assertThrows<CyaDataHasChangedException> { stepConfig.afterStepIsReached(mockState) }
+        verify(mockPaymentService).cancelUnfinalisedPayment(paymentId)
+        verify(mockPaymentService, never()).finalisePayment(any(), any(), any())
+    }
+
+    @Test
+    fun `afterStepIsReached reports success when the payment was already finalised despite answers having changed`() {
+        // Arrange
+        stubGovUkPayStatus(PaymentStatus.CAPTURABLE)
+        stubAnswersChangedSinceConfirmation()
+        whenever(mockPaymentService.cancelUnfinalisedPayment(paymentId)).thenReturn(PaymentStatus.SUCCEEDED)
+
+        // Act
+        stepConfig.afterStepIsReached(mockState)
+
+        // Assert
+        verify(mockState).paymentOutcome = PaymentOutcome.SUCCESS
+        verify(mockPaymentService, never()).finalisePayment(any(), any(), any())
+    }
+
+    @Test
+    fun `afterStepIsReached finalises a capturable payment when answers are unchanged since they were confirmed`() {
+        // Arrange
+        stubFinalisedPaymentStatus(PaymentStatus.SUCCEEDED)
+        val confirmedAt = Instant.now()
+        whenever(mockState.answersLastChanged).thenReturn(confirmedAt)
+        whenever(mockState.answersConfirmedAt).thenReturn(confirmedAt)
+
+        // Act
+        stepConfig.afterStepIsReached(mockState)
+
+        // Assert
+        verify(mockPaymentService, never()).cancelUnfinalisedPayment(any(), anyOrNull())
+        verify(mockPaymentService).finalisePayment(paymentId, PaymentStatus.CAPTURABLE, registrationData)
+    }
+
+    private fun stubAnswersChangedSinceConfirmation() {
+        whenever(mockState.answersLastChanged).thenReturn(Instant.now())
+        whenever(mockState.answersConfirmedAt).thenReturn(Instant.now().minusSeconds(60))
     }
 
     private fun stubGovUkPayStatus(status: PaymentStatus) {

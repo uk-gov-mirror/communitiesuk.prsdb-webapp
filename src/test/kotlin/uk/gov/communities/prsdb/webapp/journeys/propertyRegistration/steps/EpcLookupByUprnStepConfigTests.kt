@@ -123,6 +123,7 @@ class EpcLookupByUprnStepConfigTests {
 
         // Assert
         verify(mockState).epcRetrievedByUprnUpdatedSinceUserReview = true
+        verify(mockState).markAnswersChanged()
     }
 
     @Test
@@ -139,5 +140,6 @@ class EpcLookupByUprnStepConfigTests {
 
         // Assert
         verify(mockState, never()).epcRetrievedByUprnUpdatedSinceUserReview = true
+        verify(mockState, never()).markAnswersChanged()
     }
 }

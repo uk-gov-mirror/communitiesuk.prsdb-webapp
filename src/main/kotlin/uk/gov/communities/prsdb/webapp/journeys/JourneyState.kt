@@ -1,6 +1,7 @@
 package uk.gov.communities.prsdb.webapp.journeys
 
 import uk.gov.communities.prsdb.webapp.database.entity.SavedJourneyState
+import java.time.Instant
 
 interface JourneyState : DelegateKeysOwner {
     fun getStepData(key: String): FormData?
@@ -41,4 +42,10 @@ interface JourneyState : DelegateKeysOwner {
     fun setJourneyId(newJourneyId: String)
 
     fun copyJourneyTo(newJourneyId: String)
+
+    val answersLastChanged: Instant?
+
+    var answersConfirmedAt: Instant?
+
+    fun markAnswersChanged()
 }

@@ -59,8 +59,10 @@ import uk.gov.communities.prsdb.webapp.database.repository.PrsdbUserRepository
 import uk.gov.communities.prsdb.webapp.database.repository.SavedJourneyStateRepository
 import uk.gov.communities.prsdb.webapp.helpers.DateTimeHelper
 import uk.gov.communities.prsdb.webapp.helpers.PaymentHelper
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.Navigator
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BackLink
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.ErrorPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LandlordDashboardPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.createValidPage
@@ -144,6 +146,7 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReg
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.WhoProvidesRentalDetailsFormPagePropertyRegistration
 import uk.gov.communities.prsdb.webapp.journeys.JourneyIdProvider
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.CertificateUpload
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BedroomsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.PaymentFailedStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.PaymentReturnStep
 import uk.gov.communities.prsdb.webapp.models.dataModels.PropertyRegistrationPaymentQuote
@@ -347,6 +350,27 @@ class PropertyRegistrationJourneyTests : IntegrationTestWithMutableData("data-lo
         return paymentRepository.findAll().single { it.reference == requestCaptor.firstValue.reference }
     }
 
+    private fun getJourneyId(page: Page): String =
+        UriComponentsBuilder
+            .fromUriString(page.url())
+            .build()
+            .queryParams
+            .getFirst(JourneyIdProvider.PARAMETER_NAME)
+            ?: error("No journey ID in ${page.url()}")
+
+    // The same session in a second tab changes an answer
+    private fun changeBedroomsInSecondTab(
+        page: Page,
+        journeyId: String,
+    ) {
+        val otherPage = page.context().newPage()
+        Navigator(otherPage, port).navigate(
+            "${RegisterPropertyController.PROPERTY_REGISTRATION_ROUTE}/${BedroomsStep.ROUTE_SEGMENT}" +
+                "?${JourneyIdProvider.PARAMETER_NAME}=$journeyId",
+        )
+        createValidPage(otherPage, NumberOfBedroomsFormPagePropertyRegistration::class).submitNumOfBedrooms(7)
+    }
+
     @Nested
     inner class EnableFeatureFlags {
         @BeforeEach
@@ -504,6 +528,64 @@ class PropertyRegistrationJourneyTests : IntegrationTestWithMutableData("data-lo
             val payment = paymentRepository.findAll().single { it.reference == request.reference }
             assertEquals(PaymentStatus.CREATED, payment.status)
             assertEquals(request.amount, payment.amountInPence)
+        }
+
+        @Test
+        @Suppress("ktlint:standard:max-line-length")
+        fun `answers changed in another tab after confirming but before the payment completes cancel the payment and do not register the property`(
+            browser: Browser,
+        ) {
+            withJavaScriptDisabled(browser) { page, navigator ->
+                val checkAnswersPage = navigator.goToPropertyRegistrationCheckAnswersPageWithPayments()
+                checkAnswersPage.confirm()
+                val paymentSummaryPage = createValidPage(page, PaymentSummaryFormPagePropertyRegistration::class)
+                val journeyId = ensureIncompletePropertyExistsForCurrentJourney(page)
+
+                // The same session in a second tab changes an answer after the user has confirmed
+                changeBedroomsInSecondTab(page, journeyId)
+
+                paymentSummaryPage.form.submit()
+                val paymentReturnPage = createValidPage(page, PaymentReturnFormPagePropertyRegistration::class)
+                paymentReturnPage.checkPaymentStatusButton.clickAndWait()
+
+                val errorPage = createValidPage(page, ErrorPage::class)
+                assertThat(errorPage.heading).containsText("Sorry, there is a problem with the service")
+                val payment = getCreatedPayment()
+                assertEquals(PaymentStatus.CANCELLED, payment.status)
+                verify(govUkPayClient).cancelPayment(payment.paymentId)
+                verify(govUkPayClient, never()).capturePayment(any())
+                verify(propertyOwnershipRepository, never()).save(any())
+            }
+        }
+
+        @Test
+        fun `answers changed in another tab after loading the CYA page stop the user confirming`(browser: Browser) {
+            withJavaScriptDisabled(browser) { page, navigator ->
+                val checkAnswersPage = navigator.goToPropertyRegistrationCheckAnswersPageWithPayments()
+                changeBedroomsInSecondTab(page, getJourneyId(page))
+
+                checkAnswersPage.confirm()
+
+                val errorPage = createValidPage(page, ErrorPage::class)
+                assertThat(errorPage.heading).containsText("Sorry, there is a problem with the service")
+                verify(govUkPayClient, never()).createPayment(any())
+            }
+        }
+
+        @Test
+        fun `visiting the task list in another tab after loading the CYA page does not stop the user confirming`(browser: Browser) {
+            withJavaScriptDisabled(browser) { page, navigator ->
+                val checkAnswersPage = navigator.goToPropertyRegistrationCheckAnswersPageWithPayments()
+                val journeyId = getJourneyId(page)
+                val otherPage = page.context().newPage()
+                Navigator(otherPage, port).navigate(
+                    "${RegisterPropertyController.PROPERTY_REGISTRATION_ROUTE}?${JourneyIdProvider.PARAMETER_NAME}=$journeyId",
+                )
+
+                checkAnswersPage.confirm()
+
+                createValidPage(page, PaymentSummaryFormPagePropertyRegistration::class)
+            }
         }
 
         @Test

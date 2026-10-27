@@ -12,6 +12,8 @@ class ConfirmMissingComplianceStepConfig :
     AbstractRequestableStepConfig<ConfirmMissingComplianceMode, ConfirmMissingComplianceFormModel, PropertyRegistrationJourneyState>() {
     override val formModelClass = ConfirmMissingComplianceFormModel::class
 
+    override val changesAnswers = false
+
     override fun getStepSpecificContent(state: PropertyRegistrationJourneyState) =
         mapOf(
             "isGasMissing" to HasMissingComplianceStepConfig.isGasCertInvalid(state.gasSafetyTask),

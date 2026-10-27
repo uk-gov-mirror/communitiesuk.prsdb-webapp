@@ -1,18 +1,17 @@
 package uk.gov.communities.prsdb.webapp.journeys.shared.stepConfig
 
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.communities.prsdb.webapp.exceptions.CyaDataHasChangedException
 import uk.gov.communities.prsdb.webapp.journeys.shared.states.CheckYourAnswersJourneyState
-import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.CheckAnswersFormModel
-import java.time.LocalDate
+import java.time.Instant
 
 class AbstractCheckYourAnswersStepConfigTests {
     private val mockState = mock<CheckYourAnswersJourneyState>()
@@ -22,77 +21,126 @@ class AbstractCheckYourAnswersStepConfigTests {
         }
 
     @Nested
-    inner class SerializeJourneyData {
-        private val testJourneyData =
-            mapOf(
-                "stringKey" to "stringValue",
-                "numberKey" to 123,
-                "booleanKey" to true,
-                "dateKey" to LocalDate.of(2021, 1, 1),
-                "nullKey" to null,
-                "enumKey" to TestEnum.TEST_VALUE,
-                "listKey" to listOf("a", "b", "c"),
-                "mapKey" to
-                    mapOf(
-                        "stringKey" to "stringValue",
-                        "numberKey" to 123,
-                        "booleanKey" to true,
-                        "dateKey" to LocalDate.of(2021, 1, 1),
-                    ),
-            )
+    inner class ResolvePageContent {
+        @Test
+        fun `puts answersLastChanged into submittedFilteredJourneyData`() {
+            // Arrange
+            val changed = Instant.parse("2026-01-01T10:15:30.123456789Z")
+            whenever(mockState.answersLastChanged).thenReturn(changed)
+
+            // Act
+            val content = stepConfig.resolvePageContent(mockState, emptyMap())
+
+            // Assert
+            assertEquals(changed.toString(), content["submittedFilteredJourneyData"])
+        }
 
         @Test
-        fun `turns journeyData's values into strings, then serializes it`() {
-            val journeyDataWithStringValues = testJourneyData.mapValues { (_, value) -> value.toString() }
-            val expectedSerializedData = Json.encodeToString(journeyDataWithStringValues)
+        fun `puts an empty string into submittedFilteredJourneyData when answersLastChanged is null`() {
+            // Arrange
+            whenever(mockState.answersLastChanged).thenReturn(null)
 
-            val returnedSerializedData = CheckAnswersFormModel.serializeJourneyData(testJourneyData)
+            // Act
+            val content = stepConfig.resolvePageContent(mockState, emptyMap())
 
-            assertEquals(expectedSerializedData, returnedSerializedData)
+            // Assert
+            assertEquals("", content["submittedFilteredJourneyData"])
         }
-    }
-
-    private enum class TestEnum {
-        TEST_VALUE,
     }
 
     @Nested
     inner class EnrichSubmittedDataBeforeValidation {
         @Test
-        fun `throws CyaDataHasChangedException when journey data has changed`() {
-            val originalStepData = mapOf("step1" to mapOf("field" to "original"))
-            val modifiedStepData = mapOf("step1" to mapOf("field" to "modified"))
-            whenever(mockState.getSubmittedStepData()).thenReturn(modifiedStepData)
+        fun `throws CyaDataHasChangedException when answers have changed since the page was loaded`() {
+            // Arrange
+            whenever(mockState.answersLastChanged).thenReturn(Instant.parse("2026-01-01T10:15:31Z"))
+            val formData = mapOf("submittedFilteredJourneyData" to "2026-01-01T10:15:30Z")
 
-            val formData = mapOf("submittedFilteredJourneyData" to CheckAnswersFormModel.serializeJourneyData(originalStepData))
-
+            // Act & Assert
             assertThrows<CyaDataHasChangedException> {
                 stepConfig.enrichSubmittedDataBeforeValidation(mockState, formData)
             }
         }
 
         @Test
-        fun `does not throw when journey data is unchanged`() {
-            val stepData = mapOf("step1" to mapOf("field" to "value"))
-            whenever(mockState.getSubmittedStepData()).thenReturn(stepData)
+        fun `throws CyaDataHasChangedException when the page was loaded with no change time but answers have since changed`() {
+            // Arrange
+            whenever(mockState.answersLastChanged).thenReturn(Instant.parse("2026-01-01T10:15:31Z"))
+            val formData = mapOf("submittedFilteredJourneyData" to "")
 
-            val formData = mapOf("submittedFilteredJourneyData" to CheckAnswersFormModel.serializeJourneyData(stepData))
+            // Act & Assert
+            assertThrows<CyaDataHasChangedException> {
+                stepConfig.enrichSubmittedDataBeforeValidation(mockState, formData)
+            }
+        }
 
+        @Test
+        fun `throws CyaDataHasChangedException when the page was loaded with a change time but the state has none`() {
+            // Arrange
+            whenever(mockState.answersLastChanged).thenReturn(null)
+            val formData = mapOf("submittedFilteredJourneyData" to "2026-01-01T10:15:30Z")
+
+            // Act & Assert
+            assertThrows<CyaDataHasChangedException> {
+                stepConfig.enrichSubmittedDataBeforeValidation(mockState, formData)
+            }
+        }
+
+        @Test
+        fun `does not throw when answers have not changed since the page was loaded`() {
+            // Arrange
+            val changed = Instant.parse("2026-01-01T10:15:30.123456789Z")
+            whenever(mockState.answersLastChanged).thenReturn(changed)
+            val formData = mapOf("submittedFilteredJourneyData" to changed.toString())
+
+            // Act & Assert
             assertDoesNotThrow {
                 stepConfig.enrichSubmittedDataBeforeValidation(mockState, formData)
             }
         }
 
         @Test
-        fun `does not throw when data was changed and page was re-rendered with the new data`() {
-            val updatedStepData = mapOf("step1" to mapOf("field" to "newValue"))
-            whenever(mockState.getSubmittedStepData()).thenReturn(updatedStepData)
+        fun `does not throw when neither the page nor the state has a change time`() {
+            // Arrange
+            whenever(mockState.answersLastChanged).thenReturn(null)
+            val formData = mapOf("submittedFilteredJourneyData" to "")
 
-            val formData = mapOf("submittedFilteredJourneyData" to CheckAnswersFormModel.serializeJourneyData(updatedStepData))
-
+            // Act & Assert
             assertDoesNotThrow {
                 stepConfig.enrichSubmittedDataBeforeValidation(mockState, formData)
             }
         }
+
+        @Test
+        fun `does not throw when the submitted data has no submittedFilteredJourneyData field`() {
+            // Arrange
+            whenever(mockState.answersLastChanged).thenReturn(Instant.parse("2026-01-01T10:15:31Z"))
+
+            // Act & Assert
+            assertDoesNotThrow {
+                stepConfig.enrichSubmittedDataBeforeValidation(mockState, emptyMap())
+            }
+        }
+    }
+
+    @Nested
+    inner class BeforeStepDataIsAdded {
+        @Test
+        fun `sets answersConfirmedAt to answersLastChanged`() {
+            // Arrange
+            val changed = Instant.parse("2026-01-01T10:15:30.123456789Z")
+            whenever(mockState.answersLastChanged).thenReturn(changed)
+
+            // Act
+            stepConfig.beforeStepDataIsAdded(mockState, emptyMap())
+
+            // Assert
+            verify(mockState).answersConfirmedAt = changed
+        }
+    }
+
+    @Test
+    fun `does not mark answers as changed when submitted`() {
+        assertFalse(stepConfig.changesAnswers)
     }
 }

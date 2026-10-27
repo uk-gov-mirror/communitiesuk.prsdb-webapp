@@ -2,6 +2,7 @@ package uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps
 
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.JourneyFrameworkComponent
 import uk.gov.communities.prsdb.webapp.constants.enums.PaymentStatus
+import uk.gov.communities.prsdb.webapp.exceptions.CyaDataHasChangedException
 import uk.gov.communities.prsdb.webapp.journeys.AbstractInternalStepConfig
 import uk.gov.communities.prsdb.webapp.journeys.Destination
 import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
@@ -30,6 +31,15 @@ class PaymentStatusCheckStepConfig(
             return
         }
 
+        if (govUkPayStatus.status == PaymentStatus.CAPTURABLE && answersChangedSinceConfirmation(state)) {
+            val cancelledStatus = paymentService.cancelUnfinalisedPayment(govUkPayStatus.paymentId)
+            if (cancelledStatus == PaymentStatus.SUCCEEDED) {
+                state.paymentOutcome = PaymentOutcome.SUCCESS
+                return
+            }
+            throw CyaDataHasChangedException("Answers changed after confirmation for journey ${state.journeyId}; payment cancelled")
+        }
+
         val finalisedStatus =
             paymentService.finalisePayment(
                 govUkPayStatus.paymentId,
@@ -52,6 +62,9 @@ class PaymentStatusCheckStepConfig(
     }
 
     override fun mode(state: PropertyRegistrationJourneyState) = state.paymentOutcome
+
+    private fun answersChangedSinceConfirmation(state: PropertyRegistrationJourneyState) =
+        state.answersLastChanged != state.answersConfirmedAt
 
     override fun resolveNextDestination(
         state: PropertyRegistrationJourneyState,

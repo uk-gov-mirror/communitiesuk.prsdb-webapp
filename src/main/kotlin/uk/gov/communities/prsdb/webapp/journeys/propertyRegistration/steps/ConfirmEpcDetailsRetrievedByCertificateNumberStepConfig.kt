@@ -75,6 +75,7 @@ class ConfirmEpcDetailsRetrievedByCertificateNumberStepConfig(
         if (state.epcRetrievedByCertificateNumberUpdatedSinceUserReview == true) {
             state.clearStepData(stepDataKey)
             state.epcRetrievedByCertificateNumberUpdatedSinceUserReview = false
+            state.markAnswersChanged()
         }
     }
 }

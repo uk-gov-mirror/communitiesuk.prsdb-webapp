@@ -18,6 +18,7 @@ class FinishCyaJourneyConfig : AbstractInternalStepConfig<Complete, CheckYourAns
         val originalState = state.getBaseJourneyState()
         if (originalState.journeyMetadata.lastUpdated == state.originalJourneyUpdated) {
             state.copyJourneyTo(originalId)
+            originalState.markAnswersChanged()
             originalState.clearCyaFields()
         } else {
             throw CyaDataHasChangedException("Journey data has changed since the user started checking their answers.")

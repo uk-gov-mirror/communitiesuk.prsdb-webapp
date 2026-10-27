@@ -40,6 +40,7 @@ class ConfirmEpcDetailsRetrievedByCertificateNumberStepConfigTests {
         // Assert
         verify(mockState).clearStepData(routeSegment)
         verify(mockState).epcRetrievedByCertificateNumberUpdatedSinceUserReview = false
+        verify(mockState).markAnswersChanged()
     }
 
     @Test
@@ -53,6 +54,7 @@ class ConfirmEpcDetailsRetrievedByCertificateNumberStepConfigTests {
 
         // Assert
         verify(mockState, never()).clearStepData(routeSegment)
+        verify(mockState, never()).markAnswersChanged()
     }
 
     @Test

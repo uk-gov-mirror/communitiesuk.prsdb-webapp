@@ -40,6 +40,7 @@ class ConfirmEpcRetrievedByUprnStepConfigTests {
         // Assert
         verify(mockState).clearStepData(routeSegment)
         verify(mockState).epcRetrievedByUprnUpdatedSinceUserReview = false
+        verify(mockState).markAnswersChanged()
     }
 
     @Test
@@ -53,6 +54,7 @@ class ConfirmEpcRetrievedByUprnStepConfigTests {
 
         // Assert
         verify(mockState, never()).clearStepData(routeSegment)
+        verify(mockState, never()).markAnswersChanged()
     }
 
     @Test

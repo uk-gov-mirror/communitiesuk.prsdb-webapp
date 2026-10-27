@@ -108,6 +108,7 @@ sealed class JourneyStep<out TEnum : Enum<out TEnum>, TFormModel : FormModel, in
         stepConfig.beforeStepDataIsAdded(state, data)
         val dataToStore = stepConfig.enrichStepDataBeforeItIsAdded(state, data)
         state.addStepData(stepDataKey, dataToStore)
+        if (stepConfig.changesAnswers) state.markAnswersChanged()
         stepConfig.afterStepDataIsAdded(state)
     }
 

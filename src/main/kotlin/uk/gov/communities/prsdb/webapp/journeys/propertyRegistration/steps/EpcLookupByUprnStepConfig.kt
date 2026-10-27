@@ -19,6 +19,7 @@ class EpcLookupByUprnStepConfig(
         state.epcRetrievedByUprn = newEpcRetrievedByUprn
         if (newEpcRetrievedByUprn != previousEpcRetrievedByUprn) {
             state.epcRetrievedByUprnUpdatedSinceUserReview = true
+            state.markAnswersChanged()
         }
     }
 }

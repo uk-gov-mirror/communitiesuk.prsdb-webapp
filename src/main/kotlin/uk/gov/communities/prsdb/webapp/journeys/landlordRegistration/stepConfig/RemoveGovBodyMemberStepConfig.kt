@@ -32,6 +32,7 @@ class RemoveGovBodyMemberStepConfig(
         val currentMap = state.governingBodyMembersMap?.toMutableMap() ?: return
         currentMap.remove(keyToRemove)
         state.governingBodyMembersMap = currentMap
+        state.markAnswersChanged()
     }
 
     override fun mode(state: OrgGovBodyMembersState): AnyMembers =

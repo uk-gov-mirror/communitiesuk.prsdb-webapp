@@ -14,6 +14,8 @@ class PaymentReturnStepConfig(
 ) : AbstractRequestableStepConfig<Complete, NoInputFormModel, PropertyRegistrationJourneyState>() {
     override val formModelClass = NoInputFormModel::class
 
+    override val changesAnswers = false
+
     override fun getStepSpecificContent(state: PropertyRegistrationJourneyState): Map<String, Any?> = emptyMap()
 
     override fun chooseTemplate(state: PropertyRegistrationJourneyState) = "forms/paymentProcessingForm"

@@ -4,13 +4,16 @@ import jakarta.persistence.EntityExistsException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.communities.prsdb.webapp.exceptions.CyaDataHasChangedException
 import uk.gov.communities.prsdb.webapp.journeys.Destination
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.PropertyRegistrationDataModelFactory
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.PropertyRegistrationJourneyState
@@ -19,6 +22,7 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.Prope
 import uk.gov.communities.prsdb.webapp.journeys.shared.Complete
 import uk.gov.communities.prsdb.webapp.services.PropertyRegistrationService
 import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.MockPropertyRegistrationData
+import java.time.Instant
 import kotlin.test.assertNotEquals
 
 @ExtendWith(MockitoExtension::class)
@@ -63,6 +67,32 @@ class SavePropertyRegistrationDataStepConfigTests {
     @Test
     fun `afterStepIsReached registers the property using the registration data from the factory`() {
         // Arrange
+        whenever(mockPropertyRegistrationDataModelFactory.fromJourneyState(mockState)).thenReturn(registrationData)
+
+        // Act
+        stepConfig.afterStepIsReached(mockState)
+
+        // Assert
+        verify(mockPropertyRegistrationService).registerProperty(registrationData)
+    }
+
+    @Test
+    fun `afterStepIsReached throws and does not register the property when answers changed since they were confirmed`() {
+        // Arrange
+        whenever(mockState.answersLastChanged).thenReturn(Instant.now())
+        whenever(mockState.answersConfirmedAt).thenReturn(Instant.now().minusSeconds(60))
+
+        // Act & Assert
+        assertThrows<CyaDataHasChangedException> { stepConfig.afterStepIsReached(mockState) }
+        verify(mockPropertyRegistrationService, never()).registerProperty(any())
+    }
+
+    @Test
+    fun `afterStepIsReached registers the property when answers are unchanged since they were confirmed`() {
+        // Arrange
+        val confirmedAt = Instant.now()
+        whenever(mockState.answersLastChanged).thenReturn(confirmedAt)
+        whenever(mockState.answersConfirmedAt).thenReturn(confirmedAt)
         whenever(mockPropertyRegistrationDataModelFactory.fromJourneyState(mockState)).thenReturn(registrationData)
 
         // Act

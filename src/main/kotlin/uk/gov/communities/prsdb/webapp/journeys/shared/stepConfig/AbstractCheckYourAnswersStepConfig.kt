@@ -13,22 +13,31 @@ abstract class AbstractCheckYourAnswersStepConfig<TState : CheckYourAnswersJourn
     AbstractRequestableStepConfig<Complete, CheckAnswersFormModel, TState>() {
     override val formModelClass = CheckAnswersFormModel::class
 
+    override val changesAnswers = false
+
     override fun chooseTemplate(state: TState) = "forms/checkAnswersForm"
 
     override fun mode(state: TState) = getFormModelFromStateOrNull(state)?.let { Complete.COMPLETE }
 
+    // TODO PDJB-1832: rename submittedFilteredJourneyData (it now holds answersLastChanged) in a follow-up PR
     override fun resolvePageContent(
         state: TState,
         defaultContent: Map<String, Any?>,
-    ): Map<String, Any?> =
-        defaultContent + ("submittedFilteredJourneyData" to CheckAnswersFormModel.serializeJourneyData(state.getSubmittedStepData()))
+    ): Map<String, Any?> = defaultContent + ("submittedFilteredJourneyData" to (state.answersLastChanged?.toString() ?: ""))
 
     override fun enrichSubmittedDataBeforeValidation(
         state: TState,
         formData: FormData,
     ): FormData {
-        checkJourneyNotModifiedSincePageLoad(state, formData)
+        checkAnswersNotChangedSincePageLoad(state, formData)
         return formData
+    }
+
+    override fun beforeStepDataIsAdded(
+        state: TState,
+        data: FormData,
+    ) {
+        state.answersConfirmedAt = state.answersLastChanged
     }
 
     override fun resolveNextDestination(
@@ -39,14 +48,14 @@ abstract class AbstractCheckYourAnswersStepConfig<TState : CheckYourAnswersJourn
         return defaultDestination
     }
 
-    private fun checkJourneyNotModifiedSincePageLoad(
+    private fun checkAnswersNotChangedSincePageLoad(
         state: TState,
         formData: FormData,
     ) {
-        val submittedData = formData["submittedFilteredJourneyData"] as? String ?: return
-        val currentData = CheckAnswersFormModel.serializeJourneyData(state.getSubmittedStepData())
-        if (submittedData != currentData) {
-            throw CyaDataHasChangedException("Journey data has changed since the page was loaded")
+        val submittedLastChanged = formData["submittedFilteredJourneyData"] as? String ?: return
+        val currentLastChanged = state.answersLastChanged?.toString() ?: ""
+        if (submittedLastChanged != currentLastChanged) {
+            throw CyaDataHasChangedException("Journey answers have changed since the page was loaded")
         }
     }
 }

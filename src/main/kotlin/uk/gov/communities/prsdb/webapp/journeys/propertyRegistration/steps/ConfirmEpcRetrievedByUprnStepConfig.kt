@@ -65,6 +65,7 @@ class ConfirmEpcRetrievedByUprnStepConfig(
         if (state.epcRetrievedByUprnUpdatedSinceUserReview == true) {
             state.clearStepData(stepDataKey)
             state.epcRetrievedByUprnUpdatedSinceUserReview = false
+            state.markAnswersChanged()
         }
     }
 }
