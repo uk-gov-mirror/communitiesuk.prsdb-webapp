@@ -224,6 +224,7 @@ class PropertyComplianceServiceTests {
         assertEquals(1, returnedCount)
     }
 
+    // TODO PDJB-2006: Delete the getNonCompliantPropertiesForLandlord tests when the PROPERTY_REGISTRATION_PHASE_THREE flag is removed
     @Test
     fun `getNonCompliantPropertiesForLandlord returns the landlord's non-compliant occupied properties`() {
         // Arrange

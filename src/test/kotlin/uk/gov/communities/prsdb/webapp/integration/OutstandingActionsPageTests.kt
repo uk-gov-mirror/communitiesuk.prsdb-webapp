@@ -3,6 +3,7 @@ package uk.gov.communities.prsdb.webapp.integration
 import com.microsoft.playwright.Page
 import org.junit.jupiter.api.Nested
 import uk.gov.communities.prsdb.webapp.constants.COMPLIANCE_INFO_FRAGMENT
+import uk.gov.communities.prsdb.webapp.constants.PROPERTY_DETAILS_FRAGMENT
 import uk.gov.communities.prsdb.webapp.integration.IntegrationTestWithImmutableData.NestedIntegrationTestWithImmutableData
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.PropertyDetailsPageLandlordView
@@ -305,6 +306,53 @@ class OutstandingActionsPageTests : IntegrationTest() {
         fun `pagination is not displayed when items fit on one page`(page: Page) {
             val outstandingActionsPage = navigator.goToOutstandingActions()
             assertThat(outstandingActionsPage.pagination).not().isVisible()
+        }
+    }
+
+    @Nested
+    inner class LandlordsWithPropertyDetailsOutstandingActions :
+        NestedIntegrationTestWithImmutableData("data-mockuser-landlord-with-property-details-outstanding-actions.sql") {
+        @Test
+        fun `licensing and tenancy rows show the dated provide this later message when occupied since registration`() {
+            val outstandingActionsPage = navigator.goToOutstandingActions()
+            val card = outstandingActionsPage.findSummaryCard("10 Licensing Lane")
+            val expectedDate = LocalDate.now().plusDays(28).format(DATE_FORMATTER)
+            assertThat(card.summaryList.licensingRow).containsText("Provide this later (before $expectedDate)")
+            assertThat(card.summaryList.tenancyRow).containsText("Provide this later (before $expectedDate)")
+            assertThat(card.summaryList.gasSafetyRow).isHidden()
+            assertThat(card.summaryList.electricalSafetyRow).isHidden()
+            assertThat(card.summaryList.energyPerformanceRow).isHidden()
+        }
+
+        @Test
+        fun `tenancy row shows the undated provide this later message when occupied after registration`() {
+            val outstandingActionsPage = navigator.goToOutstandingActions()
+            val card = outstandingActionsPage.findSummaryCard("11 Tenancy Terrace")
+            assertThat(card.summaryList.tenancyRow)
+                .containsText("Provide this later (within 28 days of the property being occupied)")
+            assertThat(card.summaryList.licensingRow).isHidden()
+        }
+
+        @Test
+        fun `unoccupied property with licensing provided later is not shown`() {
+            val outstandingActionsPage = navigator.goToOutstandingActions()
+            assertThat(outstandingActionsPage.findSummaryCard("12 Vacant View")).isHidden()
+        }
+
+        @Test
+        fun `property with tenancy and certificate actions shows both`() {
+            val outstandingActionsPage = navigator.goToOutstandingActions()
+            val card = outstandingActionsPage.findSummaryCard("13 Mixed Mews")
+            assertThat(card.summaryList.tenancyRow).containsText("Provide this later")
+            assertThat(card.summaryList.gasSafetyRow).containsText("No valid gas safety certificate")
+        }
+
+        @Test
+        fun `go to property links to the property details tab when licensing or tenancy details are outstanding`(page: Page) {
+            val outstandingActionsPage = navigator.goToOutstandingActions()
+            outstandingActionsPage.findSummaryCard("10 Licensing Lane").getAction("Go to property").link.clickAndWait()
+            val propertyDetailsPage = assertPageIs(page, PropertyDetailsPageLandlordView::class, mapOf("propertyOwnershipId" to "1"))
+            assertEquals(PROPERTY_DETAILS_FRAGMENT, propertyDetailsPage.tabs.activeTabPanelId)
         }
     }
 }

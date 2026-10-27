@@ -36,6 +36,7 @@ class LandlordControllerFeatureFlagTests : FeatureFlagTestCallingEndpoints() {
     fun setUpMocks() {
         whenever(userToLandlordService.getCurrentLandlordForUser()).thenReturn(createIndividualLandlord())
         whenever(propertyComplianceService.getNonCompliantPropertiesForLandlord(any(), any())).thenReturn(PageImpl(emptyList()))
+        whenever(propertyOwnershipService.getOutstandingActionsForLandlord(any(), any())).thenReturn(PageImpl(emptyList()))
     }
 
     @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"])

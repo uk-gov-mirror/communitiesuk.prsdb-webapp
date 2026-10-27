@@ -5,6 +5,7 @@ import uk.gov.communities.prsdb.webapp.constants.enums.ComplianceCertStatus
 import uk.gov.communities.prsdb.webapp.controllers.PropertyDetailsController
 import uk.gov.communities.prsdb.webapp.exceptions.PrsdbWebException
 import uk.gov.communities.prsdb.webapp.models.dataModels.ComplianceStatusDataModel
+import uk.gov.communities.prsdb.webapp.models.dataModels.OutstandingActionsDataModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -13,45 +14,73 @@ class OutstandingActionViewModelBuilder {
     companion object {
         val DATE_FORMATTER = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.UK)
 
-        fun fromDataModel(dataModel: ComplianceStatusDataModel): SummaryCardViewModel =
+        fun fromDataModel(dataModel: OutstandingActionsDataModel): SummaryCardViewModel =
             SummaryCardViewModel(
                 title = dataModel.singleLineAddress,
                 summaryList = getSummaryList(dataModel),
                 actions = getActions(dataModel),
-                insetViewModel = getInsetViewModel(dataModel),
+                insetViewModel = dataModel.complianceStatus?.let { getInsetViewModel(it) },
             )
 
-        private fun getSummaryList(dataModel: ComplianceStatusDataModel): List<SummaryListRowViewModel> =
+        private fun getSummaryList(dataModel: OutstandingActionsDataModel): List<SummaryListRowViewModel> =
             mutableListOf<SummaryListRowViewModel>()
                 .apply {
-                    if (dataModel.shouldShowGasSafetyAction()) {
-                        addCertRow(
-                            "outstandingActions.summaryRow.gasSafety",
-                            dataModel.gasSafetyStatus,
-                            "gasSafety",
-                            dataModel.provideLaterDeadline,
-                            dataModel.gasSafetyExpiryDate,
-                        )
+                    if (dataModel.shouldShowLicensingAction) {
+                        addProvideLaterRow("outstandingActions.summaryRow.licensing", dataModel.provideLaterDeadline)
                     }
-                    if (dataModel.shouldShowElectricalSafetyAction()) {
-                        addCertRow(
-                            "outstandingActions.summaryRow.electricalSafety",
-                            dataModel.electricalSafetyStatus,
-                            "electricalSafety",
-                            dataModel.provideLaterDeadline,
-                            dataModel.electricalSafetyExpiryDate,
-                        )
+                    if (dataModel.shouldShowTenancyAction) {
+                        addProvideLaterRow("outstandingActions.summaryRow.tenancy", dataModel.provideLaterDeadline)
                     }
-                    if (dataModel.shouldShowEpcAction()) {
-                        addCertRow(
-                            "outstandingActions.summaryRow.energyPerformance",
-                            dataModel.epcStatus,
-                            "epc",
-                            dataModel.provideLaterDeadline,
-                            dataModel.epcExpiryDate,
-                        )
-                    }
+                    dataModel.complianceStatus?.let { addCertRows(it) }
                 }.toList()
+
+        private fun MutableList<SummaryListRowViewModel>.addProvideLaterRow(
+            label: String,
+            provideLaterDeadline: LocalDate?,
+        ) {
+            add(
+                SummaryListRowViewModel(
+                    fieldHeading = label,
+                    fieldValue =
+                        if (provideLaterDeadline == null) {
+                            "outstandingActions.status.provideLaterNoDeadline"
+                        } else {
+                            "outstandingActions.status.provideLater"
+                        },
+                    optionalFieldValueParam = provideLaterDeadline?.format(DATE_FORMATTER),
+                ),
+            )
+        }
+
+        private fun MutableList<SummaryListRowViewModel>.addCertRows(dataModel: ComplianceStatusDataModel) {
+            if (dataModel.shouldShowGasSafetyAction()) {
+                addCertRow(
+                    "outstandingActions.summaryRow.gasSafety",
+                    dataModel.gasSafetyStatus,
+                    "gasSafety",
+                    dataModel.provideLaterDeadline,
+                    dataModel.gasSafetyExpiryDate,
+                )
+            }
+            if (dataModel.shouldShowElectricalSafetyAction()) {
+                addCertRow(
+                    "outstandingActions.summaryRow.electricalSafety",
+                    dataModel.electricalSafetyStatus,
+                    "electricalSafety",
+                    dataModel.provideLaterDeadline,
+                    dataModel.electricalSafetyExpiryDate,
+                )
+            }
+            if (dataModel.shouldShowEpcAction()) {
+                addCertRow(
+                    "outstandingActions.summaryRow.energyPerformance",
+                    dataModel.epcStatus,
+                    "epc",
+                    dataModel.provideLaterDeadline,
+                    dataModel.epcExpiryDate,
+                )
+            }
+        }
 
         private fun MutableList<SummaryListRowViewModel>.addCertRow(
             label: String,
@@ -128,11 +157,15 @@ class OutstandingActionViewModelBuilder {
                 null
             }
 
-        private fun getActions(dataModel: ComplianceStatusDataModel): List<SummaryCardActionViewModel> =
+        private fun getActions(dataModel: OutstandingActionsDataModel): List<SummaryCardActionViewModel> =
             listOf(
                 SummaryCardActionViewModel(
                     "outstandingActions.action.goToProperty",
-                    PropertyDetailsController.getPropertyCompliancePath(dataModel.propertyOwnershipId),
+                    if (dataModel.hasPropertyDetailsAction) {
+                        PropertyDetailsController.getPropertyDetailsPath(dataModel.propertyOwnershipId)
+                    } else {
+                        PropertyDetailsController.getPropertyCompliancePath(dataModel.propertyOwnershipId)
+                    },
                 ),
             )
     }

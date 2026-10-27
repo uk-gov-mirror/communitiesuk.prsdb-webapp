@@ -3,11 +3,13 @@ package uk.gov.communities.prsdb.webapp.services
 import jakarta.transaction.Transactional
 import org.springframework.dao.QueryTimeoutException
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.server.ResponseStatusException
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbWebService
+import uk.gov.communities.prsdb.webapp.constants.MAX_ENTRIES_IN_OUTSTANDING_ACTIONS_PAGE
 import uk.gov.communities.prsdb.webapp.constants.MAX_ENTRIES_IN_PROPERTIES_SEARCH_PAGE
 import uk.gov.communities.prsdb.webapp.constants.enums.FurnishedStatus
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
@@ -30,6 +32,7 @@ import uk.gov.communities.prsdb.webapp.helpers.EmailHelper.Companion.sendEmailAn
 import uk.gov.communities.prsdb.webapp.helpers.RenewalDateHelper
 import uk.gov.communities.prsdb.webapp.helpers.TransactionHelper.Companion.runAfterTransactionCommits
 import uk.gov.communities.prsdb.webapp.models.dataModels.AddressDataModel
+import uk.gov.communities.prsdb.webapp.models.dataModels.OutstandingActionsDataModel
 import uk.gov.communities.prsdb.webapp.models.dataModels.RegistrationNumberDataModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.searchResultModels.PropertySearchResultViewModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.RegisteredPropertyLandlordViewModel
@@ -503,6 +506,20 @@ class PropertyOwnershipService(
     fun getNumberOfIncompleteCompliancesForLandlord(landlord: Landlord): Int {
         val propertyOwnerships = retrieveAllActivePropertiesForLandlord(landlord)
         return propertyOwnerships.count { it.isOccupied && it.propertyCompliance == null }
+    }
+
+    fun getOutstandingActionsForLandlord(
+        landlord: Landlord,
+        requestedPageIndex: Int,
+    ): Page<OutstandingActionsDataModel> {
+        val allOutstandingActions =
+            retrieveAllActivePropertiesForLandlord(landlord)
+                .map { OutstandingActionsDataModel.fromPropertyOwnership(it) }
+                .filter { it.shouldShowOnOutstandingActionsPage }
+        val pageRequest = PageRequest.of(requestedPageIndex, MAX_ENTRIES_IN_OUTSTANDING_ACTIONS_PAGE)
+        val fromIndex = pageRequest.offset.toInt().coerceAtMost(allOutstandingActions.size)
+        val toIndex = (fromIndex + pageRequest.pageSize).coerceAtMost(allOutstandingActions.size)
+        return PageImpl(allOutstandingActions.subList(fromIndex, toIndex), pageRequest, allOutstandingActions.size.toLong())
     }
 
     fun doesLandlordHaveRegisteredProperties(landlord: Landlord): Boolean =

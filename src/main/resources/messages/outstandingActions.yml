@@ -1,6 +1,8 @@
 heading: Outstanding actions
 subtitle: These occupied properties are missing details or certificates
 summaryRow:
+  licensing: Licensing details
+  tenancy: Tenancy details
   gasSafety: Gas safety certificate
   electricalSafety: Electrical safety certificate
   energyPerformance: Energy performance certificate

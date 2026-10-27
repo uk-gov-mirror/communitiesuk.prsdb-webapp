@@ -125,20 +125,20 @@ class LandlordController(
         request: HttpServletRequest,
     ): String {
         val landlord = userToLandlordService.getCurrentLandlordForUser()
-        val pagedNonCompliantProperties =
-            propertyComplianceService.getNonCompliantPropertiesForLandlord(landlord, page - 1)
+        val pagedOutstandingActions =
+            propertyOwnershipService.getOutstandingActionsForLandlord(landlord, page - 1)
 
-        if (pagedNonCompliantProperties.totalPages != 0 && pagedNonCompliantProperties.totalPages < page) {
+        if (pagedOutstandingActions.totalPages != 0 && pagedOutstandingActions.totalPages < page) {
             return "redirect:$OUTSTANDING_ACTIONS_URL"
         }
 
         val outstandingActions =
-            pagedNonCompliantProperties.content.map {
+            pagedOutstandingActions.content.map {
                 OutstandingActionViewModelBuilder.fromDataModel(it)
             }
 
         model.addAttribute("outstandingActions", outstandingActions)
-        model.addAttribute("paginationViewModel", PaginationViewModel(page, pagedNonCompliantProperties.totalPages, request))
+        model.addAttribute("paginationViewModel", PaginationViewModel(page, pagedOutstandingActions.totalPages, request))
 
         model.addAttribute(
             "viewRegisteredPropertiesUrl",

@@ -187,6 +187,7 @@ class PropertyComplianceService(
 
     fun getNumberOfNonCompliantPropertiesForLandlord(landlord: Landlord) = getAllNonCompliantPropertiesForLandlord(landlord).size
 
+    // TODO PDJB-2006: Remove when the PROPERTY_REGISTRATION_PHASE_THREE flag is removed
     fun getNonCompliantPropertiesForLandlord(
         landlord: Landlord,
         requestedPageIndex: Int,

@@ -48,6 +48,8 @@ class OutstandingActionsPage(
     class OutstandingActionSummaryList(
         locator: Locator,
     ) : SummaryList(locator) {
+        val licensingRow = getRow("Licensing details")
+        val tenancyRow = getRow("Tenancy details")
         val gasSafetyRow = getRow("Gas safety certificate")
         val electricalSafetyRow = getRow("Electrical safety certificate")
         val energyPerformanceRow = getRow("Energy performance certificate")
