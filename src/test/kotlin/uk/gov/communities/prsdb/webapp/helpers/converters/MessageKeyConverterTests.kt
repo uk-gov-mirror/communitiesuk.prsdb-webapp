@@ -100,7 +100,7 @@ class MessageKeyConverterTests {
 
     @Test
     fun `convert returns a non-resolvable parent message key for HAS_FAULTS ComplianceCertStatus`() {
-        // HAS_FAULTS resolves per cert type (e.g. outstandingActions.status.hasFaults.gasSafety),
+        // HAS_FAULTS resolves per cert type (e.g. complianceActions.status.hasFaults.gasSafety),
         // so the base key intentionally maps to a parent node rather than a message.
         assertMessageKeyDoesNotResolve(MessageKeyConverter.convert(ComplianceCertStatus.HAS_FAULTS))
     }

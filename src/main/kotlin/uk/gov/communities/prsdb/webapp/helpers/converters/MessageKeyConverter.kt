@@ -190,13 +190,14 @@ class MessageKeyConverter {
                 }
             }
 
+        // TODO PDJB-2006: Remove the ComplianceCertStatus conversion when the PROPERTY_REGISTRATION_PHASE_THREE flag is removed
         private fun convertComplianceCertStatus(complianceCertStatus: ComplianceCertStatus): String =
             when (complianceCertStatus) {
-                ComplianceCertStatus.HAS_FAULTS -> "outstandingActions.status.hasFaults"
+                ComplianceCertStatus.HAS_FAULTS -> "complianceActions.status.hasFaults"
 
-                ComplianceCertStatus.PROVIDE_LATER -> "outstandingActions.status.provideLater"
+                ComplianceCertStatus.PROVIDE_LATER -> "complianceActions.status.provideLater"
 
-                ComplianceCertStatus.EXPIRED -> "outstandingActions.status.expired"
+                ComplianceCertStatus.EXPIRED -> "complianceActions.status.expired"
 
                 else -> throw IllegalStateException(
                     "${complianceCertStatus.name} should not be shown on the page and hence should not be converted to a message key",

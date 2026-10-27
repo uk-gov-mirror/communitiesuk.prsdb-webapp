@@ -1,0 +1,28 @@
+# TODO PDJB-2006: Delete this file when the PROPERTY_REGISTRATION_PHASE_THREE flag is removed
+heading: Compliance actions
+subtitle: Add certificates to these properties.
+summaryRow:
+  registrationNumber: Property Registration Number
+  gasSafety: Gas safety certificate
+  electricalSafety: Electrical safety certificate
+  energyPerformance: Energy performance certificate
+  status: Status
+  occupied: Occupied
+  unoccupied: Unoccupied
+action:
+  goToProperty: Go to property
+status:
+  hasFaults:
+    gasSafety: No valid gas safety certificate
+    electricalSafety: No valid electrical safety certificate
+    epc: No valid energy performance certificate (EPC)
+  expired: Expired on {0}
+  provideLater: Provide this later (before {0})
+  provideLaterNoDeadline: Provide this later (within 28 days of the property being occupied)
+none:
+  inset: The certificates for your occupied properties are up to date.
+inset:
+  epcExpired:
+    beforeLink: This EPC is valid if the current tenancy began before <strong>{0}</strong>. To start a new tenancy or advertise the property, you must
+    link: get a new energy certificate (opens in new tab)
+    afterLink: .

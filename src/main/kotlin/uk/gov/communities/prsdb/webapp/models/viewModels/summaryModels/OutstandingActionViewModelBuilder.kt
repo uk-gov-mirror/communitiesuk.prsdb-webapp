@@ -4,7 +4,6 @@ import uk.gov.communities.prsdb.webapp.constants.GET_NEW_EPC_URL
 import uk.gov.communities.prsdb.webapp.constants.enums.ComplianceCertStatus
 import uk.gov.communities.prsdb.webapp.controllers.PropertyDetailsController
 import uk.gov.communities.prsdb.webapp.exceptions.PrsdbWebException
-import uk.gov.communities.prsdb.webapp.helpers.converters.MessageKeyConverter
 import uk.gov.communities.prsdb.webapp.models.dataModels.ComplianceStatusDataModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -74,26 +73,28 @@ class OutstandingActionViewModelBuilder {
             status: ComplianceCertStatus,
             certTypeKey: String,
             provideLaterDeadline: LocalDate?,
-        ): String {
-            val baseKey = MessageKeyConverter.convert(status)
-            return when (status) {
+        ): String =
+            when (status) {
                 ComplianceCertStatus.HAS_FAULTS -> {
-                    "$baseKey.$certTypeKey"
+                    "outstandingActions.status.hasFaults.$certTypeKey"
                 }
 
                 ComplianceCertStatus.PROVIDE_LATER -> {
-                    if (provideLaterDeadline == null) "outstandingActions.status.provideLaterNoDeadline" else baseKey
+                    if (provideLaterDeadline == null) {
+                        "outstandingActions.status.provideLaterNoDeadline"
+                    } else {
+                        "outstandingActions.status.provideLater"
+                    }
                 }
 
                 ComplianceCertStatus.EXPIRED -> {
-                    baseKey
+                    "outstandingActions.status.expired"
                 }
 
                 else -> {
-                    baseKey
+                    throw IllegalStateException("${status.name} should not be shown on the outstanding actions page")
                 }
             }
-        }
 
         private fun getCertStatusValueParam(
             status: ComplianceCertStatus,

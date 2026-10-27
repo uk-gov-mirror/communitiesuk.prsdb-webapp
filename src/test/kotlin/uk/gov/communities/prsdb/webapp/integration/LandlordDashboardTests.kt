@@ -2,7 +2,9 @@ package uk.gov.communities.prsdb.webapp.integration
 
 import com.microsoft.playwright.Page
 import org.junit.jupiter.api.Nested
+import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_PHASE_THREE
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.ComplianceActionsPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LandlordDetailsPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LandlordIncompletePropertiesPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.OutstandingActionsPage
@@ -54,6 +56,17 @@ class LandlordDashboardTests : IntegrationTestWithImmutableData("data-local.sql"
         val dashboard = navigator.goToLandlordDashboard()
         dashboard.outstandingActionsButton.clickAndWait()
         assertPageIs(page, OutstandingActionsPage::class)
+    }
+
+    // TODO PDJB-2006: Delete this test when the PROPERTY_REGISTRATION_PHASE_THREE flag is removed
+    @Test
+    fun `the compliance actions button links to the compliance actions page when PROPERTY_REGISTRATION_PHASE_THREE is disabled`(
+        page: Page,
+    ) {
+        featureFlagManager.disableFeature(PROPERTY_REGISTRATION_PHASE_THREE)
+        val dashboard = navigator.goToLandlordDashboard()
+        dashboard.addComplianceInformationButton.clickAndWait()
+        assertPageIs(page, ComplianceActionsPage::class)
     }
 
     @Nested

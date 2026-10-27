@@ -40,7 +40,7 @@
                     </a>
                 </div>
                 <div class="govuk-grid-column-one-third prsd-dashboard__stretched-button-container">
-                    <a th:replace="~{fragments/buttons/secondaryButtonLink :: secondaryButtonLink(${outstandingActionsUrl}, #{landlord.dashboard.outstandingActions.button})}">
+                    <a th:replace="~{fragments/buttons/secondaryButtonLink :: secondaryButtonLink(${outstandingActionsUrl}, #{${outstandingActionsButtonKey}})}">
                         landlord.dashboard.outstandingActions.button
                     </a>
                 </div>

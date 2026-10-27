@@ -29,6 +29,7 @@ import uk.gov.communities.prsdb.webapp.controllers.FeatureFlagOverrideController
 import uk.gov.communities.prsdb.webapp.controllers.GeneratePasscodeController.Companion.GENERATE_PASSCODE_URL
 import uk.gov.communities.prsdb.webapp.controllers.InviteJointLandlordController
 import uk.gov.communities.prsdb.webapp.controllers.InviteOrganisationalLandlordUserController
+import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.COMPLIANCE_ACTIONS_URL
 import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.INCOMPLETE_PROPERTIES_URL
 import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.LANDLORD_DASHBOARD_URL
 import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.OUTSTANDING_ACTIONS_URL
@@ -62,6 +63,7 @@ import uk.gov.communities.prsdb.webapp.controllers.UpdateOccupancyController
 import uk.gov.communities.prsdb.webapp.controllers.UpdateOrganisationTypeController
 import uk.gov.communities.prsdb.webapp.controllers.UpdateOwnershipTypeController
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.CancelLocalCouncilAdminInvitationPage
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.ComplianceActionsPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.CookiesPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.DeleteIncompletePropertyRegistrationAreYouSurePage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.DeleteLocalCouncilAdminPage
@@ -1511,6 +1513,12 @@ class Navigator(
     fun goToLandlordIncompleteProperties(): LandlordIncompletePropertiesPage {
         navigate(INCOMPLETE_PROPERTIES_URL)
         return createValidPage(page, LandlordIncompletePropertiesPage::class)
+    }
+
+    // TODO PDJB-2006: Remove when the PROPERTY_REGISTRATION_PHASE_THREE flag is removed
+    fun goToComplianceActions(): ComplianceActionsPage {
+        navigate(COMPLIANCE_ACTIONS_URL)
+        return createValidPage(page, ComplianceActionsPage::class)
     }
 
     fun goToOutstandingActions(): OutstandingActionsPage {

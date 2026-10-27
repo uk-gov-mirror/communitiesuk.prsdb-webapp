@@ -1,5 +1,7 @@
 package uk.gov.communities.prsdb.webapp.controllers
 
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
@@ -13,12 +15,16 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.get
 import org.springframework.web.context.WebApplicationContext
 import org.springframework.web.server.ResponseStatusException
+import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
 import uk.gov.communities.prsdb.webapp.constants.LANDLORD_PATH_SEGMENT
+import uk.gov.communities.prsdb.webapp.constants.PROPERTY_REGISTRATION_PHASE_THREE
 import uk.gov.communities.prsdb.webapp.constants.REGISTERED_PROPERTIES_FRAGMENT
 import uk.gov.communities.prsdb.webapp.constants.enums.ComplianceCertStatus
+import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.COMPLIANCE_ACTIONS_URL
 import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.LANDLORD_DASHBOARD_URL
 import uk.gov.communities.prsdb.webapp.controllers.LandlordController.Companion.OUTSTANDING_ACTIONS_URL
 import uk.gov.communities.prsdb.webapp.models.dataModels.ComplianceStatusDataModel
+import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.ComplianceActionViewModelBuilder
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.LandlordDashboardNotificationBannerViewModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.OutstandingActionViewModelBuilder
 import uk.gov.communities.prsdb.webapp.services.LocalCouncilService
@@ -48,6 +54,14 @@ class LandlordControllerTests(
 
     @MockitoBean
     private lateinit var usersIncompletePropertyService: UsersIncompletePropertyService
+
+    @MockitoBean
+    private lateinit var featureFlagManager: FeatureFlagManager
+
+    @BeforeEach
+    fun enableFeatureFlag() {
+        whenever(featureFlagManager.checkFeature(PROPERTY_REGISTRATION_PHASE_THREE)).thenReturn(true)
+    }
 
     @Test
     fun `index returns a redirect for unauthenticated user`() {
@@ -303,5 +317,132 @@ class LandlordControllerTests(
                 status { isOk() }
                 model { attributeExists("paginationViewModel") }
             }
+    }
+
+    // TODO PDJB-2006: Delete this class when the PROPERTY_REGISTRATION_PHASE_THREE flag is removed
+    @Nested
+    inner class LegacyComplianceActions {
+        @Test
+        @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"])
+        fun `landlordDashboard links to compliance actions when PROPERTY_REGISTRATION_PHASE_THREE is disabled`() {
+            whenever(featureFlagManager.checkFeature(PROPERTY_REGISTRATION_PHASE_THREE)).thenReturn(false)
+            whenever(userToLandlordService.getCurrentLandlordForUser()).thenReturn(createIndividualLandlord())
+
+            mvc
+                .get(LANDLORD_DASHBOARD_URL)
+                .andExpect {
+                    status { isOk() }
+                    model {
+                        attribute("outstandingActionsUrl", COMPLIANCE_ACTIONS_URL)
+                        attribute("outstandingActionsButtonKey", "landlord.dashboard.complianceActions.button")
+                    }
+                }
+        }
+
+        @Test
+        fun `getComplianceActions returns a redirect for unauthenticated user`() {
+            mvc
+                .get(COMPLIANCE_ACTIONS_URL)
+                .andExpect {
+                    status { is3xxRedirection() }
+                }
+        }
+
+        @Test
+        @WithMockUser
+        fun `getComplianceActions returns 403 for unauthorized user`() {
+            mvc
+                .get(COMPLIANCE_ACTIONS_URL)
+                .andExpect {
+                    status { isForbidden() }
+                }
+        }
+
+        @Test
+        @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"], username = "user")
+        fun `getComplianceActions returns 200 for authorised landlord user`() {
+            val nonCompliantDataModel =
+                ComplianceStatusDataModel(
+                    propertyOwnershipId = 2,
+                    singleLineAddress = "456 Example Avenue, EX",
+                    registrationNumber = "P-YYYY-YYYY",
+                    gasSafetyStatus = ComplianceCertStatus.EXPIRED,
+                    electricalSafetyStatus = ComplianceCertStatus.ADDED,
+                    epcStatus = ComplianceCertStatus.HAS_FAULTS,
+                    isComplete = false,
+                    isOccupied = true,
+                )
+            whenever(userToLandlordService.getCurrentLandlordForUser()).thenReturn(createIndividualLandlord())
+            whenever(propertyComplianceService.getNonCompliantPropertiesForLandlord(any(), any())).thenReturn(
+                PageImpl(listOf(nonCompliantDataModel)),
+            )
+
+            // Act and Assert
+            val expectedComplianceActions =
+                listOf(
+                    ComplianceActionViewModelBuilder.fromDataModel(nonCompliantDataModel),
+                )
+
+            mvc
+                .get(COMPLIANCE_ACTIONS_URL)
+                .andExpect {
+                    status { isOk() }
+                    model {
+                        attribute("complianceActions", expectedComplianceActions)
+                        attribute(
+                            "viewRegisteredPropertiesUrl",
+                            "${LandlordDetailsController.LANDLORD_DETAILS_FOR_LANDLORD_ROUTE}#$REGISTERED_PROPERTIES_FRAGMENT",
+                        )
+                        attribute("backUrl", LANDLORD_DASHBOARD_URL)
+                    }
+                }
+        }
+
+        @Test
+        @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"], username = "user")
+        fun `getComplianceActions returns complianceActions view`() {
+            whenever(userToLandlordService.getCurrentLandlordForUser()).thenReturn(createIndividualLandlord())
+            whenever(propertyComplianceService.getNonCompliantPropertiesForLandlord(any(), any())).thenReturn(
+                PageImpl(emptyList()),
+            )
+
+            mvc
+                .get(COMPLIANCE_ACTIONS_URL)
+                .andExpect {
+                    status { isOk() }
+                    view { name("complianceActions") }
+                }
+        }
+
+        @Test
+        @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"], username = "user")
+        fun `getComplianceActions redirects to first page when requested page exceeds total pages`() {
+            whenever(userToLandlordService.getCurrentLandlordForUser()).thenReturn(createIndividualLandlord())
+            whenever(propertyComplianceService.getNonCompliantPropertiesForLandlord(any(), any())).thenReturn(
+                PageImpl(emptyList(), PageRequest.of(5, 10), 10),
+            )
+
+            mvc
+                .get("$COMPLIANCE_ACTIONS_URL?page=6")
+                .andExpect {
+                    status { is3xxRedirection() }
+                }
+        }
+
+        @Test
+        @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"], username = "user")
+        fun `getComplianceActions includes paginationViewModel`() {
+            whenever(userToLandlordService.getCurrentLandlordForUser()).thenReturn(createIndividualLandlord())
+            whenever(propertyComplianceService.getNonCompliantPropertiesForLandlord(any(), any())).thenReturn(
+                PageImpl(emptyList(), PageRequest.of(0, 10), 20),
+            )
+
+            mvc
+                .get(COMPLIANCE_ACTIONS_URL)
+                .andExpect {
+                    status { isOk() }
+                    model { attributeExists("paginationViewModel") }
+                }
+        }
     }
 }

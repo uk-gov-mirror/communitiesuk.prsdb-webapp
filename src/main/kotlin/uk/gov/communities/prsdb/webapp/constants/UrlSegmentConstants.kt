@@ -41,6 +41,10 @@ const val PASSCODE_ENTRY_PATH_SEGMENT = "passcode-entry"
 const val INVALID_PASSCODE_PATH_SEGMENT = "invalid-passcode"
 const val PRIVACY_NOTICE_PATH_SEGMENT = "privacy-notice"
 const val FEEDBACK_PATH_SEGMENT = "feedback"
+
+// TODO PDJB-2006: Remove COMPLIANCE_ACTIONS_PATH_SEGMENT when the PROPERTY_REGISTRATION_PHASE_THREE flag is removed
+const val COMPLIANCE_ACTIONS_PATH_SEGMENT = "compliance-actions"
+
 const val OUTSTANDING_ACTIONS_PATH_SEGMENT = "outstanding-actions"
 const val MAINTENANCE_PATH_SEGMENT = "maintenance"
 const val ASSETS_PATH_SEGMENT = "assets"

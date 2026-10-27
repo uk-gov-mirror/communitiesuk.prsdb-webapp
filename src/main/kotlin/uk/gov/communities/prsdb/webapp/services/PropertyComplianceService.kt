@@ -8,7 +8,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbWebService
-import uk.gov.communities.prsdb.webapp.constants.MAX_ENTRIES_IN_OUTSTANDING_ACTIONS_PAGE
+import uk.gov.communities.prsdb.webapp.constants.MAX_ENTRIES_IN_COMPLIANCE_ACTIONS_PAGE
 import uk.gov.communities.prsdb.webapp.constants.PROVIDE_LATER_DEADLINE_DAYS
 import uk.gov.communities.prsdb.webapp.constants.enums.CertificateType
 import uk.gov.communities.prsdb.webapp.constants.enums.EpcExemptionReason
@@ -192,7 +192,7 @@ class PropertyComplianceService(
         requestedPageIndex: Int,
     ): Page<ComplianceStatusDataModel> {
         val allNonCompliant = getAllNonCompliantPropertiesForLandlord(landlord)
-        val pageRequest = PageRequest.of(requestedPageIndex, MAX_ENTRIES_IN_OUTSTANDING_ACTIONS_PAGE)
+        val pageRequest = PageRequest.of(requestedPageIndex, MAX_ENTRIES_IN_COMPLIANCE_ACTIONS_PAGE)
         val fromIndex = pageRequest.offset.toInt().coerceAtMost(allNonCompliant.size)
         val toIndex = (fromIndex + pageRequest.pageSize).coerceAtMost(allNonCompliant.size)
         return PageImpl(allNonCompliant.subList(fromIndex, toIndex), pageRequest, allNonCompliant.size.toLong())

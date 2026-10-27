@@ -15,6 +15,9 @@ dashboard:
     button: View your landlord record
   complianceInformation:
     heading: Add compliance information for your properties
+  # TODO PDJB-2006: Remove complianceActions.button when the PROPERTY_REGISTRATION_PHASE_THREE flag is removed
+  complianceActions:
+    button: Compliance actions
   outstandingActions:
     button: Outstanding actions
   notificationBanner:
