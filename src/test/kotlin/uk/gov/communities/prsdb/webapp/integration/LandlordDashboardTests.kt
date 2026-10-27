@@ -135,7 +135,7 @@ class LandlordDashboardTests : IntegrationTestWithImmutableData("data-local.sql"
                 }
 
                 @Test
-                fun `the add compliance information link redirects to the compliance actions page`(page: Page) {
+                fun `the add compliance information link redirects to the outstanding actions page`(page: Page) {
                     val dashboard = navigator.goToLandlordDashboard()
                     dashboard.notificationBanner.addComplianceInformationLink.clickAndWait()
                     assertPageIs(page, OutstandingActionsPage::class)
@@ -160,7 +160,7 @@ class LandlordDashboardTests : IntegrationTestWithImmutableData("data-local.sql"
             }
 
             @Test
-            fun `the add compliance information link redirects to the compliance actions page`(page: Page) {
+            fun `the add compliance information link redirects to the outstanding actions page`(page: Page) {
                 val dashboard = navigator.goToLandlordDashboard()
                 dashboard.notificationBanner.addComplianceInformationLink.clickAndWait()
                 assertPageIs(page, OutstandingActionsPage::class)

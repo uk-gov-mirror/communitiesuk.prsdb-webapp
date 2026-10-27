@@ -190,7 +190,8 @@ class MessageKeyConverter {
                 }
             }
 
-        // TODO PDJB-2006: Remove the ComplianceCertStatus conversion when the PROPERTY_REGISTRATION_PHASE_THREE flag is removed
+        // TODO PDJB-2006: Remove this function and the ComplianceCertStatus branch in convert() when the
+        //  PROPERTY_REGISTRATION_PHASE_THREE flag is removed
         private fun convertComplianceCertStatus(complianceCertStatus: ComplianceCertStatus): String =
             when (complianceCertStatus) {
                 ComplianceCertStatus.HAS_FAULTS -> "complianceActions.status.hasFaults"

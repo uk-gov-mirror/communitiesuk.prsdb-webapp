@@ -156,7 +156,22 @@ class LandlordControllerTests(
             .get(LANDLORD_DASHBOARD_URL)
             .andExpect {
                 status { isOk() }
-                model { attribute("outstandingActionsUrl", OUTSTANDING_ACTIONS_URL) }
+            }
+    }
+
+    @Test
+    @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"])
+    fun `landlordDashboard links to outstanding actions`() {
+        whenever(userToLandlordService.getCurrentLandlordForUser()).thenReturn(createIndividualLandlord())
+
+        mvc
+            .get(LANDLORD_DASHBOARD_URL)
+            .andExpect {
+                status { isOk() }
+                model {
+                    attribute("outstandingActionsUrl", OUTSTANDING_ACTIONS_URL)
+                    attribute("outstandingActionsButtonKey", "landlord.dashboard.outstandingActions.button")
+                }
             }
     }
 
