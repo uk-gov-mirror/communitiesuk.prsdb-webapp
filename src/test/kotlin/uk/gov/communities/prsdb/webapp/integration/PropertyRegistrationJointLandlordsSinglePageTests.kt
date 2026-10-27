@@ -2,8 +2,10 @@ package uk.gov.communities.prsdb.webapp.integration
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import uk.gov.communities.prsdb.webapp.constants.ASSOCIATED_PARTIES
 import uk.gov.communities.prsdb.webapp.constants.GOV_LEGAL_ADVICE_URL
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
@@ -13,6 +15,12 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReg
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.RemoveJointLandlordAreYouSureFormPagePropertyRegistration
 
 class PropertyRegistrationJointLandlordsSinglePageTests : IntegrationTestWithImmutableData("data-local.sql") {
+    // TODO PDJB-959: remove this override and update these tests for the associated parties journey
+    @BeforeEach
+    fun disableAssociatedParties() {
+        featureFlagManager.disableFeature(ASSOCIATED_PARTIES)
+    }
+
     @Nested
     inner class HasJointLandlordsStep {
         @Test

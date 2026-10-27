@@ -53,6 +53,7 @@ class PropertyRegistrationPaymentQuoteStateTests {
             occupied = mock(),
             propertyDetailsTask = mock(),
             ownershipAndLandlordsTask = mock(),
+            ownershipAndLandlordsTaskBeforeAssociatedParties = mock(),
             correspondenceTask = mock(),
             tenancyDetailsTask = mock(),
             whoProvidesDetailsTask = mock(),

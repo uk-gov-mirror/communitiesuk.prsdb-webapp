@@ -2,10 +2,12 @@ package uk.gov.communities.prsdb.webapp.integration
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import uk.gov.communities.prsdb.webapp.constants.ASSOCIATED_PARTIES
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.CheckElectricalCertUploadsFormPagePropertyRegistration
@@ -15,6 +17,12 @@ import uk.gov.communities.prsdb.webapp.testHelpers.builders.PropertyStateSession
 import java.util.regex.Pattern
 
 class PropertyRegistrationElectricalSafetySinglePageTests : IntegrationTestWithImmutableData("data-local.sql") {
+    // TODO PDJB-959: remove this override and update these tests for the associated parties journey
+    @BeforeEach
+    fun disableAssociatedParties() {
+        featureFlagManager.disableFeature(ASSOCIATED_PARTIES)
+    }
+
     @Nested
     inner class HasElectricalCertStep {
         @Test

@@ -2,6 +2,7 @@ package uk.gov.communities.prsdb.webapp.integration
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor.captor
@@ -11,6 +12,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import uk.gov.communities.prsdb.webapp.clients.EpcRegisterClient
+import uk.gov.communities.prsdb.webapp.constants.ASSOCIATED_PARTIES
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
 import uk.gov.communities.prsdb.webapp.constants.enums.OwnershipType
 import uk.gov.communities.prsdb.webapp.database.entity.SavedJourneyState
@@ -58,6 +60,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PropertyRegistrationCheckAnswersSinglePageTests : IntegrationTestWithImmutableData("data-local.sql") {
+    // TODO PDJB-959: remove this override and update these tests for the associated parties journey
+    @BeforeEach
+    fun disableAssociatedParties() {
+        featureFlagManager.disableFeature(ASSOCIATED_PARTIES)
+    }
+
     @MockitoBean
     private lateinit var epcRegisterClient: EpcRegisterClient
 

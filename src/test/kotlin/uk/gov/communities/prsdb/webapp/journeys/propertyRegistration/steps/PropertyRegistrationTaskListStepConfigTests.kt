@@ -22,7 +22,7 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.Elect
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.EpcTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.GasSafetyTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.LicensingTask
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.OwnershipAndLandlordsTask
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.OwnershipAndLandlordsTaskBeforeAssociatedParties
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.PropertyDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.TenancyDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.WhoProvidesDetailsTask
@@ -181,7 +181,7 @@ class PropertyRegistrationTaskListStepConfigTests {
 
     private fun stubState() {
         val mockPropertyDetailsTask = mock<PropertyDetailsTask>()
-        val mockOwnershipAndLandlordsTask = mock<OwnershipAndLandlordsTask>()
+        val mockOwnershipAndLandlordsTaskBeforeAssociatedParties = mock<OwnershipAndLandlordsTaskBeforeAssociatedParties>()
         val mockCorrespondenceTask = mock<CorrespondenceTask>()
         val mockLicensingTask = mock<LicensingTask>()
         val mockTenancyDetailsTask = mock<TenancyDetailsTask>()
@@ -191,7 +191,7 @@ class PropertyRegistrationTaskListStepConfigTests {
         val mockEpcTask = mock<EpcTask>()
 
         whenever(mockPropertyDetailsTask.taskStatus()).thenReturn(TaskStatus.CANNOT_START)
-        whenever(mockOwnershipAndLandlordsTask.taskStatus()).thenReturn(TaskStatus.CANNOT_START)
+        whenever(mockOwnershipAndLandlordsTaskBeforeAssociatedParties.taskStatus()).thenReturn(TaskStatus.CANNOT_START)
         whenever(mockCorrespondenceTask.taskStatus()).thenReturn(TaskStatus.CANNOT_START)
         whenever(mockLicensingTask.taskStatus()).thenReturn(TaskStatus.CANNOT_START)
         whenever(mockTenancyDetailsTask.taskStatus()).thenReturn(TaskStatus.CANNOT_START)
@@ -203,7 +203,9 @@ class PropertyRegistrationTaskListStepConfigTests {
         whenever(mockCyaStep.currentJourneyId).thenReturn("test-journey-id")
 
         whenever(mockState.propertyDetailsTask).thenReturn(mockPropertyDetailsTask)
-        whenever(mockState.ownershipAndLandlordsTask).thenReturn(mockOwnershipAndLandlordsTask)
+        whenever(
+            mockState.ownershipAndLandlordsTaskBeforeAssociatedParties,
+        ).thenReturn(mockOwnershipAndLandlordsTaskBeforeAssociatedParties)
         whenever(mockState.correspondenceTask).thenReturn(mockCorrespondenceTask)
         whenever(mockState.occupied).thenReturn(mockOccupiedStep)
         whenever(mockState.licensingTask).thenReturn(mockLicensingTask)

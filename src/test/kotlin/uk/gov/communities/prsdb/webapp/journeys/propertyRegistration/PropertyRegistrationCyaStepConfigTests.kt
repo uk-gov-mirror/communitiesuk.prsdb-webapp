@@ -42,7 +42,7 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.GasSa
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.HouseholdsAndTenantsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.JointLandlordsPropertyRegistrationTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.LicensingTask
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.OwnershipAndLandlordsTask
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.OwnershipAndLandlordsTaskBeforeAssociatedParties
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.PropertyDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.PropertyRegistrationAddressTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.TenancyDetailsTask
@@ -129,7 +129,7 @@ class PropertyRegistrationCyaStepConfigTests {
     private lateinit var mockPropertyTypeFormModel: PropertyTypeFormModel
 
     @Mock
-    private lateinit var mockOwnershipAndLandlordsTask: OwnershipAndLandlordsTask
+    private lateinit var mockOwnershipAndLandlordsTaskBeforeAssociatedParties: OwnershipAndLandlordsTaskBeforeAssociatedParties
 
     @Mock
     private lateinit var mockOwnershipTypeStep: OwnershipTypeStep
@@ -225,10 +225,12 @@ class PropertyRegistrationCyaStepConfigTests {
         lenient().`when`(mockPropertyDetailsTask.bedrooms).thenReturn(mockBedroomsStep)
         lenient().`when`(mockState.bedrooms).thenReturn(mockBedroomsStep)
         lenient().`when`(mockBedroomsStep.formModel).thenReturn(mockBedroomsFormModel)
-        lenient().`when`(mockState.ownershipAndLandlordsTask).thenReturn(mockOwnershipAndLandlordsTask)
-        lenient().`when`(mockOwnershipAndLandlordsTask.ownershipTypeStep).thenReturn(mockOwnershipTypeStep)
+        lenient().`when`(
+            mockState.ownershipAndLandlordsTaskBeforeAssociatedParties,
+        ).thenReturn(mockOwnershipAndLandlordsTaskBeforeAssociatedParties)
+        lenient().`when`(mockOwnershipAndLandlordsTaskBeforeAssociatedParties.ownershipTypeStep).thenReturn(mockOwnershipTypeStep)
         lenient().`when`(mockOwnershipTypeStep.formModel).thenReturn(mockOwnershipTypeFormModel)
-        lenient().`when`(mockOwnershipAndLandlordsTask.jointLandlordsTask).thenReturn(mockJointLandlordsTask)
+        lenient().`when`(mockState.getJointLandlordsTask(mockFeatureFlagManager)).thenReturn(mockJointLandlordsTask)
         lenient().`when`(mockJointLandlordsTask.hasJointLandlordsStep).thenReturn(mockHasJointLandlordsStep)
         lenient().`when`(mockHasJointLandlordsStep.formModel).thenReturn(mockHasJointLandlordsFormModel)
         lenient().`when`(mockHasJointLandlordsFormModel.hasJointLandlords).thenReturn(false)
