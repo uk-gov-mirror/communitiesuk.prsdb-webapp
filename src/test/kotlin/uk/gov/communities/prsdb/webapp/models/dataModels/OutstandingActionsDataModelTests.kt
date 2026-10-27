@@ -51,6 +51,7 @@ class OutstandingActionsDataModelTests {
 
     @Test
     fun `fromPropertyOwnership shows the property when only compliance actions are outstanding`() {
+        // Arrange
         val propertyOwnership = MockLandlordData.createOccupiedPropertyOwnership()
         val propertyCompliance =
             PropertyComplianceBuilder()
@@ -60,8 +61,10 @@ class OutstandingActionsDataModelTests {
                 .build()
         ReflectionTestUtils.setField(propertyOwnership, "propertyCompliance", propertyCompliance)
 
+        // Act
         val dataModel = OutstandingActionsDataModel.fromPropertyOwnership(propertyOwnership)
 
+        // Assert
         assertNotNull(dataModel.complianceStatus)
         assertFalse(dataModel.hasPropertyDetailsAction)
         assertTrue(dataModel.shouldShowOnOutstandingActionsPage)

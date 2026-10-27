@@ -267,7 +267,7 @@ class LandlordControllerTests(
                 propertyOwnershipId = 2,
                 singleLineAddress = "456 Example Avenue, EX",
                 isOccupied = true,
-                isLicensingProvideLater = true,
+                isLicensingProvideLater = false,
                 isTenancyProvideLater = false,
                 provideLaterDeadline = null,
                 complianceStatus = nonCompliantDataModel,

@@ -1800,20 +1800,24 @@ class PropertyOwnershipServiceTests {
     inner class GetOutstandingActionsForLandlord {
         val landlord = MockLandlordData.createIndividualLandlord()
 
+        private fun addGasSafetyCertProvideLaterCompliance(propertyOwnership: PropertyOwnership) {
+            ReflectionTestUtils.setField(
+                propertyOwnership,
+                "propertyCompliance",
+                PropertyComplianceBuilder()
+                    .withPropertyOwnership(propertyOwnership)
+                    .withHasGasSupply()
+                    .withGasSafetyCertProvideLater()
+                    .build(),
+            )
+        }
+
         @Test
         fun `returns only the landlord's properties with outstanding actions`() {
             // Arrange
             val tenancyProvideLaterProperty = MockLandlordData.createOccupiedPropertyOwnership(id = 1, tenancyProvideLater = true)
             val gasProvideLaterProperty = MockLandlordData.createOccupiedPropertyOwnership(id = 2)
-            ReflectionTestUtils.setField(
-                gasProvideLaterProperty,
-                "propertyCompliance",
-                PropertyComplianceBuilder()
-                    .withPropertyOwnership(gasProvideLaterProperty)
-                    .withHasGasSupply()
-                    .withGasSafetyCertProvideLater()
-                    .build(),
-            )
+            addGasSafetyCertProvideLaterCompliance(gasProvideLaterProperty)
             val propertyWithNothingOutstanding = MockLandlordData.createOccupiedPropertyOwnership(id = 3)
             MockPropertyComplianceData.createPropertyComplianceForOwnership(propertyWithNothingOutstanding)
 
@@ -1861,15 +1865,7 @@ class PropertyOwnershipServiceTests {
                     createdDate = registrationDate.atStartOfDay(DateTimeHelper.UK_ZONE).toInstant(),
                     lastOccupiedDate = registrationDate,
                 )
-            ReflectionTestUtils.setField(
-                propertyOwnership,
-                "propertyCompliance",
-                PropertyComplianceBuilder()
-                    .withPropertyOwnership(propertyOwnership)
-                    .withHasGasSupply()
-                    .withGasSafetyCertProvideLater()
-                    .build(),
-            )
+            addGasSafetyCertProvideLaterCompliance(propertyOwnership)
             whenever(
                 mockPropertyOwnershipRepository.findAllByOwnershipLinks_Landlord_IdAndIsActiveTrue(landlord.id),
             ).thenReturn(listOf(propertyOwnership))
@@ -1896,15 +1892,7 @@ class PropertyOwnershipServiceTests {
                     createdDate = registrationDate.atStartOfDay(DateTimeHelper.UK_ZONE).toInstant(),
                     lastOccupiedDate = registrationDate.plusDays(30),
                 )
-            ReflectionTestUtils.setField(
-                propertyOwnership,
-                "propertyCompliance",
-                PropertyComplianceBuilder()
-                    .withPropertyOwnership(propertyOwnership)
-                    .withHasGasSupply()
-                    .withGasSafetyCertProvideLater()
-                    .build(),
-            )
+            addGasSafetyCertProvideLaterCompliance(propertyOwnership)
             whenever(
                 mockPropertyOwnershipRepository.findAllByOwnershipLinks_Landlord_IdAndIsActiveTrue(landlord.id),
             ).thenReturn(listOf(propertyOwnership))

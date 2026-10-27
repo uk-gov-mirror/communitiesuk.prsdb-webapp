@@ -52,32 +52,32 @@ class OutstandingActionViewModelBuilder {
             )
         }
 
-        private fun MutableList<SummaryListRowViewModel>.addCertRows(dataModel: ComplianceStatusDataModel) {
-            if (dataModel.shouldShowGasSafetyAction()) {
+        private fun MutableList<SummaryListRowViewModel>.addCertRows(complianceStatus: ComplianceStatusDataModel) {
+            if (complianceStatus.shouldShowGasSafetyAction()) {
                 addCertRow(
                     "outstandingActions.summaryRow.gasSafety",
-                    dataModel.gasSafetyStatus,
+                    complianceStatus.gasSafetyStatus,
                     "gasSafety",
-                    dataModel.provideLaterDeadline,
-                    dataModel.gasSafetyExpiryDate,
+                    complianceStatus.provideLaterDeadline,
+                    complianceStatus.gasSafetyExpiryDate,
                 )
             }
-            if (dataModel.shouldShowElectricalSafetyAction()) {
+            if (complianceStatus.shouldShowElectricalSafetyAction()) {
                 addCertRow(
                     "outstandingActions.summaryRow.electricalSafety",
-                    dataModel.electricalSafetyStatus,
+                    complianceStatus.electricalSafetyStatus,
                     "electricalSafety",
-                    dataModel.provideLaterDeadline,
-                    dataModel.electricalSafetyExpiryDate,
+                    complianceStatus.provideLaterDeadline,
+                    complianceStatus.electricalSafetyExpiryDate,
                 )
             }
-            if (dataModel.shouldShowEpcAction()) {
+            if (complianceStatus.shouldShowEpcAction()) {
                 addCertRow(
                     "outstandingActions.summaryRow.energyPerformance",
-                    dataModel.epcStatus,
+                    complianceStatus.epcStatus,
                     "epc",
-                    dataModel.provideLaterDeadline,
-                    dataModel.epcExpiryDate,
+                    complianceStatus.provideLaterDeadline,
+                    complianceStatus.epcExpiryDate,
                 )
             }
         }

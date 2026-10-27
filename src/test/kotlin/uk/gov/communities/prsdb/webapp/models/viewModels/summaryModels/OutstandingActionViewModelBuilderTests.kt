@@ -778,6 +778,7 @@ class OutstandingActionViewModelBuilderTests {
 
         @Test
         fun `rows are ordered licensing, tenancy, gas safety, electrical safety then energy performance`() {
+            // Arrange
             val complianceStatus =
                 ComplianceStatusDataModel(
                     propertyOwnershipId = 1L,
@@ -791,6 +792,7 @@ class OutstandingActionViewModelBuilderTests {
                     provideLaterDeadline = provideLaterDeadline,
                 )
 
+            // Act
             val viewModel =
                 OutstandingActionViewModelBuilder.fromDataModel(
                     buildDataModel(
@@ -801,6 +803,7 @@ class OutstandingActionViewModelBuilderTests {
                     ),
                 )
 
+            // Assert
             assertEquals(
                 listOf(
                     "outstandingActions.summaryRow.licensing",
