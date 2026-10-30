@@ -1,0 +1,24 @@
+<!--/*@thymesVar id="formModel" type="uk.gov.communities.prsdb.webapp.models.requestModels.formModels.PropertyManagerFormModel"*/-->
+<!--/*@thymesVar id="backUrl" type="java.lang.String"*/-->
+<!--/*@thymesVar id="sectionHeaderInfo" type="uk.gov.communities.prsdb.webapp.models.viewModels.SectionHeaderViewModel"*/-->
+<!--/*@thymesVar id="radioOptions" type="java.util.List<uk.gov.communities.prsdb.webapp.models.viewModels.formModels.RadiosButtonViewModel>"*/-->
+<!DOCTYPE html>
+<html th:replace="~{fragments/forms/complexQuestionPage :: complexQuestionPage(#{registerProperty.propertyManager.usingPropertyManager.heading}, ${formModel}, ~{::#form-content}, ~{::#question-content}, ${backUrl}, ${sectionHeaderInfo})}">
+<th:block id="question-content">
+    <h1 class="govuk-heading-l" th:text="#{registerProperty.propertyManager.usingPropertyManager.heading}">registerProperty.propertyManager.usingPropertyManager.heading</h1>
+    <p class="govuk-body" th:text="#{registerProperty.propertyManager.usingPropertyManager.paragraph}">registerProperty.propertyManager.usingPropertyManager.paragraph</p>
+    <ul class="govuk-list govuk-list--bullet">
+        <li th:text="#{registerProperty.propertyManager.usingPropertyManager.bullet.one}">registerProperty.propertyManager.usingPropertyManager.bullet.one</li>
+        <li th:text="#{registerProperty.propertyManager.usingPropertyManager.bullet.two}">registerProperty.propertyManager.usingPropertyManager.bullet.two</li>
+        <li th:text="#{registerProperty.propertyManager.usingPropertyManager.bullet.three}">registerProperty.propertyManager.usingPropertyManager.bullet.three</li>
+    </ul>
+    <div class="govuk-inset-text" th:text="#{registerProperty.propertyManager.usingPropertyManager.insetText}">registerProperty.propertyManager.usingPropertyManager.insetText</div>
+</th:block>
+<th:block id="form-content">
+    <th:block id="fieldset-content"
+              th:replace="~{fragments/forms/minorFieldSet :: minorFieldSet(~{::#fieldset-content/content()}, 'usingPropertyManager', #{registerProperty.propertyManager.usingPropertyManager.fieldSetHeading}, null)}">
+        <th:block th:replace="~{fragments/forms/radios :: radios(null, 'usingPropertyManager', null, ${radioOptions})}"></th:block>
+    </th:block>
+    <button th:replace="~{fragments/buttons/primaryButton :: primaryButton(#{forms.buttons.saveAndContinue})}"></button>
+</th:block>
+</html>

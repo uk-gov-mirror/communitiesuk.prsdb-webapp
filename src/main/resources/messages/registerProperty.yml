@@ -193,14 +193,25 @@ correspondenceEmail:
             missing: Enter an email address
             invalidFormat: Enter an email address in the correct format, like name@example.com
 propertyManager:
+  usingPropertyManager:
+    heading: Property manager
+    paragraph: 'Tell us if you use a person or company for day-to-day tasks, like:'
+    bullet:
+      one: collecting the rent
+      two: completing property inspections
+      three: organising repairs and compliance checks
+    insetText: This does not include any letting agents who are only advertising the property for you.
+    fieldSetHeading: Are you using a property manager?
+    radios:
+      'no': No, I manage this property (or another joint landlord does)
+      error:
+        missing: Select if you are using a property manager
   todo:
-    usingPropertyManager:
-      heading: 'TODO (PDJB-1980): Are you using a property manager?'
     removePropertyManager:
       heading: 'TODO (PDJB-1983): Are you sure you want to remove your property manager?'
     radios:
       error:
-        missing: 'TODO (PDJB-1980, PDJB-1983): Select yes or no'
+        missing: 'TODO (PDJB-1983): Select yes or no'
 paymentDescription: Register your rental property
 paymentSummary:
   heading: Property fee
