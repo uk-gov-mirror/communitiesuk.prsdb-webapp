@@ -593,7 +593,9 @@ checkPropertyAnswers:
     rentAmount: Rent amount
     customFrequencyRentAmountSuffix: per month
   jointLandlordsDetails:
+    heading: Joint landlords
     invitations: Invitations
+    # TODO PDJB-2016: Remove jointLandlordInvitations when ASSOCIATED_PARTIES is removed
     jointLandlordInvitations: Joint landlord invitations
     areThereJointLandlords: Are there any other landlords for this property?
     noJointLandlords: No, I am the only landlord for this property

@@ -2,6 +2,7 @@ package uk.gov.communities.prsdb.webapp.integration
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -47,6 +48,7 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReg
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.HasEpcFormPagePropertyRegistration
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.HasGasCertFormPagePropertyRegistration
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.HasGasSupplyFormPagePropertyRegistration
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.HasJointLandlordsFormBasePagePropertyRegistration
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.HasMeesExemptionFormPagePropertyRegistration
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.HmoAdditionalLicenceFormPagePropertyRegistration
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRegistrationJourneyPages.IsEpcRequiredFormPagePropertyRegistration
@@ -459,7 +461,93 @@ class PropertyRegistrationCheckAnswersSinglePageTests : IntegrationTestWithImmut
     }
 
     @Nested
+    inner class JointLandlordsCheckAnswers {
+        @Test
+        fun `joint landlord invitations are shown under the joint landlords heading`(page: Page) {
+            val checkAnswersPage = goToJointLandlordsCheckAnswers(page, hasJointLandlords = true)
+
+            BaseComponent.assertThat(checkAnswersPage.jointLandlordsHeading).isVisible()
+            assertThat(checkAnswersPage.jointLandlordsSummaryList).containsText("Invitations")
+            assertThat(checkAnswersPage.jointLandlordsSummaryList).containsText("email@address.com")
+        }
+
+        @Test
+        fun `no joint landlords answer is shown under the joint landlords heading`(page: Page) {
+            val checkAnswersPage = goToJointLandlordsCheckAnswers(page, hasJointLandlords = false)
+
+            BaseComponent.assertThat(checkAnswersPage.jointLandlordsHeading).isVisible()
+            assertThat(checkAnswersPage.summaryList.jointLandlordsAreThereRow.value)
+                .hasText("No, I am the only landlord for this property")
+        }
+    }
+
+    // TODO PDJB-2016: Remove this class when ASSOCIATED_PARTIES is released
+    @Nested
+    inner class BeforePdjb2146JointLandlordsCheckAnswers {
+        @BeforeEach
+        fun disableAssociatedPartiesFlag() {
+            featureFlagManager.disableFeature(ASSOCIATED_PARTIES)
+        }
+
+        @Test
+        fun `joint landlord invitations use the legacy label without a joint landlords heading`(page: Page) {
+            val checkAnswersPage = goToJointLandlordsCheckAnswers(page, hasJointLandlords = true)
+
+            BaseComponent.assertThat(checkAnswersPage.jointLandlordsHeading).isHidden()
+            assertThat(checkAnswersPage.summaryList.jointLandlordsInvitationsRowBeforePdjb2146.value)
+                .containsText("email@address.com")
+            assertThat(checkAnswersPage.summaryList.invitationsRow.key).hasCount(0)
+        }
+
+        @Test
+        fun `no joint landlords answer is shown without a joint landlords heading`(page: Page) {
+            val checkAnswersPage = goToJointLandlordsCheckAnswers(page, hasJointLandlords = false)
+
+            BaseComponent.assertThat(checkAnswersPage.jointLandlordsHeading).isHidden()
+            assertThat(checkAnswersPage.summaryList.jointLandlordsAreThereRow.value)
+                .hasText("No, I am the only landlord for this property")
+        }
+
+        @Test
+        fun `the back link on the check joint landlords page returns to the CYA page`(page: Page) {
+            val checkAnswersPage = goToJointLandlordsCheckAnswers(page, hasJointLandlords = true)
+
+            checkAnswersPage.summaryList.jointLandlordsInvitationsRowBeforePdjb2146.actions
+                .getActionLink("Change")
+                .clickAndWait()
+            val checkJointLandlordsPage = assertPageIs(page, CheckJointLandlordsFormPagePropertyRegistration::class)
+            checkJointLandlordsPage.backLink.clickAndWait()
+            assertPageIs(page, CheckAnswersPagePropertyRegistration::class)
+        }
+    }
+
+    private fun goToJointLandlordsCheckAnswers(
+        page: Page,
+        hasJointLandlords: Boolean,
+    ): CheckAnswersPagePropertyRegistration {
+        val state = PropertyStateSessionBuilder.beforePropertyRegistrationCheckAnswersOccupied()
+        if (hasJointLandlords) {
+            state.withCheckedJointLandlords(mutableListOf("email@address.com"))
+        }
+        val taskListPage = navigator.goToPropertyRegistrationTaskList(state)
+        taskListPage.clickSubmitYourRegistrationTaskWithName("Submit and pay")
+        return assertPageIs(page, CheckAnswersPagePropertyRegistration::class)
+    }
+
+    @Nested
     inner class CheckAnswersChangeLinkBackLinks {
+        @Test
+        fun `the back link on the has joint landlords page returns to CYA when there are no joint landlords`(page: Page) {
+            val checkAnswersPage = goToJointLandlordsCheckAnswers(page, hasJointLandlords = false)
+
+            checkAnswersPage.summaryList.jointLandlordsAreThereRow.actions
+                .getActionLink("Change")
+                .clickAndWait()
+            assertPageIs(page, HasJointLandlordsFormBasePagePropertyRegistration::class)
+            BackLink.default(page).clickAndWait()
+            assertPageIs(page, CheckAnswersPagePropertyRegistration::class)
+        }
+
         @Test
         fun `the back link on the check joint landlords page returns to the CYA page when reached from there`(page: Page) {
             val taskListPage =
@@ -471,7 +559,7 @@ class PropertyRegistrationCheckAnswersSinglePageTests : IntegrationTestWithImmut
             taskListPage.clickSubmitYourRegistrationTaskWithName("Submit and pay")
             val checkAnswersPage = assertPageIs(page, CheckAnswersPagePropertyRegistration::class)
 
-            checkAnswersPage.summaryList.jointLandlordsInvitationsRow.actions
+            checkAnswersPage.summaryList.invitationsRow.actions
                 .getActionLink("Change")
                 .clickAndWait()
             val checkJointLandlordsPage = assertPageIs(page, CheckJointLandlordsFormPagePropertyRegistration::class)
@@ -888,7 +976,7 @@ class PropertyRegistrationCheckAnswersSinglePageTests : IntegrationTestWithImmut
                         .withAnyoneInOwnershipChain(false),
                 )
             taskListPage.clickSubmitYourRegistrationTaskWithName("Submit and pay")
-            var checkAnswersPage = assertPageIs(page, CheckAnswersPagePropertyRegistration::class)
+            val checkAnswersPage = assertPageIs(page, CheckAnswersPagePropertyRegistration::class)
 
             BaseComponent.assertThat(checkAnswersPage.superiorLandlordsHeading).isVisible()
             assertThat(checkAnswersPage.summaryList.anyoneInOwnershipChainRow.value).hasText("No")
@@ -923,7 +1011,7 @@ class PropertyRegistrationCheckAnswersSinglePageTests : IntegrationTestWithImmut
         }
 
         @Test
-        fun `The back link on the superior landlords list page returns to the CYA page when reached from there`(page: Page) {
+        fun `the back link on the superior landlords list page returns to the CYA page when reached from there`(page: Page) {
             val checkAnswersPage = goToCheckAnswersWithSuperiorLandlords(page)
 
             checkAnswersPage.superiorLandlordsChangeLink.clickAndWait()

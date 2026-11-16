@@ -210,7 +210,8 @@ class PropertyRegistrationJourneyFactory(
                     val ownershipStructureTask = journey.ownershipAndLandlordsTask.ownershipStructureTask
                     val ownershipTypeTask = ownershipStructureTask.ownershipTypeTask
                     val freeholdersTask = ownershipStructureTask.freeholdersTask
-                    // TODO PDJB-2146: Revisit whether check-answer routing should use freeholdersTask; ownershipTypeTask provides joint ownership.
+                    // The freeholders steps need isJointFreeholder, which is derived from the ownership type steps' outcomes.
+                    // Step outcomes are only available once a step is initialised, so the ownership type task must be mounted too.
                     checkAnswerTask(ownershipTypeTask)
                     checkAnswerTaskFrom(
                         freeholdersTask,

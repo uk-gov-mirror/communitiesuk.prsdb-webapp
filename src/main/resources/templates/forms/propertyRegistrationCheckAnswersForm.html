@@ -5,6 +5,7 @@
 <!--/*@thymesVar id="aboutPropertyHeadingKey" type="java.lang.String"*/-->
 <!--/*@thymesVar id="propertyDetails" type="java.lang.Object"*/-->
 <!--/*@thymesVar id="peopleResponsibleForThisPropertyHeadingKey" type="java.lang.String"*/-->
+<!--/*@thymesVar id="jointLandlordsRows" type="java.util.List"*/-->
 <!--/*@thymesVar id="peopleResponsibleForThisPropertyRows" type="java.util.List"*/-->
 <!--/*@thymesVar id="freeholdersHeadingKey" type="java.lang.String"*/-->
 <!--/*@thymesVar id="freeholdersChangeLinkKey" type="java.lang.String"*/-->
@@ -60,58 +61,61 @@
         <h2 class="govuk-heading-l" th:text="#{${aboutPropertyHeadingKey}}"></h2>
         <h3 class="govuk-heading-m" th:text="#{forms.checkPropertyAnswers.propertyDetails.heading}"></h3>
         <dl th:replace="~{fragments/summaryList :: summaryList(${propertyDetails})}"></dl>
-        <!--/* TODO: PDJB-2146: This header & section no longer need to be optional */-->
+        <h3 class="govuk-heading-m"
+            th:text="#{${peopleResponsibleForThisPropertyHeadingKey}}">peopleResponsibleForThisPropertyHeadingKey</h3>
+        <th:block th:if="${jointLandlordsRows != null}">
+            <h4 class="govuk-heading-s"
+                th:text="#{forms.checkPropertyAnswers.jointLandlordsDetails.heading}">forms.checkPropertyAnswers.jointLandlordsDetails.heading</h4>
+            <dl th:replace="~{fragments/summaryList :: summaryList(${jointLandlordsRows})}"></dl>
+        </th:block>
         <th:block th:if="${!#lists.isEmpty(peopleResponsibleForThisPropertyRows)}">
-            <h3 class="govuk-heading-m"
-                th:text="#{${peopleResponsibleForThisPropertyHeadingKey}}">peopleResponsibleForThisPropertyHeadingKey</h3>
             <dl th:replace="~{fragments/summaryList :: summaryList(${peopleResponsibleForThisPropertyRows})}"></dl>
-            <!--/* TODO: PDJB-2146: Add Joint Landlords header & row */-->
-            <!--/* TODO: PDJB-2016: This section no longer needs to be optional once ASSOCIATED_PARTIES is released */-->
-            <th:block th:if="${ownershipRows != null}">
-                <h4 class="govuk-heading-s"
-                    th:text="#{propertyDetails.peopleResponsible.ownership.heading}">propertyDetails.peopleResponsible.ownership.heading</h4>
-                <dl th:replace="~{fragments/summaryList :: summaryList(${ownershipRows})}"></dl>
+        </th:block>
+        <!--/* TODO PDJB-2016: This section no longer needs to be optional once ASSOCIATED_PARTIES is released */-->
+        <th:block th:if="${ownershipRows != null}">
+            <h4 class="govuk-heading-s"
+                th:text="#{propertyDetails.peopleResponsible.ownership.heading}">propertyDetails.peopleResponsible.ownership.heading</h4>
+            <dl th:replace="~{fragments/summaryList :: summaryList(${ownershipRows})}"></dl>
+        </th:block>
+        <th:block th:if="${freeholdersCards != null}">
+            <h4 class="govuk-heading-s" th:text="#{${freeholdersHeadingKey}}">freeholdersHeadingKey</h4>
+            <p th:if="${freeholdersChangeUrl != null}" class="govuk-body">
+                <a class="govuk-link" th:href="@{${freeholdersChangeUrl}}"
+                   th:text="#{${freeholdersChangeLinkKey}}">freeholdersChangeLinkKey</a>
+            </p>
+            <th:block th:each="card : ${freeholdersCards}">
+                <div th:replace="~{fragments/summaryCard :: summaryCardWithHeadingLevelAndAdditionalContent(${card.title}, ${card.cardNumber}, ${card.actions}, ${card.summaryList}, 'h5', ~{fragments/summaryCardBodyText :: summaryCardBodyText(${card.bodyTextKey})})}"></div>
             </th:block>
-            <th:block th:if="${freeholdersCards != null}">
-                <h4 class="govuk-heading-s" th:text="#{${freeholdersHeadingKey}}">freeholdersHeadingKey</h4>
-                <p th:if="${freeholdersChangeUrl != null}" class="govuk-body">
-                    <a class="govuk-link" th:href="@{${freeholdersChangeUrl}}"
-                       th:text="#{${freeholdersChangeLinkKey}}">freeholdersChangeLinkKey</a>
+        </th:block>
+        <th:block th:if="${superiorLandlordsRows != null or superiorLandlordsCards != null}">
+            <h4 class="govuk-heading-s"
+                th:text="#{forms.checkPropertyAnswers.peopleResponsibleForThisProperty.otherPeopleInOwnershipChain.heading}">forms.checkPropertyAnswers.peopleResponsibleForThisProperty.otherPeopleInOwnershipChain.heading</h4>
+            <th:block th:if="${superiorLandlordsRows != null}">
+                <dl th:replace="~{fragments/summaryList :: summaryList(${superiorLandlordsRows})}"></dl>
+            </th:block>
+            <th:block th:if="${superiorLandlordsCards != null}">
+                <p th:if="${superiorLandlordsChangeUrl != null}" class="govuk-body">
+                    <a class="govuk-link" th:href="@{${superiorLandlordsChangeUrl}}"
+                       th:text="#{registerProperty.superiorLandlords.checkAnswers.changeLink}">registerProperty.superiorLandlords.checkAnswers.changeLink</a>
                 </p>
-                <th:block th:each="card : ${freeholdersCards}">
+                <th:block th:each="card : ${superiorLandlordsCards}">
                     <div th:replace="~{fragments/summaryCard :: summaryCardWithHeadingLevelAndAdditionalContent(${card.title}, ${card.cardNumber}, ${card.actions}, ${card.summaryList}, 'h5', ~{fragments/summaryCardBodyText :: summaryCardBodyText(${card.bodyTextKey})})}"></div>
                 </th:block>
             </th:block>
-            <th:block th:if="${superiorLandlordsRows != null or superiorLandlordsCards != null}">
-                <h4 class="govuk-heading-s"
-                    th:text="#{forms.checkPropertyAnswers.peopleResponsibleForThisProperty.otherPeopleInOwnershipChain.heading}">forms.checkPropertyAnswers.peopleResponsibleForThisProperty.otherPeopleInOwnershipChain.heading</h4>
-                <th:block th:if="${superiorLandlordsRows != null}">
-                    <dl th:replace="~{fragments/summaryList :: summaryList(${superiorLandlordsRows})}"></dl>
-                </th:block>
-                <th:block th:if="${superiorLandlordsCards != null}">
-                    <p class="govuk-body">
-                        <a class="govuk-link" th:href="@{${superiorLandlordsChangeUrl}}"
-                           th:text="#{registerProperty.superiorLandlords.checkAnswers.changeLink}">registerProperty.superiorLandlords.checkAnswers.changeLink</a>
-                    </p>
-                    <th:block th:each="card : ${superiorLandlordsCards}">
-                        <div th:replace="~{fragments/summaryCard :: summaryCardWithHeadingLevelAndAdditionalContent(${card.title}, ${card.cardNumber}, ${card.actions}, ${card.summaryList}, 'h5', ~{fragments/summaryCardBodyText :: summaryCardBodyText(${card.bodyTextKey})})}"></div>
-                    </th:block>
-                </th:block>
+        </th:block>
+        <th:block th:if="${propertyManagerRows != null or propertyManagerCards != null}">
+            <h4 class="govuk-heading-s"
+                th:text="#{forms.checkPropertyAnswers.peopleResponsibleForThisProperty.propertyManager.heading}">forms.checkPropertyAnswers.peopleResponsibleForThisProperty.propertyManager.heading</h4>
+            <th:block th:if="${propertyManagerRows != null}">
+                <dl th:replace="~{fragments/summaryList :: summaryList(${propertyManagerRows})}"></dl>
             </th:block>
-            <th:block th:if="${propertyManagerRows != null or propertyManagerCards != null}">
-                <h4 class="govuk-heading-s"
-                    th:text="#{forms.checkPropertyAnswers.peopleResponsibleForThisProperty.propertyManager.heading}">forms.checkPropertyAnswers.peopleResponsibleForThisProperty.propertyManager.heading</h4>
-                <th:block th:if="${propertyManagerRows != null}">
-                    <dl th:replace="~{fragments/summaryList :: summaryList(${propertyManagerRows})}"></dl>
-                </th:block>
-                <th:block th:if="${propertyManagerCards != null}">
-                    <p class="govuk-body">
-                        <a class="govuk-link" th:href="@{${propertyManagerChangeUrl}}"
-                           th:text="#{registerProperty.propertyManager.checkAnswers.changeLink}">registerProperty.propertyManager.checkAnswers.changeLink</a>
-                    </p>
-                    <th:block th:each="card : ${propertyManagerCards}">
-                        <div th:replace="~{fragments/summaryCard :: summaryCardWithHeadingLevel(${card.title}, ${card.cardNumber}, ${card.actions}, ${card.summaryList}, 'h5')}"></div>
-                    </th:block>
+            <th:block th:if="${propertyManagerCards != null}">
+                <p th:if="${propertyManagerChangeUrl != null}" class="govuk-body">
+                    <a class="govuk-link" th:href="@{${propertyManagerChangeUrl}}"
+                       th:text="#{registerProperty.propertyManager.checkAnswers.changeLink}">registerProperty.propertyManager.checkAnswers.changeLink</a>
+                </p>
+                <th:block th:each="card : ${propertyManagerCards}">
+                    <div th:replace="~{fragments/summaryCard :: summaryCardWithHeadingLevel(${card.title}, ${card.cardNumber}, ${card.actions}, ${card.summaryList}, 'h5')}"></div>
                 </th:block>
             </th:block>
         </th:block>

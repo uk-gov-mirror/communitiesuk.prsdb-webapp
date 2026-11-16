@@ -30,7 +30,7 @@ features:
       enabled: true
       expiry-date: "2027-01-01"
     - name: "pdjb-1894-gas-certificate-14-month-expiry"
-      enabled: false
+      enabled: true
       expiry-date: "2027-01-01"
     - name: "pdjb-955-associated-parties"
       enabled: false

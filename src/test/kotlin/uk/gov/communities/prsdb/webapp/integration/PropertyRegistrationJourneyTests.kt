@@ -2814,7 +2814,7 @@ class PropertyRegistrationJourneyTests : IntegrationTestWithMutableData("data-lo
             assertThat(checkAnswersPage.summaryList.occupancyQuestionRow.key).isVisible()
 
             val changeLink =
-                checkAnswersPage.summaryList.jointLandlordsInvitationsRow.actions
+                checkAnswersPage.summaryList.invitationsRow.actions
                     .getActionLink("Change")
             assertThat(changeLink).isVisible()
 

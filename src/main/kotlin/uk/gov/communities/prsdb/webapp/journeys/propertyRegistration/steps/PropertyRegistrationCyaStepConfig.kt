@@ -16,6 +16,7 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.PropertyReg
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.anyoneInOwnershipChain
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.getFreeholdersOrNull
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.getSuperiorLandlordsOrNull
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.JointLandlordsPropertyRegistrationTask
 import uk.gov.communities.prsdb.webapp.journeys.shared.helpers.ComplianceDetailsHelper
 import uk.gov.communities.prsdb.webapp.journeys.shared.helpers.FreeholderSummaryCardHelper
 import uk.gov.communities.prsdb.webapp.journeys.shared.helpers.LicensingDetailsHelper
@@ -138,18 +139,6 @@ class PropertyRegistrationCyaStepConfig(
     ): Map<String, Any?> =
         mapOf(
             "aboutPropertyHeadingKey" to "forms.checkPropertyAnswers.aboutYourProperty.heading",
-            "peopleResponsibleForThisPropertyHeadingKey" to
-                if (featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) {
-                    "forms.checkPropertyAnswers.peopleResponsibleForThisProperty.heading"
-                } else {
-                    "forms.checkPropertyAnswers.ownershipAndLandlords.heading"
-                },
-            "peopleResponsibleForThisPropertyRows" to
-                // TODO PDJB-2016: change back to listOf once getOwnershipTypeRowBeforeAssociatedParties is removed
-                listOfNotNull(
-                    getOwnershipTypeRowBeforeAssociatedParties(state),
-                    getJointLandLordsSummaryRow(state),
-                ),
             "correspondenceRows" to getCorrespondenceRows(state),
             "rentedOutHeadingKey" to "forms.checkPropertyAnswers.rentedOut.heading",
             "rentedOutLicensingHeadingKey" to "forms.checkPropertyAnswers.rentedOut.licensing.heading",
@@ -161,13 +150,46 @@ class PropertyRegistrationCyaStepConfig(
             "rentedOutTenancyRows" to tenancyDetails,
             "occupancyDetails" to occupancyDetails,
             "tenancyUnoccupiedBodyTextKey" to if (!isOccupied) "forms.checkPropertyAnswers.tenancyDetails.unoccupiedBodyText" else null,
-        ) + getOwnershipContent(state) + getFreeholdersContent(state) + getSuperiorLandlordsContent(state) +
-            getPropertyManagerContent(state)
+        ) +
+            getPeopleResponsibleForThisPropertyContent(state)
+
+    private fun getPeopleResponsibleForThisPropertyContent(state: PropertyRegistrationJourneyState): Map<String, Any?> {
+        val associatedPartiesEnabled = featureFlagManager.checkFeature(ASSOCIATED_PARTIES)
+        val jointLandlordsTask =
+            if (associatedPartiesEnabled) {
+                state.ownershipAndLandlordsTask.jointLandlordsTask
+            } else {
+                state.ownershipAndLandlordsTaskBeforeAssociatedParties.jointLandlordsTask
+            }
+        val jointLandlordsRow = getJointLandLordsSummaryRow(state, jointLandlordsTask, associatedPartiesEnabled)
+        val sectionHeadingKey =
+            if (associatedPartiesEnabled) {
+                "forms.checkPropertyAnswers.peopleResponsibleForThisProperty.heading"
+            } else {
+                "forms.checkPropertyAnswers.ownershipAndLandlords.heading"
+            }
+
+        val sectionContent =
+            if (associatedPartiesEnabled) {
+                mapOf(
+                    "jointLandlordsRows" to listOf(jointLandlordsRow),
+                ) +
+                    getOwnershipContent(state) +
+                    getFreeholdersContent(state) +
+                    getSuperiorLandlordsContent(state) +
+                    getPropertyManagerContent(state)
+            } else {
+                // TODO PDJB-2016: Remove this branch when ASSOCIATED_PARTIES is removed
+                mapOf(
+                    "peopleResponsibleForThisPropertyRows" to
+                        listOf(getOwnershipTypeRowBeforeAssociatedParties(state), jointLandlordsRow),
+                )
+            }
+
+        return mapOf("peopleResponsibleForThisPropertyHeadingKey" to sectionHeadingKey) + sectionContent
+    }
 
     private fun getOwnershipContent(state: PropertyRegistrationJourneyState): Map<String, Any?> {
-        // TODO PDJB-2016: remove this check once ASSOCIATED_PARTIES is released
-        if (!featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) return emptyMap()
-
         val ownershipTypeTask = state.ownershipAndLandlordsTask.ownershipStructureTask.ownershipTypeTask
         val ownershipType =
             ownershipTypeTask.ownershipType
@@ -213,8 +235,6 @@ class PropertyRegistrationCyaStepConfig(
     }
 
     private fun getFreeholdersContent(state: PropertyRegistrationJourneyState): Map<String, Any?> {
-        if (!featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) return emptyMap()
-
         val ownershipStructureTask = state.ownershipAndLandlordsTask.ownershipStructureTask
         val ownershipType =
             ownershipStructureTask.ownershipTypeTask.ownershipType
@@ -243,8 +263,6 @@ class PropertyRegistrationCyaStepConfig(
     }
 
     private fun getSuperiorLandlordsContent(state: PropertyRegistrationJourneyState): Map<String, Any?> {
-        if (!featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) return emptyMap()
-
         val ownershipStructureTask = state.ownershipAndLandlordsTask.ownershipStructureTask
         val ownershipType =
             ownershipStructureTask.ownershipTypeTask.ownershipType
@@ -290,8 +308,6 @@ class PropertyRegistrationCyaStepConfig(
     }
 
     private fun getPropertyManagerContent(state: PropertyRegistrationJourneyState): Map<String, Any?> {
-        if (!featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) return emptyMap()
-
         val propertyManagerTask = state.ownershipAndLandlordsTask.propertyManagerTask
         val propertyManagerStep = propertyManagerTask.propertyManagerStep
         val usingPropertyManager =
@@ -359,16 +375,24 @@ class PropertyRegistrationCyaStepConfig(
         defaultDestination: Destination,
     ): Destination = defaultDestination
 
-    private fun hasJointLandlords(state: PropertyRegistrationJourneyState): Boolean =
-        state.getJointLandlordsTask(featureFlagManager).hasJointLandlordsStep.formModel.notNullValue(
+    private fun hasJointLandlords(jointLandlordsTask: JointLandlordsPropertyRegistrationTask): Boolean =
+        jointLandlordsTask.hasJointLandlordsStep.formModel.notNullValue(
             HasJointLandlordsFormModel::hasJointLandlords,
         )
 
-    private fun getJointLandLordsSummaryRow(state: PropertyRegistrationJourneyState): SummaryListRowViewModel {
-        val jointLandlordsTask = state.getJointLandlordsTask(featureFlagManager)
-        return if (hasJointLandlords(state)) {
+    private fun getJointLandLordsSummaryRow(
+        state: PropertyRegistrationJourneyState,
+        jointLandlordsTask: JointLandlordsPropertyRegistrationTask,
+        associatedPartiesEnabled: Boolean,
+    ): SummaryListRowViewModel {
+        return if (hasJointLandlords(jointLandlordsTask)) {
             SummaryListRowViewModel.forCheckYourAnswersPage(
-                "forms.checkPropertyAnswers.jointLandlordsDetails.jointLandlordInvitations",
+                // TODO PDJB-2016: Remove the flag-off message when ASSOCIATED_PARTIES is removed
+                if (associatedPartiesEnabled) {
+                    "forms.checkPropertyAnswers.jointLandlordsDetails.invitations"
+                } else {
+                    "forms.checkPropertyAnswers.jointLandlordsDetails.jointLandlordInvitations"
+                },
                 jointLandlordsTask.inviteJointLandlordsTask.invitedJointLandlords,
                 Destination.VisitableStep(
                     jointLandlordsTask.inviteJointLandlordsTask.checkJointLandlordsStep,
@@ -433,9 +457,7 @@ class PropertyRegistrationCyaStepConfig(
     }
 
     // TODO PDJB-2016: remove once ASSOCIATED_PARTIES is released
-    private fun getOwnershipTypeRowBeforeAssociatedParties(state: PropertyRegistrationJourneyState): SummaryListRowViewModel? {
-        if (featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) return null
-
+    private fun getOwnershipTypeRowBeforeAssociatedParties(state: PropertyRegistrationJourneyState): SummaryListRowViewModel {
         val ownershipTypeStep = state.ownershipAndLandlordsTaskBeforeAssociatedParties.ownershipTypeStep
         return SummaryListRowViewModel.forCheckYourAnswersPage(
             "propertyDetails.propertyRecord.ownership.ownershipType",
