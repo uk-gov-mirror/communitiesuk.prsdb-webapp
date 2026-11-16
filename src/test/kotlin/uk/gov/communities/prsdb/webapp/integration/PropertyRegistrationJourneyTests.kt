@@ -992,7 +992,7 @@ class PropertyRegistrationJourneyTests : IntegrationTestWithMutableData("data-lo
             val occupancyPage = assertPageIs(page, OccupancyFormPagePropertyRegistration::class)
 
             // Occupancy - render page
-            assertThat(occupancyPage.form.fieldsetHeading).containsText("Is your property occupied by tenants?")
+            assertThat(occupancyPage.form.fieldsetHeading).containsText("Is this property occupied by tenants?")
             assertThat(occupancyPage.form.sectionHeader).containsText(occupiedSectionHeader)
             occupancyPage.submitIsOccupied()
             val whoProvidesRentalDetailsPage = assertPageIs(page, WhoProvidesRentalDetailsFormPagePropertyRegistration::class)
@@ -1375,7 +1375,7 @@ class PropertyRegistrationJourneyTests : IntegrationTestWithMutableData("data-lo
             val occupancyPage = assertPageIs(page, OccupancyFormPagePropertyRegistration::class)
 
             // Occupancy - render page
-            assertThat(occupancyPage.form.fieldsetHeading).containsText("Is your property occupied by tenants?")
+            assertThat(occupancyPage.form.fieldsetHeading).containsText("Is this property occupied by tenants?")
             assertThat(occupancyPage.form.sectionHeader).containsText(occupiedSectionHeader)
             // fill in and submit
             occupancyPage.submitIsVacant()
@@ -2447,7 +2447,7 @@ class PropertyRegistrationJourneyTests : IntegrationTestWithMutableData("data-lo
             correspondenceSelectPage.selectAddressAndSubmit("1 Fictional Road, FA1 1AA")
 
             val occupancyPage = assertPageIs(page, OccupancyFormPagePropertyRegistration::class)
-            assertThat(occupancyPage.form.fieldsetHeading).containsText("Is your property occupied by tenants?")
+            assertThat(occupancyPage.form.fieldsetHeading).containsText("Is this property occupied by tenants?")
             occupancyPage.submitIsOccupied()
             val whoProvidesRentalDetailsPage = assertPageIs(page, WhoProvidesRentalDetailsFormPagePropertyRegistration::class)
             whoProvidesRentalDetailsPage.submitLandlordProvidesDetails()

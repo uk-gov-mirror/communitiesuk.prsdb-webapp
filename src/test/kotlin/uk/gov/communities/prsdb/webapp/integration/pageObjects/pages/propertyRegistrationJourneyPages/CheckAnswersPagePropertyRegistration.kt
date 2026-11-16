@@ -114,6 +114,9 @@ class CheckAnswersPagePropertyRegistration(
 
     val superiorLandlordsChangeLink = Link.byText(page, "Add, change or remove people in the ownership chain")
 
+    val ownershipHeading =
+        Heading(page.locator("h4.govuk-heading-s", Page.LocatorOptions().setHasText(Pattern.compile("^Ownership$"))))
+
     val freeholdersHeading =
         Heading(page.locator("h4.govuk-heading-s", Page.LocatorOptions().setHasText(Pattern.compile("^Freeholders$"))))
 
@@ -138,7 +141,9 @@ class CheckAnswersPagePropertyRegistration(
         page: Page,
     ) : SummaryList(page) {
         val propertyAddressRow = getRow(Pattern.compile("^Address$"))
-        val ownershipRow = getRow("How do you own this property?")
+        val ownsPropertyRow = getRow("Do you own this property?")
+        val ownershipKindRow = getRow(Pattern.compile("^Ownership type$"))
+        val freeholdTypeRow = getRow("Freeholder type")
         val correspondenceEmailRow = getRow(Pattern.compile("^Email address$"))
         val correspondencePostalAddressRow = getRow(Pattern.compile("^Postal address$"))
 

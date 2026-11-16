@@ -1,5 +1,7 @@
 package uk.gov.communities.prsdb.webapp.performance
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.gatling.javaapi.core.ChainBuilder
 import io.gatling.javaapi.core.CoreDsl.css
 import io.gatling.javaapi.core.CoreDsl.exec
@@ -9,6 +11,7 @@ import io.gatling.javaapi.http.HttpDsl.status
 import uk.gov.communities.prsdb.webapp.controllers.LandlordDetailsController
 import java.net.URI
 import java.net.URLDecoder
+import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 object OneLoginAuthentication {
@@ -70,7 +73,7 @@ object OneLoginAuthentication {
         var chain =
             exec(
                 http("$requestLabelPrefix${loginRequestNames[0]}")
-                    .get("/oauth2/authorization/one-login")
+                    .get { _ -> HttpDestination.withCacheBuster("${config.baseUrl}/oauth2/authorization/one-login") }
                     .disableFollowRedirect()
                     .check(status().`is`(302))
                     .check(
@@ -82,22 +85,27 @@ object OneLoginAuthentication {
                 .exec(authenticationCompletionChain(config, subject, requestNamePrefix, authorizeUrlKey, requestLabelPrefix))
 
         if (requireLandlordDetails) {
-            chain =
-                chain.exec(
-                    http("$requestLabelPrefix$DETAILS_REQUEST")
-                        .get(LandlordDetailsController.LANDLORD_DETAILS_FOR_LANDLORD_ROUTE)
-                        .disableFollowRedirect()
-                        .check(status().`is`(200))
-                        .check(header("Content-Type").transform { it.substringBefore(';').trim().lowercase() }.`is`("text/html"))
-                        .check(
-                            css("a[href*='/landlord-details/update-phone-number']", "href")
-                                .transform { HttpDestination.resolve(it, config.baseUrl) }
-                                .saveAs("phoneUpdateEntry"),
-                        ),
-                ).exitHereIfFailed()
+            chain = chain.exec(landlordDetailsChain(config, requestLabelPrefix))
         }
         return chain
     }
+
+    fun landlordDetailsChain(
+        config: BasicRunConfig,
+        prefix: String = "",
+    ): ChainBuilder =
+        exec(
+            http("$prefix$DETAILS_REQUEST")
+                .get(LandlordDetailsController.LANDLORD_DETAILS_FOR_LANDLORD_ROUTE)
+                .disableFollowRedirect()
+                .check(status().`is`(200))
+                .check(header("Content-Type").transform { it.substringBefore(';').trim().lowercase() }.`is`("text/html"))
+                .check(
+                    css("a[href*='/landlord-details/update-phone-number']", "href")
+                        .transform { HttpDestination.resolve(it, config.baseUrl) }
+                        .saveAs("phoneUpdateEntry"),
+                ),
+        ).exitHereIfFailed()
 
     fun authenticationCompletionChain(
         config: BasicRunConfig,
@@ -196,7 +204,13 @@ object OneLoginAuthentication {
                     .check(status().`is`(302))
                     .check(
                         header("Location")
-                            .transform { authorizeUrlWithRequiredIdentityClaims(it, config.simulatorUrl) }
+                            .transform {
+                                authorizeUrlWithRequiredIdentityClaims(
+                                    it,
+                                    config.simulatorUrl,
+                                    fixture.includeCoreIdentityClaim,
+                                )
+                            }
                             .saveAs("identitySimulatorAuthorizeUrl"),
                     ),
             ).exitHereIfFailed()
@@ -272,7 +286,7 @@ object OneLoginAuthentication {
                             val resolved = HttpDestination.resolve(location, config.baseUrl)
                             val path = URI.create(resolved).path
                             val expectedStep =
-                                if (fixture.coreIdentity.isBlank()) "identity-not-verified" else "confirm-identity"
+                                if (fixture.includeCoreIdentityClaim) "confirm-identity" else "identity-not-verified"
                             require(path.endsWith("/$expectedStep")) {
                                 "Identity verification resumed at an unexpected registration step"
                             }
@@ -284,9 +298,12 @@ object OneLoginAuthentication {
     private fun authorizeUrlWithRequiredIdentityClaims(
         location: String,
         simulatorOrigin: String,
+        includeCoreIdentityClaim: Boolean,
     ): String {
+        val resolved = HttpDestination.resolve(location, simulatorOrigin)
+        val authorizeUri = URI.create(resolved)
         val parameters =
-            URI.create(location).rawQuery.orEmpty().split("&").associate { part ->
+            authorizeUri.rawQuery.orEmpty().split("&").associate { part ->
                 val pieces = part.split("=", limit = 2)
                 URLDecoder.decode(pieces[0], StandardCharsets.UTF_8) to
                     URLDecoder.decode(pieces.getOrElse(1) { "" }, StandardCharsets.UTF_8)
@@ -294,15 +311,32 @@ object OneLoginAuthentication {
         require(parameters["vtr"] == """["Cl.Cm.P2"]""") {
             "Identity verification authorization request is missing the required VTR"
         }
-        val claims = parameters["claims"].orEmpty()
+        val claims = parameters["claims"] ?: error("Identity verification authorization request is missing claims")
         require(
             listOf(
-                CORE_IDENTITY_CLAIM,
                 ADDRESS_CLAIM,
                 RETURN_CODE_CLAIM,
-            ).all { claims.contains("\"$it\"") },
+            ).plus(if (includeCoreIdentityClaim) listOf(CORE_IDENTITY_CLAIM) else emptyList())
+                .all { claims.contains("\"$it\"") },
         ) { "Identity verification authorization request is missing required identity claims" }
-        return HttpDestination.resolve(location, simulatorOrigin)
+        if (includeCoreIdentityClaim) return resolved
+
+        val claimsObject =
+            ObjectMapper().readTree(claims) as? ObjectNode
+                ?: error("Identity verification authorization claims must be a JSON object")
+        val userInfo =
+            claimsObject.get("userinfo") as? ObjectNode
+                ?: error("Identity verification authorization claims must contain userinfo")
+        userInfo.remove(CORE_IDENTITY_CLAIM)
+        val query =
+            parameters
+                .plus("claims" to claimsObject.toString())
+                .map { (key, value) ->
+                    "${URLEncoder.encode(key, StandardCharsets.UTF_8)}=${URLEncoder.encode(value, StandardCharsets.UTF_8)}"
+                }.joinToString("&")
+        val rewrittenUrl =
+            "${authorizeUri.scheme}://${authorizeUri.rawAuthority}${authorizeUri.rawPath}?$query"
+        return HttpDestination.resolve(rewrittenUrl, simulatorOrigin)
     }
 
     private const val CORE_IDENTITY_CLAIM = "https://vocab.account.gov.uk/v1/coreIdentityJWT"
@@ -314,18 +348,15 @@ data class IdentityVerificationFixture(
     val coreIdentity: String,
     val address: String,
     val returnCodes: String,
+    val includeCoreIdentityClaim: Boolean = true,
 ) {
     companion object {
         fun synthetic(includeCoreIdentity: Boolean = true): IdentityVerificationFixture =
             IdentityVerificationFixture(
-                coreIdentity =
-                    if (includeCoreIdentity) {
-                        loadFixture("core-identity.json")
-                    } else {
-                        ""
-                    },
+                coreIdentity = loadFixture("core-identity.json"),
                 address = loadFixture("address.json"),
                 returnCodes = loadFixture("return-codes.json"),
+                includeCoreIdentityClaim = includeCoreIdentity,
             )
 
         private fun loadFixture(name: String): String =

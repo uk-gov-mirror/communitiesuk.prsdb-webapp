@@ -2,6 +2,7 @@ package uk.gov.communities.prsdb.webapp.journeys.shared.helpers
 
 import uk.gov.communities.prsdb.webapp.journeys.JourneyStep
 import uk.gov.communities.prsdb.webapp.journeys.builders.JourneyBuilder
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.TenancyDetailsState
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.ElectricalSafetyDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.ElectricalSafetyTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.EpcDetailsTask
@@ -84,4 +85,16 @@ fun JourneyBuilder<*>.useContinueButtons(task: EpcDetailsTask) {
 fun JourneyBuilder<*>.useContinueButtons(task: EpcTask) {
     useContinueButtons(task.epcDetailsTask)
     useContinueButtons(task.checkEpcAnswersStep)
+}
+
+fun JourneyBuilder<*>.useContinueButtons(tenancyDetails: TenancyDetailsState) {
+    useContinueButtons(
+        tenancyDetails.householdsAndTenantsTask.households,
+        tenancyDetails.householdsAndTenantsTask.tenants,
+        tenancyDetails.rentIncludesBillsTask.rentIncludesBills,
+        tenancyDetails.rentIncludesBillsTask.billsIncluded,
+        tenancyDetails.furnishedStatus,
+        tenancyDetails.rentFrequencyAndAmountTask.rentFrequency,
+        tenancyDetails.rentFrequencyAndAmountTask.rentAmount,
+    )
 }

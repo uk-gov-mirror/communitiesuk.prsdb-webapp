@@ -4,7 +4,7 @@ import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.JourneyFramewo
 import uk.gov.communities.prsdb.webapp.journeys.AndParents
 import uk.gov.communities.prsdb.webapp.journeys.JourneyStateService
 import uk.gov.communities.prsdb.webapp.journeys.OrParents
-import uk.gov.communities.prsdb.webapp.journeys.TaskWithoutDependencies
+import uk.gov.communities.prsdb.webapp.journeys.Task
 import uk.gov.communities.prsdb.webapp.journeys.doesNotHaveOutcome
 import uk.gov.communities.prsdb.webapp.journeys.hasOutcome
 import uk.gov.communities.prsdb.webapp.journeys.isComplete
@@ -20,14 +20,14 @@ class TenancyDetailsTask(
     override val rentIncludesBillsTask: RentIncludesBillsTask,
     override val furnishedStatus: FurnishedStatusStep,
     override val rentFrequencyAndAmountTask: RentFrequencyAndAmountTask,
-) : TaskWithoutDependencies<TenancyDetailsState>(journeyStateService),
+) : Task<TenancyDetailsState, HouseholdsAndTenantsDependencies>(journeyStateService),
     TenancyDetailsState {
     override val taskState get() = this
 
     override fun makeSubJourney(state: TenancyDetailsState) =
         subJourney(state) {
             task(journey.householdsAndTenantsTask) {
-                withDependencies { HouseHoldsAndTenantsDependencies(true) }
+                withDependencies { dependencies }
                 nextStep {
                     when (state.householdsAndTenantsTask.households.outcome) {
                         HouseholdMode.PROVIDE_THIS_LATER -> exitStep
@@ -43,6 +43,7 @@ class TenancyDetailsTask(
                         journey.householdsAndTenantsTask.households.doesNotHaveOutcome(HouseholdMode.PROVIDE_THIS_LATER),
                     )
                 }
+                backUrl { journey.householdsAndTenantsTask.exitStep.backUrl }
                 nextStep { journey.furnishedStatus }
                 savable()
             }

@@ -299,6 +299,7 @@ nft-seed:
   system-operators: ${NFT_SEED_SYSTEM_OPERATORS:5}
   local-council-users: ${NFT_SEED_LOCAL_COUNCIL_USERS:10}
   landlords: ${NFT_SEED_LANDLORDS:30}
-  properties: ${NFT_SEED_PROPERTIES:45}
+  properties: ${NFT_SEED_PROPERTIES:40}
+  incomplete-properties: ${NFT_SEED_INCOMPLETE_PROPERTIES:5}
   batch-size: ${NFT_SEED_BATCH_SIZE:10}
   generated-addresses: ${NFT_SEED_GENERATED_ADDRESSES:1000}

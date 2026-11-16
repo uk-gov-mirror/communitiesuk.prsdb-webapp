@@ -29,7 +29,7 @@ gasSafetyTask:
           three: If you provide the appliance, it must be included.
   gasCert:
     heading: Do you have a gas safety certificate for this property?
-    hint: Rental properties must be checked by a Gas Safe engineer before a tenant can move in. They must then be checked every year.
+    hint: Provided by a Gas Safe engineer after an inspection
     radios:
       yesHint: We’ll ask you to upload this now
   gasSafetyCertificateMissingOccupied:

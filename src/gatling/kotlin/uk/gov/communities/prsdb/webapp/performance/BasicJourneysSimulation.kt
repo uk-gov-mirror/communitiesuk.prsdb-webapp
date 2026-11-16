@@ -21,10 +21,15 @@ class BasicJourneysSimulation : Simulation() {
         val profileUpdates =
             (listOf(warmUpData) + (1..config.iterations).map { BasicIterationData.forPass(registrationSubject, it) })
                 .mapIndexed { pass, iterationData ->
-                    scenario("Seeded landlord phone and email update (${passName(pass)})")
+                    scenario("Seeded landlord profile updates (${passName(pass)})")
                         .exec(OneLoginAuthentication.chain(config, iterationData))
+                        .exec(LandlordReadJourney.chain(config, iterationData))
+                        .exec(LandlordIdentityUpdateJourney.chain(config, iterationData, dateOfBirth = false))
+                        .exec(LandlordIdentityUpdateJourney.chain(config, iterationData, dateOfBirth = true))
                         .exec(LandlordPhoneUpdateJourney.chain(config, iterationData))
                         .exec(LandlordEmailUpdateJourney.chain(config, iterationData))
+                        .exec(LandlordAddressUpdateJourney.chain(config, iterationData, manual = false))
+                        .exec(LandlordAddressUpdateJourney.chain(config, iterationData, manual = true))
                         .injectOpen(atOnceUsers(1))
                 }.reduce { previous, next -> previous.andThen(next) }
 
@@ -55,8 +60,13 @@ class BasicJourneysSimulation : Simulation() {
             BasicPerformanceAssertions.forRequests(
                 config,
                 OneLoginAuthentication.applicationRequestNames +
+                    LandlordReadJourney.requestNames +
+                    LandlordIdentityUpdateJourney.requestNames(false) +
+                    LandlordIdentityUpdateJourney.requestNames(true) +
                     LandlordPhoneUpdateJourney.requestNames +
                     LandlordEmailUpdateJourney.requestNames +
+                    LandlordAddressUpdateJourney.requestNames(false) +
+                    LandlordAddressUpdateJourney.requestNames(true) +
                     OneLoginAuthentication.loginRequestNames(REGISTRATION_LOGIN_PREFIX) +
                     IndividualLandlordRegistrationJourney.requestNames,
             ),

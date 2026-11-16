@@ -41,7 +41,7 @@ object LandlordPhoneUpdateJourney {
                     .check(css("form[method=post]", "action").saveAs("phoneFormAction"))
                     .check(css("input[name=_csrf]", "value").saveAs("phoneCsrf"))
                     .check(css("input[name=phoneNumber]").exists()),
-            ).exitHereIfFailed()
+            ).exitHereIfFailed().pause(config.thinkTime)
             .exec(
                 http("$requestNamePrefix$SUBMIT_REQUEST")
                     .post { session ->

@@ -72,10 +72,7 @@ class UpdateOccupancyJourneyFactory(
                 backUrl { propertyDetailsRoute }
                 nextStep { journey.occupancyUpdateRoutingStep }
                 withAdditionalContentProperties {
-                    mapOf(
-                        "fieldSetHeading" to "forms.update.occupancy.occupied.fieldSetHeading",
-                        "submitButtonText" to "forms.buttons.saveAndContinue",
-                    )
+                    mapOf("submitButtonText" to "forms.buttons.saveAndContinue")
                 }
             }
             step<OccupancyUpdateRouteMode, OccupancyUpdateRoutingStepConfig>(journey.occupancyUpdateRoutingStep) {
@@ -129,10 +126,7 @@ class UpdateOccupancyJourneyFactory(
                         routeSegment(OccupiedStep.ROUTE_SEGMENT)
                         nextStep { journey.occupancyUpdateRoutingStep }
                         withAdditionalContentProperties {
-                            mapOf(
-                                "fieldSetHeading" to "forms.update.occupancy.occupied.fieldSetHeading",
-                                "submitButtonText" to "forms.buttons.saveAndContinue",
-                            )
+                            mapOf("submitButtonText" to "forms.buttons.saveAndContinue")
                         }
                     }
                     step<OccupancyUpdateRouteMode, OccupancyUpdateRoutingStepConfig>(journey.occupancyUpdateRoutingStep) {

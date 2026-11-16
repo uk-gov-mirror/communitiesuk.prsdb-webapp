@@ -2,9 +2,21 @@ package uk.gov.communities.prsdb.webapp.helpers
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
+import org.springframework.mock.web.MockHttpSession
+import tools.jackson.databind.ObjectMapper
 import uk.gov.communities.prsdb.webapp.constants.EIC_VALIDITY_YEARS
 import uk.gov.communities.prsdb.webapp.constants.enums.CertificateType
 import uk.gov.communities.prsdb.webapp.constants.enums.OrganisationalLandlordUserRole
+import uk.gov.communities.prsdb.webapp.database.entity.Address
+import uk.gov.communities.prsdb.webapp.database.entity.LocalCouncil
+import uk.gov.communities.prsdb.webapp.journeys.JourneyStateDelegateProvider
+import uk.gov.communities.prsdb.webapp.journeys.JourneyStatePersistenceService
+import uk.gov.communities.prsdb.webapp.journeys.JourneyStateService
+import uk.gov.communities.prsdb.webapp.models.dataModels.AddressDataModel
 import java.sql.Date
 import java.sql.Timestamp
 import java.time.Instant
@@ -17,6 +29,43 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class NftDataFakerTests {
+    @ParameterizedTest
+    @ValueSource(strings = ["Performance House", "The \"Quoted\" House\\Annexe\nFloor 1"])
+    fun `generated incomplete state restores full selected address through journey delegates`(buildingName: String) {
+        val address =
+            Address(
+                AddressDataModel(
+                    singleLineAddress = "$buildingName, 1 Performance Road, London, EG1 1EG",
+                    uprn = 900000000001,
+                    buildingName = buildingName,
+                    buildingNumber = "1",
+                    streetName = "Performance Road",
+                    townName = "London",
+                    postcode = "EG1 1EG",
+                ),
+                LocalCouncil(2, "Test council", "1234"),
+            )
+        val serializedState = NftDataFaker.generateIncompletePropertyJourneyState(address)
+        val persistenceService = mock<JourneyStatePersistenceService>()
+        whenever(persistenceService.retrieveJourneyStateData("seeded-state"))
+            .thenReturn(ObjectMapper().readValue(serializedState, Any::class.java))
+        val stateService = JourneyStateService(MockHttpSession(), mock(), persistenceService)
+        stateService.setJourneyId("seeded-state")
+        val delegateProvider = JourneyStateDelegateProvider(stateService)
+        val state =
+            object {
+                val cachedAddresses: List<AddressDataModel>? by delegateProvider.nullableDelegate("cachedAddresses")
+                val isAddressAlreadyRegistered: Boolean? by delegateProvider.nullableDelegate("isAddressAlreadyRegistered")
+            }
+
+        assertEquals(listOf(AddressDataModel.fromAddress(address)), state.cachedAddresses)
+        assertEquals(false, state.isAddressAlreadyRegistered)
+        assertEquals(
+            mapOf("address" to address.singleLineAddress),
+            stateService.getSubmittedStepData()["select-address"],
+        )
+    }
+
     @Test
     fun `same seed produces the same scenario sequence`() {
         NftDataFaker.reset(seed = TEST_SEED)

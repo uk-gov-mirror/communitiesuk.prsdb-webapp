@@ -14,7 +14,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.communities.prsdb.webapp.constants.PROVIDE_THIS_LATER_BUTTON_ACTION_NAME
 import uk.gov.communities.prsdb.webapp.journeys.UnrecoverableJourneyStateException
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.states.HouseholdsAndTenantsState
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.HouseHoldsAndTenantsDependencies
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.HouseholdsAndTenantsDependencies
 import uk.gov.communities.prsdb.webapp.testHelpers.mockObjects.AlwaysTrueValidator
 
 @ExtendWith(MockitoExtension::class)
@@ -25,7 +25,7 @@ class HouseholdStepConfigProvideLaterTests {
     lateinit var mockJourneyState: HouseholdsAndTenantsState
 
     @Mock
-    lateinit var dependencies: HouseHoldsAndTenantsDependencies
+    lateinit var dependencies: HouseholdsAndTenantsDependencies
 
     private fun setupStepConfig(): HouseholdStepConfig {
         val stepConfig = HouseholdStepConfig()

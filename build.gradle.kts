@@ -162,13 +162,13 @@ val frontendAssetsSpec: CopySpec =
 // constants. The One Login simulator fixtures are shared with the simulator integration tests.
 sourceSets.named("gatling") {
     resources.srcDir("src/test/resources")
-    resources.include("one-login-simulator/*.json", "logback-test.xml")
+    resources.include("one-login-simulator/*.json", "logback-test.xml", "gatling.conf")
 }
 
 gatling {
     includeTestOutput = false
-    // Test-only simulation used by the performance unit tests; it must not be offered as a real simulation.
-    excludes = listOf("uk.gov.communities.prsdb.webapp.performance.BasicContractSimulation")
+    // Contract simulations use fake servers and must not be offered as real performance runs.
+    excludes = listOf("uk.gov.communities.prsdb.webapp.performance.*ContractSimulation")
     systemProperties =
         System
             .getProperties()

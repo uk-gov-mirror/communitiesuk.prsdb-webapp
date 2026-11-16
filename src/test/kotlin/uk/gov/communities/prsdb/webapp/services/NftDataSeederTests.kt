@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
+import org.springframework.core.io.ClassPathResource
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.queryForList
 import org.springframework.test.context.ActiveProfiles
@@ -16,6 +17,7 @@ import org.springframework.test.context.TestPropertySource
 import uk.gov.communities.prsdb.webapp.TestcontainersConfiguration
 import uk.gov.communities.prsdb.webapp.constants.enums.OrganisationalLandlordUserRole
 import uk.gov.communities.prsdb.webapp.constants.enums.OwnershipType
+import uk.gov.communities.prsdb.webapp.database.dao.NftDataSeederDao
 import uk.gov.communities.prsdb.webapp.database.repository.IndividualLandlordRepository
 import uk.gov.communities.prsdb.webapp.database.repository.LandlordIncompletePropertiesRepository
 import uk.gov.communities.prsdb.webapp.database.repository.LandlordRepository
@@ -25,6 +27,7 @@ import uk.gov.communities.prsdb.webapp.database.repository.OrganisationLandlordR
 import uk.gov.communities.prsdb.webapp.database.repository.OrganisationalLandlordUserRepository
 import uk.gov.communities.prsdb.webapp.database.repository.PropertyOwnershipRepository
 import uk.gov.communities.prsdb.webapp.database.repository.PrsdbUserRepository
+import uk.gov.communities.prsdb.webapp.helpers.NftDataFaker
 import uk.gov.communities.prsdb.webapp.testHelpers.IntegrationTestHelper
 import java.util.TimeZone
 import kotlin.test.assertNotNull
@@ -66,6 +69,9 @@ class NftDataSeederTests(
         properties: Int = numOfProperties,
         batchSize: Int = 25,
         generatedAddresses: Int = 2000,
+        randomSeed: Long = 239L,
+        minimumFreeAddresses: Int = 0,
+        incompleteProperties: Int = properties / 10,
     ) = NftDataSeeder(
         sessionFactory = sessionFactory,
         localCouncilRepository = localCouncilRepository,
@@ -73,15 +79,17 @@ class NftDataSeederTests(
         numOfSystemOperators = 2,
         numOfLcUsers = 2,
         numOfLandlords = landlords,
-        numOfProperties = properties,
+        numOfProperties = properties - incompleteProperties,
         batchSize = batchSize,
-        randomSeed = 239L,
+        randomSeed = randomSeed,
         // A blank referenceDate resolves to Instant.now(), which makes seeding non-reproducible: the
         // random-call sequence for date generation depends on the exact instant, so any two runs (even with
         // the same random seed) can diverge. Use a fixed date so "seedDatabase is deterministic" actually
         // tests what it claims to test.
         referenceDate = "2024-01-01",
         numOfGeneratedAddresses = generatedAddresses,
+        minimumFreeAddresses = minimumFreeAddresses,
+        numOfIncompleteProperties = incompleteProperties,
     )
 
     @BeforeEach
@@ -90,11 +98,219 @@ class NftDataSeederTests(
     }
 
     @Test
+    fun `seeder collision checks use custom planning without leaking after commit or rollback`() {
+        sessionFactory.openStatelessSession().use { session ->
+            session.doWork { connection ->
+                connection.createStatement().use { it.execute("SET plan_cache_mode = force_generic_plan") }
+            }
+            try {
+                for (commit in listOf(true, false)) {
+                    val transaction = session.beginTransaction()
+                    session.doWork { connection ->
+                        NftDataSeederDao(session, connection)
+                        connection.createStatement().use { statement ->
+                            statement.executeQuery("SHOW plan_cache_mode").use { result ->
+                                result.next()
+                                assertEquals("force_custom_plan", result.getString(1))
+                            }
+                        }
+                    }
+                    if (commit) transaction.commit() else transaction.rollback()
+                    session.doWork { connection ->
+                        connection.createStatement().use { statement ->
+                            statement.executeQuery("SHOW plan_cache_mode").use { result ->
+                                result.next()
+                                assertEquals("force_generic_plan", result.getString(1))
+                            }
+                        }
+                    }
+                }
+            } finally {
+                session.doWork { connection ->
+                    connection.createStatement().use { it.execute("RESET plan_cache_mode") }
+                }
+            }
+        }
+    }
+
+    @Test
     fun `seedDatabase seeds the configured number of landlords and properties without error`() {
-        newSeeder().seedDatabase()
+        newSeeder(minimumFreeAddresses = 100).seedDatabase()
 
         assertEquals(numOfLandlords.toLong(), landlordRepository.count())
         assertEquals(numOfProperties.toLong(), propertyOwnershipRepository.count() + incompletePropertiesRepository.count())
+    }
+
+    @Test
+    fun `seedDatabase produces exact completed and incomplete property counts`() {
+        newSeeder(properties = 300, incompleteProperties = 30).seedDatabase()
+
+        assertEquals(270L, propertyOwnershipRepository.count())
+        assertEquals(30L, incompletePropertiesRepository.count())
+    }
+
+    @Test
+    fun `seedDatabase derives the landlord population from portfolios when no landlord count is supplied`() {
+        newSeeder(landlords = 0, properties = 120, incompleteProperties = 20).seedDatabase()
+
+        assertEquals(100L, propertyOwnershipRepository.count())
+        assertEquals(20L, incompletePropertiesRepository.count())
+        assertTrue(landlordRepository.count() > 0)
+        assertTrue(
+            jdbcTemplate.queryForObject(
+                """
+                SELECT count(*) FROM landlord l
+                WHERE NOT EXISTS (SELECT 1 FROM ownership_link ol WHERE ol.landlord_id = l.id)
+                AND NOT EXISTS (
+                    SELECT 1 FROM saved_journey_state sjs
+                    WHERE sjs.subject_identifier = l.individual_subject_identifier
+                )
+                AND l.landlord_type = 0
+                """.trimIndent(),
+                Long::class.java,
+            )!! > 0,
+        )
+    }
+
+    @Test
+    fun `seedDatabase can generate only completed properties`() {
+        newSeeder(properties = 100, incompleteProperties = 0).seedDatabase()
+
+        assertEquals(100L, propertyOwnershipRepository.count())
+        assertEquals(0L, incompletePropertiesRepository.count())
+    }
+
+    @Test
+    fun `seedDatabase can generate only incomplete properties`() {
+        newSeeder(properties = 100, incompleteProperties = 100).seedDatabase()
+
+        assertEquals(0L, propertyOwnershipRepository.count())
+        assertEquals(100L, incompletePropertiesRepository.count())
+    }
+
+    @Test
+    fun `seedDatabase preserves the NFT fixture and adds the configured volume`() {
+        jdbcTemplate.execute(
+            """
+            INSERT INTO address (id, created_date, uprn, single_line_address, postcode, local_council_id)
+            VALUES (1, current_timestamp, 1, '1 Test Street', 'TE1 1ST', 1)
+            """.trimIndent(),
+        )
+        jdbcTemplate.execute(
+            """
+            INSERT INTO prsdb_user (id, created_date) VALUES ('fixture-landlord', current_timestamp);
+            INSERT INTO registration_number (id, created_date, number, type)
+            VALUES (2147484000, current_timestamp, 210000000001, 1);
+            INSERT INTO landlord
+                (id, registration_number_id, individual_address_id, created_date, individual_email,
+                 is_active, individual_name, individual_phone_number, individual_subject_identifier,
+                 individual_date_of_birth, individual_country_of_residence, individual_is_verified,
+                 individual_has_accepted_privacy_notice)
+            VALUES (2147484000, 2147484000, 1, current_timestamp, 'fixture@example.com',
+                    true, 'Fixture Landlord', '07777777777', 'fixture-landlord',
+                    '1980-01-01', 'England or Wales', true, true);
+            INSERT INTO system_operator (id, created_date, subject_identifier)
+            VALUES (1, current_timestamp, 'fixture-landlord');
+            SELECT setval(pg_get_serial_sequence('address', 'id'), 1);
+            """.trimIndent(),
+        )
+        jdbcTemplate.execute(
+            ClassPathResource("data-nft-performance.sql").inputStream.bufferedReader().use { it.readText() },
+        )
+        val before = captureSeedSnapshot()
+        val landlordCount = landlordRepository.count()
+        val propertyCount = propertyOwnershipRepository.count() + incompletePropertiesRepository.count()
+
+        newSeeder().seedDatabase()
+
+        assertEquals(landlordCount + numOfLandlords, landlordRepository.count())
+        assertEquals(
+            propertyCount + numOfProperties,
+            propertyOwnershipRepository.count() + incompletePropertiesRepository.count(),
+        )
+        val after = captureSeedSnapshot()
+        assertTrue(after.landlords.containsAll(before.landlords))
+        assertTrue(after.properties.containsAll(before.properties))
+        assertEquals(
+            0L,
+            jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM property_ownership WHERE address_id BETWEEN 9100000001 AND 9100000005",
+                Long::class.java,
+            ),
+        )
+    }
+
+    @Test
+    fun `seedDatabase appends records with existing compliance and saved journeys without changing them`() {
+        newSeeder().seedDatabase()
+        val before = captureSeedSnapshot()
+        val propertyCount = propertyOwnershipRepository.count() + incompletePropertiesRepository.count()
+
+        newSeeder(randomSeed = 240L).seedDatabase()
+
+        assertEquals(2L * numOfLandlords, landlordRepository.count())
+        assertEquals(
+            propertyCount + numOfProperties,
+            propertyOwnershipRepository.count() + incompletePropertiesRepository.count(),
+        )
+        val after = captureSeedSnapshot()
+        assertTrue(after.properties.containsAll(before.properties))
+        assertTrue(after.incompleteProperties.containsAll(before.incompleteProperties))
+        assertTrue(after.compliance.containsAll(before.compliance))
+        assertTrue(after.uploads.containsAll(before.uploads))
+    }
+
+    @Test
+    fun `seedDatabase fails rather than consuming reserved lookup addresses`() {
+        jdbcTemplate.execute(
+            ClassPathResource("data-nft-performance.sql").inputStream.bufferedReader().use { it.readText() },
+        )
+
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                newSeeder(generatedAddresses = 0).seedDatabase()
+            }
+
+        assertTrue(exception.message!!.contains("not enough addresses"))
+        assertEquals(5L, countRows("address"))
+        assertEquals(0L, landlordRepository.count())
+    }
+
+    @Test
+    fun `seedDatabase rejects insufficient free address headroom and rolls back generated addresses`() {
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                newSeeder(generatedAddresses = numOfProperties + 10, minimumFreeAddresses = 20).seedDatabase()
+            }
+
+        assertTrue(exception.message!!.contains("20 free addresses"))
+        assertEquals(0L, countRows("address"))
+        assertEquals(0L, landlordRepository.count())
+    }
+
+    @Test
+    fun `seedDatabase fails instead of accepting fewer properties than requested`() {
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                newSeeder(landlords = 1, properties = 1000).seedDatabase()
+            }
+
+        assertTrue(exception.message!!.contains("only generated"))
+        assertEquals(0L, countRows("address"))
+        assertEquals(0L, countRows("system_operator"))
+    }
+
+    @Test
+    fun `seedDatabase does not rewind sequences already ahead of the data`() {
+        newSeeder().seedDatabase()
+        jdbcTemplate.execute("SELECT setval(pg_get_serial_sequence('landlord', 'id'), 70000)")
+
+        newSeeder(randomSeed = 240L).seedDatabase()
+
+        assertEquals(
+            70001L,
+            jdbcTemplate.queryForObject("SELECT nextval(pg_get_serial_sequence('landlord', 'id'))", Long::class.java),
+        )
     }
 
     @Test
@@ -132,6 +348,84 @@ class NftDataSeederTests(
         assertTrue(countRows("file_upload") > 0, "Expected certificate file upload metadata")
         assertTrue(countRows("gas_safety_uploads") > 0, "Expected gas safety certificate relationships")
         assertTrue(countRows("electrical_safety_uploads") > 0, "Expected electrical certificate relationships")
+    }
+
+    @Test
+    fun `seedDatabase allocates distinct addresses across completed and incomplete batches and appended runs`() {
+        repeat(2) { run ->
+            newSeeder(
+                landlords = 0,
+                properties = 120,
+                incompleteProperties = 60,
+                batchSize = 5,
+                generatedAddresses = if (run == 0) 260 else 0,
+                randomSeed = 239L + run,
+                minimumFreeAddresses = 20,
+            ).seedDatabase()
+
+            val allocations =
+                jdbcTemplate.queryForList(
+                    """
+                    SELECT a.single_line_address AS address
+                    FROM property_ownership p JOIN address a ON a.id = p.address_id
+                    UNION ALL
+                    SELECT s.serialized_state::jsonb #>> '{journeyData,select-address,address}' AS address
+                    FROM saved_journey_state s
+                    JOIN landlord_incomplete_properties i ON i.saved_journey_state_id = s.id
+                    """.trimIndent(),
+                    String::class.java,
+                )
+            assertEquals((run + 1) * 120, allocations.size)
+            assertEquals(allocations.size, allocations.toSet().size, "Every completed and incomplete allocation must be distinct")
+        }
+    }
+
+    @Test
+    fun `seedDatabase keeps generated address selections unambiguous alongside an earlier synthetic street`() {
+        NftDataFaker.reset(seed = 239L)
+        val street = NftDataFaker.generateFakeStreet()
+        jdbcTemplate.update(
+            """
+            INSERT INTO address (created_date, uprn, single_line_address, postcode, building_number, street_name, local_council_id)
+            VALUES (current_timestamp, 1, ?, ?, '1', ?, 1)
+            """.trimIndent(),
+            NftDataFaker.buildSingleLineAddress(1, street),
+            street.postcode,
+            street.streetName,
+        )
+        newSeeder(landlords = 0, properties = 70, incompleteProperties = 35, generatedAddresses = 80, batchSize = 5)
+            .seedDatabase()
+
+        assertEquals(
+            0,
+            jdbcTemplate.queryForObject(
+                """
+                SELECT count(*) FROM (
+                    SELECT single_line_address FROM address
+                    GROUP BY single_line_address HAVING count(*) > 1
+                ) ambiguous_addresses
+                """.trimIndent(),
+                Int::class.java,
+            ),
+        )
+    }
+
+    @Test
+    fun `seedDatabase counts existing incomplete allocations when checking free address headroom`() {
+        newSeeder(landlords = 0, properties = 20, incompleteProperties = 20, generatedAddresses = 30, batchSize = 5).seedDatabase()
+
+        assertThrows(IllegalStateException::class.java) {
+            newSeeder(
+                landlords = 0,
+                properties = 10,
+                incompleteProperties = 0,
+                generatedAddresses = 0,
+                minimumFreeAddresses = 1,
+                batchSize = 5,
+            ).seedDatabase()
+        }
+        assertEquals(20L, incompletePropertiesRepository.count())
+        assertEquals(0L, propertyOwnershipRepository.count())
     }
 
     @Test
@@ -267,7 +561,7 @@ class NftDataSeederTests(
 
     @Test
     fun `seedDatabase creates valid organisational landlord invitations for seeded organisations`() {
-        newSeeder().seedDatabase()
+        newSeeder(batchSize = numOfLandlords).seedDatabase()
 
         val organisationLandlordIds =
             organisationLandlordRepository

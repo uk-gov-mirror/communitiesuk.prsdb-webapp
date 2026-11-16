@@ -45,6 +45,7 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.EicrE
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.EpcExemptionStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.EpcInDateAtStartOfTenancyCheckStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.FinishCyaJourneyStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.FreeholdTypeStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.FreeholdersListStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.FurnishedStatusStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.GasCertIssueDateStep
@@ -66,7 +67,9 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.MeesE
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OccupancyChangeInterruptionStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OccupancyChangeRoutingStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OccupiedStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OwnershipKindStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OwnershipTypeStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OwnsPropertyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.PaymentFailedStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.PaymentOutcome
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.PaymentReturnStep
@@ -96,7 +99,7 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.EpcDe
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.EpcTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.GasSafetyDependencies
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.GasSafetyTask
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.HouseHoldsAndTenantsDependencies
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.HouseholdsAndTenantsDependencies
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.JointLandlordsPropertyRegistrationTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.LicensingDependencies
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.LicensingTask
@@ -179,6 +182,20 @@ class PropertyRegistrationJourneyFactory(
                     checkAnswerTask(journey.propertyDetailsTask.addressTask)
                 }
 
+                OwnsPropertyStep.ROUTE_SEGMENT -> {
+                    checkAnswerTask(journey.ownershipAndLandlordsTask.ownershipStructureTask)
+                }
+
+                OwnershipKindStep.ROUTE_SEGMENT -> {
+                    val ownershipStructureTask = journey.ownershipAndLandlordsTask.ownershipStructureTask
+                    checkAnswerTaskFrom(ownershipStructureTask, startStep = ownershipStructureTask.ownershipTypeTask.ownershipKindStep)
+                }
+
+                FreeholdTypeStep.ROUTE_SEGMENT -> {
+                    val ownershipStructureTask = journey.ownershipAndLandlordsTask.ownershipStructureTask
+                    checkAnswerTaskFrom(ownershipStructureTask, startStep = ownershipStructureTask.ownershipTypeTask.freeholdTypeStep)
+                }
+
                 AnyoneInOwnershipChainStep.ROUTE_SEGMENT,
                 SuperiorLandlordsListStep.ROUTE_SEGMENT,
                 -> {
@@ -253,7 +270,7 @@ class PropertyRegistrationJourneyFactory(
                 }
 
                 ProvideTenancyDetailsLaterStep.ROUTE_SEGMENT -> {
-                    checkAnswerTask(journey.tenancyDetailsTask)
+                    checkAnswerTask(journey.tenancyDetailsTask, { journey })
                 }
 
                 OccupiedStep.ROUTE_SEGMENT -> {
@@ -261,11 +278,11 @@ class PropertyRegistrationJourneyFactory(
                 }
 
                 HouseholdStep.ROUTE_SEGMENT -> {
-                    checkAnswerTask(journey.householdsAndTenantsTask, { HouseHoldsAndTenantsDependencies(true) })
+                    checkAnswerTask(journey.householdsAndTenantsTask, { journey })
                 }
 
                 TenantsStep.ROUTE_SEGMENT -> {
-                    checkAnswerTask(journey.householdsAndTenantsTask, { HouseHoldsAndTenantsDependencies(true) })
+                    checkAnswerTask(journey.householdsAndTenantsTask, { journey })
                     configureStep(journey.householdsAndTenantsTask.tenants) {
                         backDestination { journey.returnToCyaPageDestination }
                     }
@@ -595,6 +612,7 @@ class PropertyRegistrationJourneyFactory(
             section {
                 withHeadingMessageKey("registerProperty.taskList.rentedOut.tenancyDetails", shouldUseNumbering = false)
                 task(journey.tenancyDetailsTask) {
+                    withDependencies { journey }
                     parents {
                         AndParents(
                             journey.epcTask.isComplete(),
@@ -848,6 +866,7 @@ class PropertyRegistrationJourney(
 
     override val allowProvideCertificateLaterRoute: Boolean = true
     override val allowProvideLicensingLaterRoute: Boolean = true
+    override val allowProvideTenancyDetailsLaterRoute: Boolean = true
 
     override fun generateJourneyId(seed: Any?): String {
         val user = seed as? Principal
@@ -864,6 +883,7 @@ interface PropertyRegistrationJourneyState :
     OccupationState,
     BedroomsState,
     TenancyDetailsState,
+    HouseholdsAndTenantsDependencies,
     InviteJointLandlordsTaskDependencies,
     GasSafetyDependencies,
     ElectricalSafetyDependencies,

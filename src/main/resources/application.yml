@@ -78,8 +78,12 @@ epc:
 nft-seed:
   system-operators: ${NFT_SEED_SYSTEM_OPERATORS:150}
   local-council-users: ${NFT_SEED_LOCAL_COUNCIL_USERS:3000}
-  landlords: ${NFT_SEED_LANDLORDS:2820000}
-  properties: ${NFT_SEED_PROPERTIES:4700000}
+  # 0 derives the synthetic landlord population from the portfolio distribution until both property targets are met.
+  landlords: ${NFT_SEED_LANDLORDS:0}
+  # Year-one forecast: 4.9 million eligible properties * 50% uptake, counted as completed registrations.
+  properties: ${NFT_SEED_PROPERTIES:2450000}
+  # Synthetic assumption: retain the existing 90% complete / 10% incomplete mix; ceil(2450000 / 9).
+  incomplete-properties: ${NFT_SEED_INCOMPLETE_PROPERTIES:272223}
   batch-size: ${NFT_SEED_BATCH_SIZE:10000}
   random-seed: ${NFT_SEED_RANDOM_SEED:239}
   # Blank means "now". Set to an ISO date (e.g. 2026-01-01) to make a run fully reproducible.
@@ -87,6 +91,8 @@ nft-seed:
   # Number of fictional addresses to generate before seeding. 0 uses the addresses already in the database (the real
   # NGD data loaded by NgdAddressLoader), which is what deployed NFT does.
   generated-addresses: ${NFT_SEED_GENERATED_ADDRESSES:0}
+  # Keep this many eligible addresses unallocated for registration journeys after seeding.
+  minimum-free-addresses: ${NFT_SEED_MINIMUM_FREE_ADDRESSES:0}
 
 server:
   error:

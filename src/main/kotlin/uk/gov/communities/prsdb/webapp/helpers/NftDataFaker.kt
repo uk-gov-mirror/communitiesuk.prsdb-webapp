@@ -1,5 +1,10 @@
 package uk.gov.communities.prsdb.webapp.helpers
 
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import net.datafaker.Faker
 import uk.gov.communities.prsdb.webapp.constants.EIC_VALIDITY_YEARS
 import uk.gov.communities.prsdb.webapp.constants.GAS_SAFETY_CERT_VALIDITY_MONTHS
@@ -21,6 +26,7 @@ import uk.gov.communities.prsdb.webapp.constants.enums.OwnershipTypeBeforePdjb95
 import uk.gov.communities.prsdb.webapp.constants.enums.PropertyType
 import uk.gov.communities.prsdb.webapp.constants.enums.RentFrequency
 import uk.gov.communities.prsdb.webapp.database.entity.Address
+import uk.gov.communities.prsdb.webapp.models.dataModels.AddressDataModel
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.sql.Date
@@ -79,8 +85,9 @@ object NftDataFaker {
 
     fun <T> shuffle(values: List<T>): List<T> = values.shuffled(seededRandom)
 
-    fun generatePropertyScenario(): PropertyScenario {
-        val isRegistrationComplete = scenarioRandom.nextDouble() < 0.9
+    fun generatePropertyScenario(completed: Boolean? = null): PropertyScenario {
+        val randomCompletion = scenarioRandom.nextDouble() < 0.9
+        val isRegistrationComplete = completed ?: randomCompletion
         if (!isRegistrationComplete) {
             return PropertyScenario(
                 isRegistrationComplete = false,
@@ -690,21 +697,23 @@ object NftDataFaker {
 
     fun generateIncompletePropertyJourneyState(address: Address): String {
         val propertyType = generatePropertyAndOtherType()
-        val journeyState =
-            """
-            {
-                "journeyData": {
-                    "lookup-address": {
-                        "houseNameOrNumber":"${address.buildingNumber ?: address.buildingName}", "postcode":"${address.postcode}"
-                    },
-                    "select-address": {"address":"${address.singleLineAddress}"},
-                    "property-type": {"propertyType":"${propertyType.first}","customPropertyType":"${propertyType.second ?: ""}"}
-                },
-                "cachedAddresses":"[{\"singleLineAddress\":\"${address.singleLineAddress}\"}]",
-                "isAddressAlreadyRegistered":"false"
+        return buildJsonObject {
+            putJsonObject("journeyData") {
+                putJsonObject("lookup-address") {
+                    put("houseNameOrNumber", address.buildingNumber ?: address.buildingName.orEmpty())
+                    put("postcode", address.postcode)
+                }
+                putJsonObject("select-address") {
+                    put("address", address.singleLineAddress)
+                }
+                putJsonObject("property-type") {
+                    put("propertyType", propertyType.first.name)
+                    put("customPropertyType", propertyType.second.orEmpty())
+                }
             }
-            """
-        return journeyState
+            put("cachedAddresses", Json.encodeToString(listOf(AddressDataModel.fromAddress(address))))
+            put("isAddressAlreadyRegistered", Json.encodeToString(false))
+        }.toString()
     }
 
     private val otherPropertyTypes = arrayOf("Bungalow", "Maisonette", "Studio", "Loft", "Cottage")

@@ -22,11 +22,12 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.RentA
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.RentFrequencyStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.RentIncludesBillsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.TenantsStep
-import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.HouseHoldsAndTenantsDependencies
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.HouseholdsAndTenantsDependencies
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.HouseholdsAndTenantsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.RentFrequencyAndAmountTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.RentIncludesBillsTask
 import uk.gov.communities.prsdb.webapp.journeys.shared.Complete
+import uk.gov.communities.prsdb.webapp.journeys.shared.helpers.useContinueButtons
 import uk.gov.communities.prsdb.webapp.journeys.shared.states.CheckYourAnswersJourneyState
 import uk.gov.communities.prsdb.webapp.journeys.shared.states.CheckYourAnswersJourneyState.Companion.checkAnswerStep
 import uk.gov.communities.prsdb.webapp.journeys.shared.states.CheckYourAnswersJourneyState.Companion.checkAnswerTask
@@ -75,7 +76,7 @@ class UpdateTenancyDetailsJourneyFactory(
             task(journey.householdsAndTenantsTask) {
                 initialStep()
                 backUrl { returnUrl }
-                withDependencies { HouseHoldsAndTenantsDependencies(false) }
+                withDependencies { journey }
                 nextStep { journey.rentIncludesBillsTask.firstStep }
             }
             task(journey.rentIncludesBillsTask) {
@@ -100,7 +101,8 @@ class UpdateTenancyDetailsJourneyFactory(
                         .withFlashAttribute("updateSuccessBanner", "propertyDetails.updateSuccessBanner.tenancyDetails")
                 }
             }
-            replaceHeadingsAndButtons(state)
+            replaceHeadings(state)
+            useContinueButtons(journey)
         }
 
     private fun checkYourAnswersJourneyMap(
@@ -113,11 +115,11 @@ class UpdateTenancyDetailsJourneyFactory(
             configureFirst { backDestination { journey.returnToCyaPageDestination } }
             when (checkingAnswersFor) {
                 HouseholdStep.ROUTE_SEGMENT -> {
-                    checkAnswerTask(journey.householdsAndTenantsTask, { HouseHoldsAndTenantsDependencies(false) })
+                    checkAnswerTask(journey.householdsAndTenantsTask, { journey })
                 }
 
                 TenantsStep.ROUTE_SEGMENT -> {
-                    checkAnswerTask(journey.householdsAndTenantsTask, { HouseHoldsAndTenantsDependencies(false) })
+                    checkAnswerTask(journey.householdsAndTenantsTask, { journey })
                     configureStep(journey.householdsAndTenantsTask.tenants) {
                         backDestination { journey.returnToCyaPageDestination }
                     }
@@ -152,41 +154,35 @@ class UpdateTenancyDetailsJourneyFactory(
                     throw IllegalStateException("Unknown step being checked: $checkingAnswersFor")
                 }
             }
-            replaceHeadingsAndButtons(state)
+            replaceHeadings(state)
+            useContinueButtons(journey)
             step(journey.finishCyaStep) {
                 initialStep()
                 nextDestination { Destination.Nowhere() }
             }
         }
 
-    private fun JourneyBuilder<UpdateTenancyDetailsJourney>.replaceHeadingsAndButtons(state: UpdateTenancyDetailsJourney) {
+    private fun JourneyBuilder<UpdateTenancyDetailsJourney>.replaceHeadings(state: UpdateTenancyDetailsJourney) {
         configureStep(journey.householdsAndTenantsTask.households) {
             withAdditionalContentProperty { "fieldSetHeading" to "forms.update.numberOfHouseholds.fieldSetHeading" }
-            withAdditionalContentProperty { "submitButtonText" to "forms.buttons.continue" }
         }
         configureStep(journey.householdsAndTenantsTask.tenants) {
             withAdditionalContentProperty { "fieldSetHeading" to "forms.update.numberOfPeople.fieldSetHeading" }
-            withAdditionalContentProperty { "submitButtonText" to "forms.buttons.continue" }
         }
         configureStep(journey.rentIncludesBillsTask.rentIncludesBills) {
             withAdditionalContentProperty { "fieldSetHeading" to "forms.update.rentIncludesBills.fieldSetHeading" }
-            withAdditionalContentProperty { "submitButtonText" to "forms.buttons.continue" }
         }
         configureStep(journey.rentIncludesBillsTask.billsIncluded) {
             withAdditionalContentProperty { "fieldSetHeading" to "forms.update.billsIncluded.fieldSetHeading" }
-            withAdditionalContentProperty { "submitButtonText" to "forms.buttons.continue" }
         }
         configureStep(journey.furnishedStatus) {
             withAdditionalContentProperty { "fieldSetHeading" to "forms.update.furnishedStatus.fieldSetHeading" }
-            withAdditionalContentProperty { "submitButtonText" to "forms.buttons.continue" }
         }
         configureStep(journey.rentFrequencyAndAmountTask.rentFrequency) {
             withAdditionalContentProperty { "heading" to "forms.update.rentFrequency.heading" }
-            withAdditionalContentProperty { "submitButtonText" to "forms.buttons.continue" }
         }
         configureStep(journey.rentFrequencyAndAmountTask.rentAmount) {
             withAdditionalContentProperty { "heading" to state.rentFrequencyAndAmountTask.getUpdateRentAmountHeading() }
-            withAdditionalContentProperty { "submitButtonText" to "forms.buttons.continue" }
         }
     }
 }
@@ -209,10 +205,12 @@ class UpdateTenancyDetailsJourney(
     override var cyaJourneys: Map<String, String> = mapOf()
     override var cyaUrlPath: String? by delegateProvider.nullableDelegate("cyaRouteSegment")
     override var lastModifiedDate: String by delegateProvider.requiredImmutableDelegate(LAST_MODIFIED_DATE_KEY)
+    override val allowProvideTenancyDetailsLaterRoute: Boolean = false
 }
 
 interface UpdateTenancyDetailsJourneyState :
     TenancyDetailsState,
+    HouseholdsAndTenantsDependencies,
     CheckYourAnswersJourneyState {
     override val cyaStep: UpdateTenancyDetailsCyaStep
     val propertyId: Long

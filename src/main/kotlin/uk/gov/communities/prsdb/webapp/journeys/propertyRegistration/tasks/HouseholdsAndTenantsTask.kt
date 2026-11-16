@@ -19,7 +19,7 @@ class HouseholdsAndTenantsTask(
     override val households: HouseholdStep,
     override val tenants: TenantsStep,
     override val provideTenancyDetailsLaterStep: ProvideTenancyDetailsLaterStep,
-) : Task<HouseholdsAndTenantsState, HouseHoldsAndTenantsDependencies>(journeyStateService),
+) : Task<HouseholdsAndTenantsState, HouseholdsAndTenantsDependencies>(journeyStateService),
     HouseholdsAndTenantsState {
     override val taskState get() = this
 

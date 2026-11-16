@@ -5,8 +5,6 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.Freeh
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OwnershipKind
 import uk.gov.communities.prsdb.webapp.journeys.shared.YesOrNo
 
-// TODO PDJB-2014: optionally use this for the same rows on the property registration check your
-//  answers page to keep cya consistent with the property record.
 object OwnershipTypeAnswersConverter {
     // Null until enough of the ownership type task has been answered to determine the type, which
     // is exactly when the task is complete (see OwnershipTypeTask.exitStep).

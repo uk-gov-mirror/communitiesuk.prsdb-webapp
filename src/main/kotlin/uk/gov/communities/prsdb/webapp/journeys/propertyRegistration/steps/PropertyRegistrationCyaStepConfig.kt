@@ -6,10 +6,10 @@ import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
 import uk.gov.communities.prsdb.webapp.constants.ASSOCIATED_PARTIES
 import uk.gov.communities.prsdb.webapp.constants.PAYMENTS
 import uk.gov.communities.prsdb.webapp.constants.enums.LicensingType
-import uk.gov.communities.prsdb.webapp.constants.enums.OwnershipTypeBeforePdjb955
 import uk.gov.communities.prsdb.webapp.constants.enums.PropertyType
 import uk.gov.communities.prsdb.webapp.constants.enums.WhoProvidesRentalDetails
 import uk.gov.communities.prsdb.webapp.exceptions.NotNullFormModelValueIsNullException.Companion.notNullValue
+import uk.gov.communities.prsdb.webapp.helpers.converters.OwnershipTypeAnswersConverter
 import uk.gov.communities.prsdb.webapp.journeys.Destination
 import uk.gov.communities.prsdb.webapp.journeys.UnrecoverableJourneyStateException
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.PropertyRegistrationJourneyState
@@ -142,8 +142,9 @@ class PropertyRegistrationCyaStepConfig(
                     "forms.checkPropertyAnswers.ownershipAndLandlords.heading"
                 },
             "peopleResponsibleForThisPropertyRows" to
-                listOf(
-                    getOwnershipTypeRow(state),
+                // TODO PDJB-2016: change back to listOf once getOwnershipTypeRowBeforeAssociatedParties is removed
+                listOfNotNull(
+                    getOwnershipTypeRowBeforeAssociatedParties(state),
                     getJointLandLordsSummaryRow(state),
                 ),
             "correspondenceRows" to getCorrespondenceRows(state),
@@ -157,7 +158,56 @@ class PropertyRegistrationCyaStepConfig(
             "rentedOutTenancyRows" to tenancyDetails,
             "occupancyDetails" to occupancyDetails,
             "tenancyUnoccupiedBodyTextKey" to if (!isOccupied) "forms.checkPropertyAnswers.tenancyDetails.unoccupiedBodyText" else null,
-        ) + getFreeholdersContent(state) + getSuperiorLandlordsContent(state) + getPropertyManagerContent(state)
+        ) + getOwnershipContent(state) + getFreeholdersContent(state) + getSuperiorLandlordsContent(state) +
+            getPropertyManagerContent(state)
+
+    private fun getOwnershipContent(state: PropertyRegistrationJourneyState): Map<String, Any?> {
+        // TODO PDJB-2016: remove this check once ASSOCIATED_PARTIES is released
+        if (!featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) return emptyMap()
+
+        val ownershipTypeTask = state.ownershipAndLandlordsTask.ownershipStructureTask.ownershipTypeTask
+        val ownershipType =
+            ownershipTypeTask.ownershipType
+                ?: throw UnrecoverableJourneyStateException(
+                    state.journeyId,
+                    "Check your answers was reached before the ownership type task was complete",
+                )
+        val answers = OwnershipTypeAnswersConverter.convert(ownershipType)
+
+        return mapOf(
+            "ownershipRows" to
+                listOfNotNull(
+                    SummaryListRowViewModel.forCheckYourAnswersPage(
+                        "propertyDetails.peopleResponsible.ownership.ownsProperty",
+                        answers.ownsProperty,
+                        Destination.VisitableStep(
+                            ownershipTypeTask.ownsPropertyStep,
+                            state.getCyaJourneyId(ownershipTypeTask.ownsPropertyStep),
+                        ),
+                    ),
+                    answers.ownershipKind?.let {
+                        SummaryListRowViewModel.forCheckYourAnswersPage(
+                            "propertyDetails.peopleResponsible.ownership.ownershipType",
+                            it,
+                            Destination.VisitableStep(
+                                ownershipTypeTask.ownershipKindStep,
+                                state.getCyaJourneyId(ownershipTypeTask.ownershipKindStep),
+                            ),
+                        )
+                    },
+                    answers.freeholdType?.let {
+                        SummaryListRowViewModel.forCheckYourAnswersPage(
+                            "propertyDetails.peopleResponsible.ownership.freeholderType",
+                            it,
+                            Destination.VisitableStep(
+                                ownershipTypeTask.freeholdTypeStep,
+                                state.getCyaJourneyId(ownershipTypeTask.freeholdTypeStep),
+                            ),
+                        )
+                    },
+                ),
+        )
+    }
 
     private fun getFreeholdersContent(state: PropertyRegistrationJourneyState): Map<String, Any?> {
         if (!featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) return emptyMap()
@@ -381,22 +431,16 @@ class PropertyRegistrationCyaStepConfig(
         )
     }
 
-    private fun getOwnershipTypeRow(state: PropertyRegistrationJourneyState): SummaryListRowViewModel {
-        // TODO PDJB-2014: replace with rows for the associated parties answers
-        if (featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) {
-            return SummaryListRowViewModel.forCheckYourAnswersPage(
-                "propertyDetails.propertyRecord.ownership.ownershipType",
-                OwnershipTypeBeforePdjb955.FREEHOLD,
-                actionUrl = null as String?,
-            )
-        } else {
-            val ownershipTypeStep = state.ownershipAndLandlordsTaskBeforeAssociatedParties.ownershipTypeStep
-            return SummaryListRowViewModel.forCheckYourAnswersPage(
-                "propertyDetails.propertyRecord.ownership.ownershipType",
-                ownershipTypeStep.formModel.ownershipType,
-                Destination.VisitableStep(ownershipTypeStep, state.getCyaJourneyId(ownershipTypeStep)),
-            )
-        }
+    // TODO PDJB-2016: remove once ASSOCIATED_PARTIES is released
+    private fun getOwnershipTypeRowBeforeAssociatedParties(state: PropertyRegistrationJourneyState): SummaryListRowViewModel? {
+        if (featureFlagManager.checkFeature(ASSOCIATED_PARTIES)) return null
+
+        val ownershipTypeStep = state.ownershipAndLandlordsTaskBeforeAssociatedParties.ownershipTypeStep
+        return SummaryListRowViewModel.forCheckYourAnswersPage(
+            "propertyDetails.propertyRecord.ownership.ownershipType",
+            ownershipTypeStep.formModel.ownershipType,
+            Destination.VisitableStep(ownershipTypeStep, state.getCyaJourneyId(ownershipTypeStep)),
+        )
     }
 
     private fun getLettingAgentDelegationSummaryContent(

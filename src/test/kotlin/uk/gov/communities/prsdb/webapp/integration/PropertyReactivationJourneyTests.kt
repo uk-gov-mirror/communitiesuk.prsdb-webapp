@@ -20,6 +20,8 @@ import uk.gov.communities.prsdb.webapp.constants.EIC_VALIDITY_YEARS
 import uk.gov.communities.prsdb.webapp.constants.GAS_SAFETY_CERT_VALIDITY_MONTHS
 import uk.gov.communities.prsdb.webapp.constants.enums.CertificateType
 import uk.gov.communities.prsdb.webapp.constants.enums.EpcExemptionReason
+import uk.gov.communities.prsdb.webapp.constants.enums.FurnishedStatus
+import uk.gov.communities.prsdb.webapp.constants.enums.RentFrequency
 import uk.gov.communities.prsdb.webapp.controllers.ReactivatePropertyController
 import uk.gov.communities.prsdb.webapp.helpers.DateTimeHelper
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
@@ -30,6 +32,7 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.C
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.DateFormPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.UploadCertificateFormPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.AlreadyRegisteredPagePropertyReactivation
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.BillsIncludedFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.CheckAnswersPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.CheckEicUploadsFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.CheckEicrUploadsFormPagePropertyReactivation
@@ -45,6 +48,7 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRea
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.EicrExpiryDateFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.ElectricalCertMissingFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.EpcExemptionFormPagePropertyReactivation
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.FurnishedStatusFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.GasCertExpiredFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.GasCertIssueDateFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.HasElectricalCertFormPagePropertyReactivation
@@ -54,7 +58,11 @@ import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyRea
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.InfoFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.IsEpcRequiredFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.LicensingFormPagePropertyReactivation
-import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.TenancyDetailsFormPagePropertyReactivation
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.NumberOfHouseholdsFormPagePropertyReactivation
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.NumberOfPeopleFormPagePropertyReactivation
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.RentAmountFormPagePropertyReactivation
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.RentFrequencyFormPagePropertyReactivation
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.RentIncludesBillsFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.UploadEicFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.UploadEicrFormPagePropertyReactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyReactivationJourneyPages.UploadGasCertFormPagePropertyReactivation
@@ -112,9 +120,7 @@ class PropertyReactivationJourneyTests : IntegrationTestWithMutableData("data-lo
         assertPageIs(page, ConfirmEpcDetailsRetrievedByUprnFormPagePropertyReactivation::class, urlArguments).submitYes()
         assertPageIs(page, CheckEpcAnswersFormPagePropertyReactivation::class, urlArguments).form.submit()
 
-        val tenancyDetailsPage = assertPageIs(page, TenancyDetailsFormPagePropertyReactivation::class, urlArguments)
-        assertThat(tenancyDetailsPage.heading).containsText("PDJB-2041")
-        tenancyDetailsPage.submit()
+        completeTenancyDetailsTask(page)
 
         val checkAnswersPage = assertPageIs(page, CheckAnswersPagePropertyReactivation::class, urlArguments)
         assertThat(checkAnswersPage.heading).containsText("PDJB-2042")
@@ -229,7 +235,43 @@ class PropertyReactivationJourneyTests : IntegrationTestWithMutableData("data-lo
         assertThat(checkEpcAnswersPage.form.submitButton).hasText("Continue")
         checkEpcAnswersPage.form.submit()
 
-        assertPageIs(page, TenancyDetailsFormPagePropertyReactivation::class, urlArguments)
+        assertPageIs(page, NumberOfHouseholdsFormPagePropertyReactivation::class, urlArguments)
+    }
+
+    @Test
+    fun `a landlord can provide tenancy details and every tenancy details button says continue`(page: Page) {
+        val numberOfHouseholdsPage = navigateToNumberOfHouseholdsPage(page)
+        assertThat(numberOfHouseholdsPage.provideThisLaterButton).isHidden()
+        assertThat(numberOfHouseholdsPage.form.submitButton).hasText("Continue")
+        numberOfHouseholdsPage.submitNumberOfHouseholds(1)
+
+        val numberOfPeoplePage = assertPageIs(page, NumberOfPeopleFormPagePropertyReactivation::class, urlArguments)
+        assertThat(numberOfPeoplePage.form.submitButton).hasText("Continue")
+        numberOfPeoplePage.submitNumOfPeople(2)
+
+        val rentIncludesBillsPage = assertPageIs(page, RentIncludesBillsFormPagePropertyReactivation::class, urlArguments)
+        assertThat(rentIncludesBillsPage.form.submitButton).hasText("Continue")
+        rentIncludesBillsPage.submitIsIncluded()
+
+        val billsIncludedPage = assertPageIs(page, BillsIncludedFormPagePropertyReactivation::class, urlArguments)
+        assertThat(billsIncludedPage.form.submitButton).hasText("Continue")
+        billsIncludedPage.selectGasElectricityWater()
+        billsIncludedPage.form.submit()
+
+        val furnishedStatusPage = assertPageIs(page, FurnishedStatusFormPagePropertyReactivation::class, urlArguments)
+        assertThat(furnishedStatusPage.form.submitButton).hasText("Continue")
+        furnishedStatusPage.submitFurnishedStatus(FurnishedStatus.FURNISHED)
+
+        val rentFrequencyPage = assertPageIs(page, RentFrequencyFormPagePropertyReactivation::class, urlArguments)
+        assertThat(rentFrequencyPage.form.submitButton).hasText("Continue")
+        rentFrequencyPage.selectRentFrequency(RentFrequency.MONTHLY)
+        rentFrequencyPage.form.submit()
+
+        val rentAmountPage = assertPageIs(page, RentAmountFormPagePropertyReactivation::class, urlArguments)
+        assertThat(rentAmountPage.form.submitButton).hasText("Continue")
+        rentAmountPage.submitRentAmount("400")
+
+        assertPageIs(page, CheckAnswersPagePropertyReactivation::class, urlArguments)
     }
 
     @Test
@@ -282,10 +324,36 @@ class PropertyReactivationJourneyTests : IntegrationTestWithMutableData("data-lo
         assertPageIs(page, ConfirmEpcDetailsRetrievedByUprnFormPagePropertyReactivation::class, urlArguments).submitYes()
         assertPageIs(page, CheckEpcAnswersFormPagePropertyReactivation::class, urlArguments).form.submit()
 
-        val tenancyDetailsPage = assertPageIs(page, TenancyDetailsFormPagePropertyReactivation::class, urlArguments)
-        tenancyDetailsPage.backLink.clickAndWait()
+        val numberOfHouseholdsPage = assertPageIs(page, NumberOfHouseholdsFormPagePropertyReactivation::class, urlArguments)
+        numberOfHouseholdsPage.backLink.clickAndWait()
 
         assertPageIs(page, CheckEpcAnswersFormPagePropertyReactivation::class, urlArguments)
+    }
+
+    @Test
+    fun `the back links into and out of the tenancy details task return to the adjacent steps`(page: Page) {
+        val numberOfHouseholdsPage = navigateToNumberOfHouseholdsPage(page)
+        numberOfHouseholdsPage.backLink.clickAndWait()
+        assertPageIs(page, CheckEpcAnswersFormPagePropertyReactivation::class, urlArguments).form.submit()
+
+        completeTenancyDetailsTask(page)
+
+        val checkAnswersPage = assertPageIs(page, CheckAnswersPagePropertyReactivation::class, urlArguments)
+        checkAnswersPage.backLink.clickAndWait()
+
+        assertPageIs(page, RentAmountFormPagePropertyReactivation::class, urlArguments)
+    }
+
+    @Test
+    fun `the back link on the rent includes bills page returns to the number of people page`(page: Page) {
+        val numberOfHouseholdsPage = navigateToNumberOfHouseholdsPage(page)
+        numberOfHouseholdsPage.submitNumberOfHouseholds(1)
+        assertPageIs(page, NumberOfPeopleFormPagePropertyReactivation::class, urlArguments).submitNumOfPeople(2)
+
+        val rentIncludesBillsPage = assertPageIs(page, RentIncludesBillsFormPagePropertyReactivation::class, urlArguments)
+        rentIncludesBillsPage.backLink.clickAndWait()
+
+        assertPageIs(page, NumberOfPeopleFormPagePropertyReactivation::class, urlArguments)
     }
 
     @Test
@@ -381,6 +449,25 @@ class PropertyReactivationJourneyTests : IntegrationTestWithMutableData("data-lo
         navigateToHasElectricalCertPage(page).submitHasNoCert()
         assertPageIs(page, ElectricalCertMissingFormPagePropertyReactivation::class, urlArguments).form.submit()
         assertPageIs(page, CheckElectricalSafetyAnswersFormPagePropertyReactivation::class, urlArguments).form.submit()
+    }
+
+    private fun navigateToNumberOfHouseholdsPage(page: Page): NumberOfHouseholdsFormPagePropertyReactivation {
+        navigateToEpcTask(page)
+        assertPageIs(page, ConfirmEpcDetailsRetrievedByUprnFormPagePropertyReactivation::class, urlArguments).submitYes()
+        assertPageIs(page, CheckEpcAnswersFormPagePropertyReactivation::class, urlArguments).form.submit()
+        return assertPageIs(page, NumberOfHouseholdsFormPagePropertyReactivation::class, urlArguments)
+    }
+
+    private fun completeTenancyDetailsTask(page: Page) {
+        assertPageIs(page, NumberOfHouseholdsFormPagePropertyReactivation::class, urlArguments).submitNumberOfHouseholds(1)
+        assertPageIs(page, NumberOfPeopleFormPagePropertyReactivation::class, urlArguments).submitNumOfPeople(2)
+        assertPageIs(page, RentIncludesBillsFormPagePropertyReactivation::class, urlArguments).submitIsNotIncluded()
+        assertPageIs(page, FurnishedStatusFormPagePropertyReactivation::class, urlArguments)
+            .submitFurnishedStatus(FurnishedStatus.FURNISHED)
+        val rentFrequencyPage = assertPageIs(page, RentFrequencyFormPagePropertyReactivation::class, urlArguments)
+        rentFrequencyPage.selectRentFrequency(RentFrequency.MONTHLY)
+        rentFrequencyPage.form.submit()
+        assertPageIs(page, RentAmountFormPagePropertyReactivation::class, urlArguments).submitRentAmount("400")
     }
 
     private fun submitHasCertificate(

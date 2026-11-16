@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <!--
-        The Gatling run output goes to a public GitHub Actions log, so only warnings and errors are logged. Gatling's
-        per-request debug logging includes session cookies and OAuth codes, so it must stay off. Failures are
-        diagnosed from the uploaded Gatling report, or by re-running with debug logging locally.
+        The Gatling run output goes to a public GitHub Actions log. Gatling's per-request debug logging includes
+        session cookies and OAuth codes, so it must stay off. Only warnings, errors, and the explicitly sanitized
+        certificate scan timing from ComplianceUpdateJourney are logged.
     -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%-5level] %logger{20} - %msg%n</pattern>
         </encoder>
     </appender>
+
+    <logger name="uk.gov.communities.prsdb.webapp.performance.ComplianceUpdateJourney" level="INFO"/>
 
     <root level="WARN">
         <appender-ref ref="CONSOLE"/>

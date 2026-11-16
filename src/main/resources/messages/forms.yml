@@ -317,8 +317,8 @@ occupancy:
     option:
       'yes':
         hint: Includes if the property is let, but tenants have not moved in yet
-  fieldSetHeading: Is your property occupied by tenants?
-  fieldSetHint: What you choose here decides which compliance and rent details you need to add.
+  fieldSetHeading: Is this property occupied by tenants?
+  fieldSetHint: This changes what details are required for this registration
 numberOfHouseholds:
   heading: Households in your property
   questionHeading: How many households are in your property?
@@ -631,8 +631,6 @@ update:
   ownershipType:
     fieldSetHeading: Update the ownership type for your property
   occupancy:
-    occupied:
-      fieldSetHeading: Update whether your property is occupied by tenants
     lettingAgentInterruption:
       heading: Are you sure you want to change this?
       pageTitle: Are you sure you want to change this property to unoccupied?

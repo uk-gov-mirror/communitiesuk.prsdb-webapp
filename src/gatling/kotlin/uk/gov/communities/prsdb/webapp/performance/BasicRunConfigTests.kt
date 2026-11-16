@@ -42,6 +42,33 @@ class BasicRunConfigTests {
     }
 
     @Test
+    fun `NFT certificate origin must be a separate HTTPS S3 bucket origin`() {
+        val origin = "https://prsdb-uploaded-files-nft.s3.eu-west-2.amazonaws.com"
+        val properties =
+            localProperties +
+                mapOf(
+                    "gatling.target" to "nft",
+                    "gatling.baseUrl" to "https://app.example.test",
+                )
+        assertEquals(
+            origin,
+            BasicRunConfig.from(properties + ("gatling.certificate.downloadOrigin" to origin)).certificateDownloadOrigin,
+        )
+        for (invalid in listOf(
+            origin.replace("https:", "http:"),
+            "$origin:443",
+            "$origin/certificate.pdf",
+            "$origin?signature=secret",
+            "https://app.example.test",
+            "https://other.example.test",
+        )) {
+            assertFailsWith<IllegalArgumentException> {
+                BasicRunConfig.from(properties + ("gatling.certificate.downloadOrigin" to invalid))
+            }
+        }
+    }
+
+    @Test
     fun `gated mode uses explicit local limits`() {
         val config =
             BasicRunConfig.from(

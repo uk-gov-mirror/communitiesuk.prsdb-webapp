@@ -11,6 +11,21 @@ class NftDataSeederDao(
     private val session: StatelessSession,
     private val connection: Connection,
 ) {
+    init {
+        // Bulk inserts are uncommitted, so stale statistics can make generic collision-check plans prohibitively slow.
+        connection.createStatement().use { it.execute("SET LOCAL plan_cache_mode = force_custom_plan") }
+    }
+
+    fun findStartingIds(): Map<String, Long> =
+        EXPLICIT_ID_TABLES.associateWith { table ->
+            connection.createStatement().use { statement ->
+                statement.executeQuery("SELECT COALESCE(MAX(id), 0) FROM $table").use { resultSet ->
+                    resultSet.next()
+                    resultSet.getLong(1)
+                }
+            }
+        }
+
     fun prepareAddressStatement(): PreparedStatement {
         val query =
             """
@@ -287,42 +302,76 @@ class NftDataSeederDao(
         return connection.prepareStatement(query)
     }
 
+    fun snapshotIncompleteAddressAllocations() {
+        connection.createStatement().use { statement ->
+            statement.execute("CREATE TEMP TABLE nft_seed_incomplete_addresses (id BIGINT PRIMARY KEY) ON COMMIT DROP")
+            statement.execute(
+                """
+                INSERT INTO nft_seed_incomplete_addresses
+                WITH labels AS MATERIALIZED (
+                    SELECT DISTINCT s.serialized_state::jsonb #>> '{journeyData,select-address,address}' AS address
+                    FROM saved_journey_state s
+                    JOIN landlord_incomplete_properties i ON i.saved_journey_state_id = s.id
+                )
+                SELECT a.id FROM address a JOIN labels l ON l.address = a.single_line_address
+                """.trimIndent(),
+            )
+            statement.execute("ANALYZE nft_seed_incomplete_addresses")
+        }
+    }
+
+    fun findAvailablePropertyAddresses(
+        limit: Int,
+        afterId: Long,
+    ): List<Address> =
+        session.createNativeQuery(
+            """
+            SELECT a.* FROM address a
+            WHERE a.id > :afterId
+              AND a.local_council_id IS NOT NULL AND a.is_active AND a.uprn IS NOT NULL
+              AND a.id NOT BETWEEN 9100000001 AND 9100000005
+              AND NOT EXISTS (SELECT 1 FROM property_ownership p WHERE p.is_active AND p.address_id = a.id)
+              AND NOT EXISTS (SELECT 1 FROM nft_seed_incomplete_addresses i WHERE i.id = a.id)
+            ORDER BY a.id
+            LIMIT :limit
+            """.trimIndent(),
+            Address::class.java,
+        ).setParameter("afterId", afterId)
+            .setParameter("limit", limit)
+            .resultList
+
     fun findAddresses(
         limit: Int,
         offset: Int,
-        restrictToAvailable: Boolean = false,
     ): List<Address> {
         val query =
             """
             SELECT * FROM address a
             WHERE a.local_council_id IS NOT NULL
-            AND (
-                NOT EXISTS (
-                    SELECT 1 FROM property_ownership po
-                    WHERE po.is_active AND po.address_id = a.id
-                )
-                OR NOT :restrictToAvailable
-            )
             ORDER BY a.id
             LIMIT :limit OFFSET :offset
             """
         return session
             .createNativeQuery(query, Address::class.java)
-            .setParameter("restrictToAvailable", restrictToAvailable)
             .setParameter("limit", limit)
             .setParameter("offset", offset)
             .resultList
     }
 
     /**
-     * Counts addresses that would be returned by [findAddresses]. The seeder uses this once to initialise the
-     * in-memory counts used while it is the only database writer.
+     * Initialises in-memory counts while the seeder is the only writer. Property allocations also exclude the
+     * snapshot of pre-existing saved registrations; new allocations use a shared forward-only cursor.
      */
     fun countAvailableAddresses(restrictToAvailable: Boolean): Int {
         val query =
             """
             SELECT count(*) FROM address a
             WHERE a.local_council_id IS NOT NULL
+            AND (
+                NOT ?
+                OR (a.is_active AND a.uprn IS NOT NULL AND a.id NOT BETWEEN 9100000001 AND 9100000005
+                    AND NOT EXISTS (SELECT 1 FROM nft_seed_incomplete_addresses i WHERE i.id = a.id))
+            )
             AND (
                 NOT EXISTS (
                     SELECT 1 FROM property_ownership po
@@ -333,6 +382,7 @@ class NftDataSeederDao(
             """
         connection.prepareStatement(query).use { statement ->
             statement.setBoolean(1, restrictToAvailable)
+            statement.setBoolean(2, restrictToAvailable)
             statement.executeQuery().use { resultSet ->
                 resultSet.next()
                 return resultSet.getInt(1)
@@ -346,7 +396,26 @@ class NftDataSeederDao(
     }
 
     fun updateIdSequences() {
-        val manuallyInsertedIdTables =
+        (EXPLICIT_ID_TABLES + IMPLICIT_ID_TABLES).forEach { table ->
+            val query =
+                """
+                SELECT setval(
+                    pg_get_serial_sequence('$table', 'id'),
+                    GREATEST(
+                        (SELECT COALESCE(MAX(id), 1) FROM $table),
+                        (SELECT COALESCE(last_value, 1) FROM pg_sequences
+                         WHERE schemaname = 'public'
+                         AND sequencename = pg_get_serial_sequence('$table', 'id')::regclass::text)
+                    )
+                )
+                WHERE EXISTS (SELECT 1 FROM $table)
+                """.trimIndent()
+            session.createNativeQuery(query, Long::class.java).resultList
+        }
+    }
+
+    private companion object {
+        val EXPLICIT_ID_TABLES =
             listOf(
                 "registration_number",
                 "landlord",
@@ -358,9 +427,14 @@ class NftDataSeederDao(
                 "reminder_email_sent",
                 "saved_journey_state",
             )
-        manuallyInsertedIdTables.forEach { table ->
-            val query = "SELECT setval(pg_get_serial_sequence('$table', 'id'), (SELECT COALESCE(MAX(id), 1) FROM $table))"
-            session.createNativeQuery(query, Long::class.java).singleResult
-        }
+        val IMPLICIT_ID_TABLES =
+            listOf(
+                "system_operator",
+                "local_council_user",
+                "local_council_invitation",
+                "organisational_landlord_user",
+                "organisational_landlord_invitation",
+                "organisation_governing_body_member",
+            )
     }
 }
