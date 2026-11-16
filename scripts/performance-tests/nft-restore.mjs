@@ -6,7 +6,7 @@ import {
 } from './nft-shared.mjs';
 
 export async function restoreEnvironment(state, {
-  aws, fetchImpl = fetch, log = console.log, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
+  aws, fetchImpl = fetch, appHealthy, log = console.log, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
   now = Date.now, timeoutMs = 600000, pollMs = 10000,
 }) {
   if (!state) {
@@ -21,7 +21,8 @@ export async function restoreEnvironment(state, {
   const waitApp = (arn, cleanup = false) => wait('App health', async () => {
     const {app} = await services();
     requireCondition(app.taskDefinition === arn, 'App task changed during health check');
-    return stable(app, arn, originalApp.desiredCount) && (await request(`${appOrigin}/healthcheck`))?.status === 200;
+    return stable(app, arn, originalApp.desiredCount) &&
+      (appHealthy ? await appHealthy(app) : (await request(`${appOrigin}/healthcheck`))?.status === 200);
   }, cleanup);
 
   let appSafe = !appSwitchAttempted;

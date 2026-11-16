@@ -8,6 +8,11 @@ on:
       aws-account-id:
         required: true
         type: string
+      checkout-ref:
+        description: Optional repository revision to use for the database reset
+        required: false
+        type: string
+        default: ''
 
 permissions:
   id-token: write
@@ -37,7 +42,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.environment == 'integration' && 'main' || inputs.environment }}
+          ref: ${{ inputs.checkout-ref || (inputs.environment == 'integration' && 'main' || inputs.environment) }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
@@ -54,7 +59,7 @@ jobs:
 
           DB_ENDPOINT="${DB_URL%:*}"
 
-          aws ssm start-session --region $AWS_REGION --target $BASTION_ID --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters host=$DB_ENDPOINT,portNumber="5432",localPortNumber="5432" > ssm_output.txt 2>&1 &
+          aws ssm start-session --region "$AWS_REGION" --target "$BASTION_ID" --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters "host=$DB_ENDPOINT,portNumber=5432,localPortNumber=5432" > ssm_output.txt 2>&1 &
           sleep 10 # Wait for command to output the session Id
           cat ssm_output.txt
 
@@ -63,10 +68,10 @@ jobs:
               echo "Session Id not found in the output."
               exit 1
           fi
-          echo "SSM_SESSION_ID=$SESSION_ID" >> $GITHUB_OUTPUT
+          echo "SSM_SESSION_ID=$SESSION_ID" >> "$GITHUB_OUTPUT"
 
       - name: Set DB username in ENV
-        run: echo "FLYWAY_USER=$(aws ssm get-parameter --output text --name "${{ inputs.environment }}-prsdb-database-username" --query "Parameter.Value")" >> $GITHUB_ENV
+        run: echo "FLYWAY_USER=$(aws ssm get-parameter --output text --name "${{ inputs.environment }}-prsdb-database-username" --query "Parameter.Value")" >> "$GITHUB_ENV"
 
       - name: Set DB password in ENV
         uses: aws-actions/aws-secretsmanager-get-secrets@v2.0.8

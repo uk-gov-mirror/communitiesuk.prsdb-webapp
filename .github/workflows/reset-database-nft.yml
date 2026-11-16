@@ -1,5 +1,11 @@
 name: Reset Database - NFT
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      verify-only:
+        description: Verify the existing QA baseline without resetting the database
+        type: boolean
+        default: false
 
 concurrency:
   group: nft-app-service-operation
@@ -12,7 +18,27 @@ permissions:
 jobs:
   reset-database:
     name: Reset Database
+    if: inputs.verify-only != true
     uses: ./.github/workflows/reset-database.yml
     with:
       environment: nft
       aws-account-id: 448120078528
+
+  verify-qa:
+    name: Verify QA baseline
+    needs: reset-database
+    if: always() && inputs.verify-only == true
+    environment: nft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: nft
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Verify the exact QA properties and required links
+        uses: ./.github/actions/verify-nft-database
+        with:
+          mode: qa

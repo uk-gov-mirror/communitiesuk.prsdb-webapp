@@ -1,0 +1,93 @@
+name: Verify NFT database through SSM
+description: Migrate and verify the large dataset, verify the QA reset, or export owned journey fixtures
+inputs:
+  mode:
+    description: seed, qa, saved/property/organisation and supported journey fixture exports
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Configure NFT database credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        role-to-assume: arn:aws:iam::448120078528:role/nft-rds-access
+        role-session-name: GitHubActions-nft-check-${{ github.run_id }}
+        aws-region: eu-west-2
+        role-duration-seconds: 3600
+    - name: Check database through a bounded SSM tunnel
+      shell: bash
+      env:
+        CHECK_MODE: ${{ inputs.mode }}
+        FLYWAY_URL: jdbc:postgresql://localhost:5432/prsdb
+      run: |
+        set -euo pipefail
+        case "$CHECK_MODE" in
+          seed) check_option=--verify-only ;;
+          qa) check_option=--verify-qa ;;
+          fixtures) check_option=--export-saved-fixtures ;;
+          property-fixtures) check_option=--export-property-fixtures ;;
+          organisation-fixtures) check_option=--export-organisation-fixtures ;;
+          operator-fixtures|agent-fixtures|agent-access-fixtures|joint-fixtures|joint-accept-fixtures|organisation-team-fixtures|organisation-team-preparation-fixtures|organisation-team-ramp-preparation-fixtures|organisation-team-ramp-fixtures|offboarding-fixtures)
+            check_option=--export-journey-fixtures ;;
+          *) echo "::error::Unsupported NFT database check."; exit 1 ;;
+        esac
+        bastion_id="$(aws ec2 describe-instances --region eu-west-2 --output text \
+          --filters "Name=tag:Name,Values=nft-bastion-1" "Name=instance-state-name,Values=running" \
+          --query "Reservations[*].Instances[].InstanceId | [0]")"
+        db_url="$(aws ssm get-parameter --region eu-west-2 --output text \
+          --name nft-prsdb-database-url --query Parameter.Value)"
+        db_endpoint="${db_url%:*}"
+        export FLYWAY_USER
+        FLYWAY_USER="$(aws ssm get-parameter --region eu-west-2 --output text \
+          --name nft-prsdb-database-username --query Parameter.Value)"
+        echo "::add-mask::$FLYWAY_USER"
+        # Read here so this action can run more than once in a job.
+        export FLYWAY_PASSWORD
+        FLYWAY_PASSWORD="$(aws secretsmanager get-secret-value --region eu-west-2 --output text \
+          --secret-id tf-nft-prsdb-database-password --query SecretString)"
+        echo "::add-mask::$FLYWAY_PASSWORD"
+
+        session_log="$RUNNER_TEMP/nft-ssm-session.log"
+        session_id=""
+        aws ssm start-session --region eu-west-2 --target "$bastion_id" \
+          --document-name AWS-StartPortForwardingSessionToRemoteHost \
+          --parameters "host=$db_endpoint,portNumber=5432,localPortNumber=5432" >"$session_log" 2>&1 &
+        session_pid=$!
+        cleanup_tunnel() {
+          if [[ -n "$session_id" ]]; then
+            aws ssm terminate-session --region eu-west-2 --session-id "$session_id" >/dev/null ||
+              echo "::warning::Could not terminate the NFT database port-forwarding session."
+          fi
+          if kill -0 "$session_pid" 2>/dev/null; then
+            kill "$session_pid" 2>/dev/null || true
+            wait "$session_pid" 2>/dev/null || true
+          fi
+          rm -f "$session_log"
+        }
+        trap cleanup_tunnel EXIT
+        for _ in $(seq 1 60); do
+          session_id="$(grep -oE 'SessionId: [a-zA-Z0-9-]+' "$session_log" | head -1 | cut -d' ' -f2 || true)"
+          if [[ -n "$session_id" ]] && nc -z 127.0.0.1 5432; then
+            break
+          fi
+          if ! kill -0 "$session_pid" 2>/dev/null; then
+            echo "::error::NFT database port-forwarding session exited during startup."
+            exit 1
+          fi
+          sleep 2
+        done
+        if [[ -z "$session_id" ]] || ! nc -z 127.0.0.1 5432; then
+          echo "::error::NFT database port-forwarding session did not become ready."
+          exit 1
+        fi
+        check_args=("$check_option")
+        if [[ "$CHECK_MODE" == "fixtures" ]]; then
+          check_args+=("$RUNNER_TEMP/nft-saved-registration-fixtures.json")
+        elif [[ "$CHECK_MODE" == "property-fixtures" ]]; then
+          check_args+=("$RUNNER_TEMP/nft-completed-property-fixtures.json")
+        elif [[ "$CHECK_MODE" == "organisation-fixtures" ]]; then
+          check_args+=("$RUNNER_TEMP/nft-organisation-fixtures.json")
+        elif [[ "$check_option" == "--export-journey-fixtures" ]]; then
+          check_args+=("${CHECK_MODE%-fixtures}" "$RUNNER_TEMP/nft-${CHECK_MODE}.json")
+        fi
+        node scripts/performance-tests/nft-load-dump.mjs "${check_args[@]}"

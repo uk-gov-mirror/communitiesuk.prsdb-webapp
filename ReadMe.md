@@ -172,6 +172,28 @@ A regression test suite covering these checks (`NftDataSeederTests`, under `src/
 seeder directly against a testcontainer database at a small scale, so it doesn't need Docker profile activation and
 doesn't hit the `exitProcess()` behaviour described above.
 
+#### NFT performance recovery
+
+Run Performance Tests restores the seed dataset for a fresh workflow run. At the end, including after a test failure,
+its recovery jobs restore the original app configuration, stop the simulator, remove owned temporary access, stop
+actual database writers, reset to the QA baseline, and verify app health and the QA fixtures. The recorded async worker
+count is restored independently after a successful reset, even if app/QA verification fails.
+
+Recovery jobs can be retried within the same workflow run. Their artifacts remain attempt-versioned, but recovery
+selects the latest validated checkpoints belonging to that run rather than requiring the current attempt to have
+created them. The checkpoints retain the original task revisions and ownership information.
+
+To retry the performance workload, start a **new workflow run** so the seed dataset is restored again. Re-running
+failed jobs or all jobs does not rerun dataset restoration or Gatling: these stages reject later attempts before
+environment changes, while recovery jobs remain available. A prior attempt may already have reset the database or
+consumed its exclusive fixtures.
+
+Recovery must not be reported as successful unless its checks pass. Missing/corrupt state, an unexpected deployment,
+or an unverified writer/restore-task shutdown blocks automatic reset and requires operator recovery. Use the retained
+checkpoints and job errors to reconcile the original services and database; do not bypass the ownership guards or
+start another load run until the QA baseline and services are verified. No reset or deployment is performed merely
+by merging these workflow changes.
+
 ### Scripts
 
 Utility scripts are in the `scripts/` directory.
