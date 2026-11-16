@@ -1,5 +1,6 @@
 package uk.gov.communities.prsdb.webapp.services
 
+import jakarta.transaction.Transactional
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbWebService
 import uk.gov.communities.prsdb.webapp.database.entity.PropertyManager
 import uk.gov.communities.prsdb.webapp.database.repository.PropertyManagerRepository
@@ -8,6 +9,7 @@ import uk.gov.communities.prsdb.webapp.database.repository.PropertyManagerReposi
 class PropertyManagerService(
     private val propertyManagerRepository: PropertyManagerRepository,
 ) {
+    @Transactional
     fun createPropertyManager(
         name: String,
         email: String,

@@ -30,6 +30,7 @@ class PropertyRegistrationService(
     private val addressService: AddressService,
     private val licenseService: LicenseService,
     private val propertyOwnershipService: PropertyOwnershipService,
+    private val propertyManagerService: PropertyManagerService,
     private val userToLandlordService: UserToLandlordService,
     private val absoluteUrlProvider: AbsoluteUrlProvider,
     private val confirmationEmailSender: EmailNotificationService<PropertyRegistrationConfirmationEmail>,
@@ -122,11 +123,9 @@ class PropertyRegistrationService(
                     null
                 }
 
-            // TODO PDJB-2015: save the property manager (if provided) and link it to the new property
-            //  ownership, and create the freeholders and superior landlords from the registration
-            //  journey's answers. Those two hold a foreign key to the property ownership, so unlike the
-            //  licence and the property manager they have to be created from the saved result rather
-            //  than passed in.
+            val propertyManagerEntity =
+                propertyManager?.let { propertyManagerService.createPropertyManager(it.name, it.email) }
+
             propertyOwnershipService.createPropertyOwnership(
                 ownershipType = ownershipType,
                 isOccupied = isOccupied,
@@ -151,6 +150,9 @@ class PropertyRegistrationService(
                 licenseProvideLater = licenseProvideLater,
                 correspondenceEmail = correspondenceEmail,
                 correspondenceAddressModel = correspondenceAddressModel,
+                freeholders = freeholders,
+                superiorLandlords = superiorLandlords,
+                propertyManager = propertyManagerEntity,
             )
         }
 

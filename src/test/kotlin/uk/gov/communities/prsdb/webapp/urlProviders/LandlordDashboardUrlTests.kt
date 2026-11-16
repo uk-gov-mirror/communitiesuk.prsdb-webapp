@@ -178,6 +178,7 @@ class LandlordDashboardUrlTests(
                 addressService = mock(),
                 licenseService = mock(),
                 propertyOwnershipService = mockPropertyOwnershipService,
+                propertyManagerService = mock(),
                 userToLandlordService = mockUserToLandlordService,
                 absoluteUrlProvider = absoluteUrlProvider,
                 confirmationEmailSender = mockEmailNotificationService,
@@ -221,6 +222,9 @@ class LandlordDashboardUrlTests(
                 correspondenceEmail = anyOrNull(),
                 correspondenceAddressModel = anyOrNull(),
                 renewalDate = any(),
+                freeholders = anyOrNull(),
+                superiorLandlords = any(),
+                propertyManager = anyOrNull(),
             ),
         ).thenReturn(propertyOwnership)
 

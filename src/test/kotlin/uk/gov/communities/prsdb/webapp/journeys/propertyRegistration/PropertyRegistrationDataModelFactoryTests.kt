@@ -5,6 +5,7 @@ import kotlinx.datetime.toJavaLocalDate
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -21,6 +22,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
+import uk.gov.communities.prsdb.webapp.constants.ASSOCIATED_PARTIES
 import uk.gov.communities.prsdb.webapp.constants.enums.CertificateType
 import uk.gov.communities.prsdb.webapp.constants.enums.CorrespondenceEmailOption
 import uk.gov.communities.prsdb.webapp.constants.enums.EpcExemptionReason
@@ -29,6 +31,8 @@ import uk.gov.communities.prsdb.webapp.constants.enums.MeesExemptionReason
 import uk.gov.communities.prsdb.webapp.constants.enums.OwnershipType
 import uk.gov.communities.prsdb.webapp.constants.enums.OwnershipTypeBeforePdjb955
 import uk.gov.communities.prsdb.webapp.constants.enums.PropertyType
+import uk.gov.communities.prsdb.webapp.journeys.UnrecoverableJourneyStateException
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.AnyoneInOwnershipChainStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.BedroomsStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.CorrespondenceEmailStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.EpcExemptionStep
@@ -49,6 +53,8 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.Licen
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.MeesExemptionStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OccupiedStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OwnershipTypeStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.PropertyManagerDetailsStep
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.PropertyManagerStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.PropertyTypeStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.RentAmountStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.RentFrequencyStep
@@ -58,21 +64,32 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.Elect
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.ElectricalSafetyTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.EpcDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.EpcTask
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.FreeholdersTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.GasSafetyDetailsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.GasSafetyTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.HouseholdsAndTenantsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.JointLandlordsPropertyRegistrationTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.LicensingTask
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.OwnershipAndLandlordsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.OwnershipAndLandlordsTaskBeforeAssociatedParties
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.OwnershipStructureTask
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.OwnershipTypeTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.PropertyDetailsTask
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.PropertyManagerTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.PropertyRegistrationAddressTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.RentFrequencyAndAmountTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.RentIncludesBillsTask
+import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.SuperiorLandlordsTask
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.tasks.WhoProvidesDetailsTask
+import uk.gov.communities.prsdb.webapp.journeys.shared.YesOrNo
 import uk.gov.communities.prsdb.webapp.journeys.shared.tasks.CorrespondenceAddressTask
 import uk.gov.communities.prsdb.webapp.models.dataModels.AddressDataModel
 import uk.gov.communities.prsdb.webapp.models.dataModels.EpcDataModel
+import uk.gov.communities.prsdb.webapp.models.dataModels.FreeholderDataModel
+import uk.gov.communities.prsdb.webapp.models.dataModels.PropertyManagerDataModel
+import uk.gov.communities.prsdb.webapp.models.dataModels.SuperiorLandlordDataModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.AllowLettingAgentEmailFormModel
+import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.AnyoneInOwnershipChainFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.CorrespondenceEmailFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.EpcExemptionFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.EpcInDateAtStartOfTenancyCheckFormModel
@@ -84,6 +101,7 @@ import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.NumberOfB
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.NumberOfHouseholdsFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.OccupancyFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.OwnershipTypeFormModel
+import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.PropertyManagerDetailsFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.PropertyTypeFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.RentAmountFormModel
 import uk.gov.communities.prsdb.webapp.models.requestModels.formModels.RentFrequencyFormModel
@@ -108,6 +126,33 @@ class PropertyRegistrationDataModelFactoryTests {
 
     @Mock
     private lateinit var mockOwnershipAndLandlordsTaskBeforeAssociatedParties: OwnershipAndLandlordsTaskBeforeAssociatedParties
+
+    @Mock
+    private lateinit var mockOwnershipAndLandlordsTask: OwnershipAndLandlordsTask
+
+    @Mock
+    private lateinit var mockOwnershipStructureTask: OwnershipStructureTask
+
+    @Mock
+    private lateinit var mockOwnershipTypeTask: OwnershipTypeTask
+
+    @Mock
+    private lateinit var mockFreeholdersTask: FreeholdersTask
+
+    @Mock
+    private lateinit var mockSuperiorLandlordsTask: SuperiorLandlordsTask
+
+    @Mock
+    private lateinit var mockAnyoneInOwnershipChainStep: AnyoneInOwnershipChainStep
+
+    @Mock
+    private lateinit var mockPropertyManagerTask: PropertyManagerTask
+
+    @Mock
+    private lateinit var mockPropertyManagerStep: PropertyManagerStep
+
+    @Mock
+    private lateinit var mockPropertyManagerDetailsStep: PropertyManagerDetailsStep
 
     private lateinit var factory: PropertyRegistrationDataModelFactory
 
@@ -158,17 +203,210 @@ class PropertyRegistrationDataModelFactoryTests {
         }
     }
 
-    @Test
-    fun `fromJourneyState converts the beforePdjb955 ownership type answer when the associated parties flag is off`() {
+    @ParameterizedTest
+    @EnumSource(OwnershipType::class)
+    fun `fromJourneyState returns the ownership type derived from the answers`(ownershipType: OwnershipType) {
         // Arrange
-        setupStateForPropertyRegistration(ownershipTypeBeforePdjb955 = OwnershipTypeBeforePdjb955.SHARE_OF_FREEHOLD)
+        setupStateForPropertyRegistration(ownershipType = ownershipType)
         setupStateForComplianceDataWithNullValues()
 
         // Act
         val result = factory.fromJourneyState(mockState)
 
         // Assert
-        assertEquals(OwnershipType.JOINT_TENANTS, result.ownershipType)
+        assertEquals(ownershipType, result.ownershipType)
+    }
+
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    fun `fromJourneyState throws when the ownership type is unanswered`() {
+        // Arrange
+        setupStateForPropertyRegistration(ownershipType = null)
+        setupStateForComplianceDataWithNullValues()
+
+        // Act, Assert
+        assertThrows<UnrecoverableJourneyStateException> { factory.fromJourneyState(mockState) }
+    }
+
+    @Test
+    fun `fromJourneyState returns the freeholders when the ownership type requires freeholder records`() {
+        // Arrange
+        val freeholder = FreeholderDataModel(detailsKnown = true, name = "Freda Holder", email = "freda@example.com")
+        setupStateForPropertyRegistration(
+            ownershipType = OwnershipType.LEASEHOLD_ONLY,
+            freeholders = mapOf(0 to freeholder),
+        )
+        setupStateForComplianceDataWithNullValues()
+
+        // Act
+        val result = factory.fromJourneyState(mockState)
+
+        // Assert
+        assertEquals(listOf(freeholder), result.freeholders)
+    }
+
+    @Test
+    fun `fromJourneyState returns null freeholders when the ownership type does not require freeholder records`() {
+        // Arrange
+        setupStateForPropertyRegistration(
+            ownershipType = OwnershipType.SOLE_FREEHOLD,
+            freeholders = mapOf(0 to FreeholderDataModel(detailsKnown = true, name = "Stale Answer")),
+        )
+        setupStateForComplianceDataWithNullValues()
+
+        // Act
+        val result = factory.fromJourneyState(mockState)
+
+        // Assert
+        assertNull(result.freeholders)
+    }
+
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    fun `fromJourneyState throws when freeholder records are required but none were collected`() {
+        // Arrange
+        setupStateForPropertyRegistration(
+            ownershipType = OwnershipType.LEASEHOLD_ONLY,
+            freeholders = emptyMap(),
+        )
+        setupStateForComplianceDataWithNullValues()
+
+        // Act, Assert
+        assertThrows<UnrecoverableJourneyStateException> { factory.fromJourneyState(mockState) }
+    }
+
+    @Test
+    fun `fromJourneyState returns the superior landlords when someone else is in the ownership chain`() {
+        // Arrange
+        val superiorLandlord = SuperiorLandlordDataModel(detailsKnown = true, name = "Sue Perior")
+        setupStateForPropertyRegistration(
+            ownershipType = OwnershipType.LEASEHOLD_ONLY,
+            anyoneInOwnershipChain = true,
+            superiorLandlords = mapOf(0 to superiorLandlord),
+        )
+        setupStateForComplianceDataWithNullValues()
+
+        // Act
+        val result = factory.fromJourneyState(mockState)
+
+        // Assert
+        assertEquals(listOf(superiorLandlord), result.superiorLandlords)
+    }
+
+    @Test
+    fun `fromJourneyState returns no superior landlords when nobody else is in the ownership chain`() {
+        // Arrange
+        setupStateForPropertyRegistration(
+            ownershipType = OwnershipType.LEASEHOLD_ONLY,
+            anyoneInOwnershipChain = false,
+        )
+        setupStateForComplianceDataWithNullValues()
+
+        // Act
+        val result = factory.fromJourneyState(mockState)
+
+        // Assert
+        assertEquals(emptyList<SuperiorLandlordDataModel>(), result.superiorLandlords)
+    }
+
+    @Test
+    fun `fromJourneyState returns no superior landlords when the ownership type does not require them`() {
+        // Arrange
+        setupStateForPropertyRegistration(
+            ownershipType = OwnershipType.JOINT_TENANTS,
+            anyoneInOwnershipChain = true,
+            superiorLandlords = mapOf(0 to SuperiorLandlordDataModel(detailsKnown = true, name = "Stale Answer")),
+        )
+        setupStateForComplianceDataWithNullValues()
+
+        // Act
+        val result = factory.fromJourneyState(mockState)
+
+        // Assert
+        assertEquals(emptyList<SuperiorLandlordDataModel>(), result.superiorLandlords)
+    }
+
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    fun `fromJourneyState throws when the anyone in ownership chain step was not answered`() {
+        // Arrange
+        setupStateForPropertyRegistration(
+            ownershipType = OwnershipType.LEASEHOLD_ONLY,
+            anyoneInOwnershipChain = null,
+        )
+        setupStateForComplianceDataWithNullValues()
+
+        // Act, Assert
+        assertThrows<UnrecoverableJourneyStateException> { factory.fromJourneyState(mockState) }
+    }
+
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    fun `fromJourneyState throws when someone else is in the ownership chain but no superior landlords were collected`() {
+        // Arrange
+        setupStateForPropertyRegistration(
+            ownershipType = OwnershipType.LEASEHOLD_ONLY,
+            anyoneInOwnershipChain = true,
+            superiorLandlords = emptyMap(),
+        )
+        setupStateForComplianceDataWithNullValues()
+
+        // Act, Assert
+        assertThrows<UnrecoverableJourneyStateException> { factory.fromJourneyState(mockState) }
+    }
+
+    @Test
+    fun `fromJourneyState throws when the property manager step was not answered`() {
+        // Arrange
+        setupStateForPropertyRegistration(isUsingPropertyManager = null)
+        setupStateForComplianceDataWithNullValues()
+
+        // Act, Assert
+        assertThrows<UnrecoverableJourneyStateException> { factory.fromJourneyState(mockState) }
+    }
+
+    @Test
+    fun `fromJourneyState returns the property manager when the landlord uses one`() {
+        // Arrange
+        setupStateForPropertyRegistration(
+            propertyManager = PropertyManagerDataModel("Pat Manager", "pat@example.com"),
+        )
+        setupStateForComplianceDataWithNullValues()
+
+        // Act
+        val result = factory.fromJourneyState(mockState)
+
+        // Assert
+        assertEquals(PropertyManagerDataModel("Pat Manager", "pat@example.com"), result.propertyManager)
+    }
+
+    @Test
+    fun `fromJourneyState returns no property manager when the landlord does not use one`() {
+        // Arrange
+        setupStateForPropertyRegistration(propertyManager = null)
+        setupStateForComplianceDataWithNullValues()
+
+        // Act
+        val result = factory.fromJourneyState(mockState)
+
+        // Assert
+        assertNull(result.propertyManager)
+    }
+
+    @Test
+    fun `fromJourneyState returns no property manager when the landlord answered no but stale details remain`() {
+        // Arrange
+        setupStateForPropertyRegistration(
+            propertyManager = null,
+            stalePropertyManagerDetails = PropertyManagerDataModel("Stale Manager", "stale@example.com"),
+        )
+        setupStateForComplianceDataWithNullValues()
+
+        // Act
+        val result = factory.fromJourneyState(mockState)
+
+        // Assert
+        assertNull(result.propertyManager)
     }
 
     @Test
@@ -482,10 +720,40 @@ class PropertyRegistrationDataModelFactoryTests {
         assertEquals(true, result.tenancyProvideLater)
     }
 
+    // TODO PDJB-2016: delete this class along with the ASSOCIATED_PARTIES flag.
+    @Nested
+    inner class BeforePdjb955 {
+        @Test
+        fun `fromJourneyState converts the beforePdjb955 ownership type answer`() {
+            // Arrange
+            setupStateForPropertyRegistration(
+                isAssociatedPartiesEnabled = false,
+                ownershipTypeBeforePdjb955 = OwnershipTypeBeforePdjb955.SHARE_OF_FREEHOLD,
+            )
+            setupStateForComplianceDataWithNullValues()
+
+            // Act
+            val result = factory.fromJourneyState(mockState)
+
+            // Assert
+            assertEquals(OwnershipType.JOINT_TENANTS, result.ownershipType)
+        }
+    }
+
     private fun setupStateForPropertyRegistration(
         // TODO PDJB-2019: remove this parameter once the legacy ownership type column is gone. It
         //  exists only so that one test can exercise the legacy conversion.
         ownershipTypeBeforePdjb955: OwnershipTypeBeforePdjb955 = OwnershipTypeBeforePdjb955.FREEHOLD,
+        isAssociatedPartiesEnabled: Boolean = true,
+        ownershipType: OwnershipType? = OwnershipType.SOLE_FREEHOLD,
+        freeholders: Map<Int, FreeholderDataModel>? = mapOf(0 to FreeholderDataModel(detailsKnown = false)),
+        anyoneInOwnershipChain: Boolean? = false,
+        superiorLandlords: Map<Int, SuperiorLandlordDataModel>? = null,
+        propertyManager: PropertyManagerDataModel? = null,
+        // Null when the property manager step has not been answered at all
+        isUsingPropertyManager: Boolean? = propertyManager != null,
+        // Details left behind when a landlord goes back through RemovePropertyManagerStep and answers "no"
+        stalePropertyManagerDetails: PropertyManagerDataModel? = null,
     ) {
         val mockOccupiedStep = mock<OccupiedStep>()
         val occupancyFormModel = OccupancyFormModel().apply { occupied = false }
@@ -520,13 +788,46 @@ class PropertyRegistrationDataModelFactoryTests {
         whenever(mockLicensingTask.getLicenceNumberOrNull()).thenReturn(null)
         whenever(mockLicensingTask.getLicensingType()).thenReturn(LicensingType.SELECTIVE_LICENCE)
 
-        val mockOwnershipTypeStep = mock<OwnershipTypeStep>()
-        val ownershipTypeFormModel = OwnershipTypeFormModel().apply { ownershipType = ownershipTypeBeforePdjb955 }
-        whenever(
-            mockState.ownershipAndLandlordsTaskBeforeAssociatedParties,
-        ).thenReturn(mockOwnershipAndLandlordsTaskBeforeAssociatedParties)
-        whenever(mockOwnershipAndLandlordsTaskBeforeAssociatedParties.ownershipTypeStep).thenReturn(mockOwnershipTypeStep)
-        whenever(mockOwnershipTypeStep.formModel).thenReturn(ownershipTypeFormModel)
+        whenever(mockFeatureFlagManager.checkFeature(ASSOCIATED_PARTIES)).thenReturn(isAssociatedPartiesEnabled)
+
+        if (isAssociatedPartiesEnabled) {
+            lenient().`when`(mockState.journeyId).thenReturn("test-journey-id")
+            whenever(mockState.ownershipAndLandlordsTask).thenReturn(mockOwnershipAndLandlordsTask)
+            whenever(mockOwnershipAndLandlordsTask.ownershipStructureTask).thenReturn(mockOwnershipStructureTask)
+            whenever(mockOwnershipStructureTask.ownershipTypeTask).thenReturn(mockOwnershipTypeTask)
+            whenever(mockOwnershipTypeTask.ownershipType).thenReturn(ownershipType)
+
+            lenient().`when`(mockOwnershipStructureTask.freeholdersTask).thenReturn(mockFreeholdersTask)
+            lenient().`when`(mockFreeholdersTask.freeholdersMap).thenReturn(freeholders)
+
+            lenient().`when`(mockOwnershipStructureTask.superiorLandlordsTask).thenReturn(mockSuperiorLandlordsTask)
+            lenient().`when`(mockSuperiorLandlordsTask.anyoneInOwnershipChainStep).thenReturn(mockAnyoneInOwnershipChainStep)
+            lenient().`when`(mockAnyoneInOwnershipChainStep.formModelIfReachableOrNull).thenReturn(
+                anyoneInOwnershipChain?.let { AnyoneInOwnershipChainFormModel(anyoneInOwnershipChain = it) },
+            )
+            lenient().`when`(mockSuperiorLandlordsTask.superiorLandlordsMap).thenReturn(superiorLandlords)
+
+            lenient().`when`(mockOwnershipAndLandlordsTask.propertyManagerTask).thenReturn(mockPropertyManagerTask)
+            lenient().`when`(mockPropertyManagerTask.propertyManagerStep).thenReturn(mockPropertyManagerStep)
+            lenient().`when`(mockPropertyManagerStep.outcome).thenReturn(
+                isUsingPropertyManager?.let { if (it) YesOrNo.YES else YesOrNo.NO },
+            )
+            lenient().`when`(mockPropertyManagerTask.propertyManagerDetailsStep).thenReturn(mockPropertyManagerDetailsStep)
+            lenient().`when`(mockPropertyManagerDetailsStep.formModel).thenReturn(
+                PropertyManagerDetailsFormModel().apply {
+                    name = (propertyManager ?: stalePropertyManagerDetails)?.name
+                    emailAddress = (propertyManager ?: stalePropertyManagerDetails)?.email
+                },
+            )
+        } else {
+            val mockOwnershipTypeStep = mock<OwnershipTypeStep>()
+            val ownershipTypeFormModel = OwnershipTypeFormModel().apply { this.ownershipType = ownershipTypeBeforePdjb955 }
+            whenever(
+                mockState.ownershipAndLandlordsTaskBeforeAssociatedParties,
+            ).thenReturn(mockOwnershipAndLandlordsTaskBeforeAssociatedParties)
+            whenever(mockOwnershipAndLandlordsTaskBeforeAssociatedParties.ownershipTypeStep).thenReturn(mockOwnershipTypeStep)
+            whenever(mockOwnershipTypeStep.formModel).thenReturn(ownershipTypeFormModel)
+        }
 
         val mockJointLandlordsTask = mock<JointLandlordsPropertyRegistrationTask>()
         whenever(mockState.getJointLandlordsTask(any())).thenReturn(mockJointLandlordsTask)

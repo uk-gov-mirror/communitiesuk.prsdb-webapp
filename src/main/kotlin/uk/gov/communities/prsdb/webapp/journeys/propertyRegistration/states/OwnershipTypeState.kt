@@ -7,8 +7,6 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.Freeh
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OwnershipKindStep
 import uk.gov.communities.prsdb.webapp.journeys.propertyRegistration.steps.OwnsPropertyStep
 
-// TODO PDJB-2015: PropertyRegistrationDataModelFactory can now map and then ask, rather than
-//  restating the rules. OwnershipStructureRoutingStepConfig already does.
 interface OwnershipTypeState : JourneyState {
     val ownsPropertyStep: OwnsPropertyStep
     val ownershipKindStep: OwnershipKindStep
