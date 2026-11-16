@@ -1,0 +1,27 @@
+cannotDeactivate:
+  heading: Deactivating a property when it has joint landlords
+  youCannotDeactivate: 'You cannot deactivate:'
+  reason: This is because there are joint landlords.
+  whatToDoNext:
+    heading: What to do next
+    paragraph:
+      one: To deactivate this property, everyone who is registered on this property needs to individually select that they’re no longer a landlord for it.
+      two: The last person to remove themselves will have the option to deactivate the property.
+  leavePropertyLink: I’m no longer a landlord for this property
+confirm:
+  heading: Are you sure you want to deactivate this property?
+  paragraph:
+    one: You should only deactivate this property if the tenants have moved out.
+    two: If you have sold the property and the tenants are still living there, contact us to transfer the property registration to the new landlord.
+  contactUs:
+    summary: Contact us to transfer a property
+  whatHappens:
+    heading: What happens when you deactivate a property
+    paragraph:
+      one: When you deactivate a property local councils will be able to view the information for 5 years.
+      two: Deactivated properties are deleted after 5 years, before this you can reactivate at any time.
+  landlordAccount:
+    heading: Your landlord account
+    body: If this property is deactivated you will not have any active properties. Your landlord account will also be deactivated.
+  confirmButton: Deactivate property
+  cancelLink: Cancel

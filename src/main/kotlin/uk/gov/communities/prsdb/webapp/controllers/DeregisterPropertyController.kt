@@ -11,7 +11,9 @@ import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.ModelAndView
 import org.springframework.web.util.UriTemplate
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.AllowIfLandlord
+import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.AvailableWhenFeatureDisabled
 import uk.gov.communities.prsdb.webapp.annotations.webAnnotations.PrsdbController
+import uk.gov.communities.prsdb.webapp.constants.ACTIVE_INACTIVE
 import uk.gov.communities.prsdb.webapp.constants.CONFIRMATION_PATH_SEGMENT
 import uk.gov.communities.prsdb.webapp.constants.DEREGISTER_PROPERTY_JOURNEY_URL
 import uk.gov.communities.prsdb.webapp.constants.LANDLORD_PATH_SEGMENT
@@ -26,6 +28,7 @@ import uk.gov.communities.prsdb.webapp.journeys.propertyDeregistration.stepConfi
 import uk.gov.communities.prsdb.webapp.services.PropertyDeregistrationService
 import uk.gov.communities.prsdb.webapp.services.PropertyOwnershipService
 
+// TODO PDJB-2149: Remove this controller when the ACTIVE_INACTIVE flag is removed
 @AllowIfLandlord
 @PrsdbController
 @RequestMapping(PROPERTY_DEREGISTRATION_ROUTE)
@@ -34,6 +37,7 @@ class DeregisterPropertyController(
     private val propertyOwnershipService: PropertyOwnershipService,
     private val propertyDeregistrationService: PropertyDeregistrationService,
 ) {
+    @AvailableWhenFeatureDisabled(ACTIVE_INACTIVE)
     @GetMapping("/{*stepPath}")
     fun getJourneyStep(
         @PathVariable stepPath: String,
@@ -43,6 +47,7 @@ class DeregisterPropertyController(
         return dispatchJourneyStep(stepPath, propertyOwnershipId) { getStepModelAndView() }
     }
 
+    @AvailableWhenFeatureDisabled(ACTIVE_INACTIVE)
     @PostMapping("/{*stepPath}")
     fun postJourneyData(
         @PathVariable stepPath: String,
@@ -66,6 +71,7 @@ class DeregisterPropertyController(
             startNewJourneyOn = { it is PropertyOwnershipMismatchException },
         )
 
+    @AvailableWhenFeatureDisabled(ACTIVE_INACTIVE)
     @GetMapping("/$CONFIRMATION_PATH_SEGMENT")
     fun getConfirmation(
         model: Model,

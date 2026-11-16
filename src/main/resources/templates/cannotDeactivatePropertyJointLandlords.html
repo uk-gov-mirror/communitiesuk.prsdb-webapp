@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout(#{deactivateProperty.cannotDeactivate.heading}, ~{::main/content()}, false, ${backUrl}, null)}">
+<main>
+    <div id="page-contents"
+         th:replace="~{fragments/layouts/twoThirdsLayout :: twoThirdsLayout(~{::#page-contents/content()})}">
+        <h1 class="govuk-heading-l" th:text="#{deactivateProperty.cannotDeactivate.heading}">
+            deactivateProperty.cannotDeactivate.heading
+        </h1>
+        <p class="govuk-body" th:text="#{deactivateProperty.cannotDeactivate.youCannotDeactivate}">
+            deactivateProperty.cannotDeactivate.youCannotDeactivate
+        </p>
+        <p class="govuk-body">
+            <th:block th:replace="~{fragments/multiLineText :: multiLineText(${addressLines})}"></th:block>
+        </p>
+        <p class="govuk-body" th:text="#{deactivateProperty.cannotDeactivate.reason}">
+            deactivateProperty.cannotDeactivate.reason
+        </p>
+        <h2 class="govuk-heading-m" th:text="#{deactivateProperty.cannotDeactivate.whatToDoNext.heading}">
+            deactivateProperty.cannotDeactivate.whatToDoNext.heading
+        </h2>
+        <p class="govuk-body" th:text="#{deactivateProperty.cannotDeactivate.whatToDoNext.paragraph.one}">
+            deactivateProperty.cannotDeactivate.whatToDoNext.paragraph.one
+        </p>
+        <p class="govuk-body" th:text="#{deactivateProperty.cannotDeactivate.whatToDoNext.paragraph.two}">
+            deactivateProperty.cannotDeactivate.whatToDoNext.paragraph.two
+        </p>
+        <p class="govuk-body">
+            <a class="govuk-link" th:href="${leavePropertyUrl}" th:text="#{deactivateProperty.cannotDeactivate.leavePropertyLink}">
+                deactivateProperty.cannotDeactivate.leavePropertyLink
+            </a>
+        </p>
+    </div>
+</main>
+</html>

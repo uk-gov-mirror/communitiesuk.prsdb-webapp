@@ -163,6 +163,10 @@ complianceInformation:
 
 deregisterPropertyLink:
   text: Deregister property
+deactivatePropertyLink:
+  text: Deactivate this property
+deactivationSuccessBanner:
+  propertyDeactivated: Property deactivated.
 propertyRecord:
   registrationDate: Registration date
   registrationNumber: Rental property number

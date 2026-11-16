@@ -1,6 +1,7 @@
 package uk.gov.communities.prsdb.webapp.controllers
 
 import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.mockito.kotlin.any
@@ -15,6 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.get
 import org.springframework.web.context.WebApplicationContext
 import uk.gov.communities.prsdb.webapp.config.managers.FeatureFlagManager
+import uk.gov.communities.prsdb.webapp.constants.ACTIVE_INACTIVE
 import uk.gov.communities.prsdb.webapp.database.entity.LettingAgentAccess
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.PropertyDetailsNotificationBannerViewModel
 import uk.gov.communities.prsdb.webapp.models.viewModels.summaryModels.propertyComplianceViewModels.NotificationBannerViewModelService
@@ -250,6 +252,76 @@ class PropertyDetailsControllerTests(
                 .andExpect {
                     status { isOk() }
                     model { attribute("markedJointLandlord", true) }
+                }
+        }
+
+        @Test
+        @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"])
+        fun `getPropertyDetails shows the deactivate link and not the deregister link`() {
+            val propertyOwnership = createPropertyOwnership()
+
+            whenever(featureFlagManager.checkFeature(ACTIVE_INACTIVE)).thenReturn(true)
+            whenever(propertyOwnershipService.getPropertyOwnershipIfCurrentUserAuthorized(eq(propertyOwnership.id)))
+                .thenReturn(propertyOwnership)
+            whenever(jointLandlordInvitationService.getPendingAndExpiredInvitations(propertyOwnership))
+                .thenReturn(Pair(emptyList(), emptyList()))
+
+            val deactivatePropertyLink = DeactivatePropertyController.getPropertyDeactivationPath(propertyOwnership.id)
+            val deregisterPropertyLink = DeregisterPropertyController.getPropertyDeregistrationPath(propertyOwnership.id)
+
+            mvc
+                .get(PropertyDetailsController.getPropertyDetailsPath(propertyOwnership.id, isLocalCouncilView = false))
+                .andExpect {
+                    status { isOk() }
+                    model { attribute("isActiveInactiveEnabled", true) }
+                    model { attribute("deactivatePropertyLink", deactivatePropertyLink) }
+                    content { string(containsString("href=\"$deactivatePropertyLink\"")) }
+                    content { string(not(containsString("href=\"$deregisterPropertyLink\""))) }
+                }
+        }
+
+        // TODO PDJB-2149: Remove this test when the ACTIVE_INACTIVE flag is removed
+        @Test
+        @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"])
+        fun `getPropertyDetails shows the deregister link and not the deactivate link when ACTIVE_INACTIVE is disabled`() {
+            val propertyOwnership = createPropertyOwnership()
+
+            whenever(featureFlagManager.checkFeature(ACTIVE_INACTIVE)).thenReturn(false)
+            whenever(propertyOwnershipService.getPropertyOwnershipIfCurrentUserAuthorized(eq(propertyOwnership.id)))
+                .thenReturn(propertyOwnership)
+            whenever(jointLandlordInvitationService.getPendingAndExpiredInvitations(propertyOwnership))
+                .thenReturn(Pair(emptyList(), emptyList()))
+
+            val deactivatePropertyLink = DeactivatePropertyController.getPropertyDeactivationPath(propertyOwnership.id)
+            val deregisterPropertyLink = DeregisterPropertyController.getPropertyDeregistrationPath(propertyOwnership.id)
+
+            mvc
+                .get(PropertyDetailsController.getPropertyDetailsPath(propertyOwnership.id, isLocalCouncilView = false))
+                .andExpect {
+                    status { isOk() }
+                    model { attribute("isActiveInactiveEnabled", false) }
+                    content { string(containsString("href=\"$deregisterPropertyLink\"")) }
+                    content { string(not(containsString("href=\"$deactivatePropertyLink\""))) }
+                }
+        }
+
+        @Test
+        @WithMockUser(roles = ["INDIVIDUAL_LANDLORD"])
+        fun `getPropertyDetails shows the deactivation success banner when the flash attribute is present`() {
+            val propertyOwnership = createPropertyOwnership()
+
+            whenever(featureFlagManager.checkFeature(ACTIVE_INACTIVE)).thenReturn(true)
+            whenever(propertyOwnershipService.getPropertyOwnershipIfCurrentUserAuthorized(eq(propertyOwnership.id)))
+                .thenReturn(propertyOwnership)
+            whenever(jointLandlordInvitationService.getPendingAndExpiredInvitations(propertyOwnership))
+                .thenReturn(Pair(emptyList(), emptyList()))
+
+            mvc
+                .get(PropertyDetailsController.getPropertyDetailsPath(propertyOwnership.id, isLocalCouncilView = false)) {
+                    flashAttr("deactivationSuccessBanner", "propertyDetails.deactivationSuccessBanner.propertyDeactivated")
+                }.andExpect {
+                    status { isOk() }
+                    content { string(containsString("id=\"deactivation-success-banner\"")) }
                 }
         }
 

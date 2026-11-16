@@ -41,12 +41,27 @@
                 </p>
             </div>
         </th:block>
+        <th:block th:if="${deactivationSuccessBanner != null}" th:with="isSuccess=true">
+            <div id="deactivation-success-banner"
+                 th:insert="~{fragments/banners/notificationBanner ::
+                notificationBanner(#{propertyDetails.updateSuccessBanner.title}, ~{::#deactivation-success-banner/content()})}"
+                 th:with="isSuccess=true">
+                <p class="govuk-notification-banner__heading" th:text="#{${deactivationSuccessBanner}}">
+                    propertyDetails.deactivationSuccessBanner
+                </p>
+            </div>
+        </th:block>
         <span class="govuk-caption-l" th:text="#{propertyDetails.heading}">propertyDetails.heading</span>
         <h1 class="govuk-heading-l">
             <th:block th:replace="~{fragments/multiLineText :: multiLineText(${propertyDetails.addressParts})}"></th:block>
         </h1>
         <p class="govuk-body">
             <div th:replace="~{fragments/tag :: tag(messageKey = ${propertyDetails.isOccupiedKey()}, tagColour = ${propertyDetails.isOccupied() ? 'turquoise' : 'grey'})}"></div>
+        </p>
+        <p th:if="${isLandlordView and isActiveInactiveEnabled}" class="govuk-body">
+            <a id="deactivate-property-link" class="govuk-link" th:href="${deactivatePropertyLink}" th:text="#{propertyDetails.deactivatePropertyLink.text}">
+                propertyDetails.deactivatePropertyLink.text
+            </a>
         </p>
         <th:block th:if="${isLandlordView}">
             <th:block th:if="${propertyIsOccupied}">
@@ -114,7 +129,8 @@
                         <p th:if="${propertyDetails.tenancyProvideLaterParagraph != null}" class="govuk-body" th:utext="${propertyDetails.tenancyProvideLaterParagraph}"></p>
                         <hr th:if="${propertyDetails.tenancyProvideLaterParagraph != null}" class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
                     </th:block>
-                <p th:if="${isLandlordView}" class="govuk-body prsd-deregister-link" >
+                <!-- TODO PDJB-2149: Remove the deregister link when the ACTIVE_INACTIVE flag is removed -->
+                <p th:if="${isLandlordView and !isActiveInactiveEnabled}" class="govuk-body prsd-deregister-link" >
                     <a class="govuk-link" th:href="${deregisterPropertyLink}" th:text="#{propertyDetails.deregisterPropertyLink.text}">
                         propertyDetails.deregisterPropertyLink.text
                     </a>

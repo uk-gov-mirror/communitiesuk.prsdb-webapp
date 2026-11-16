@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout(#{deactivateProperty.confirm.heading}, ~{::main/content()}, false, ${backUrl}, null)}">
+<main>
+    <div id="page-contents"
+         th:replace="~{fragments/layouts/twoThirdsLayout :: twoThirdsLayout(~{::#page-contents/content()})}">
+        <h1 class="govuk-heading-l" th:text="#{deactivateProperty.confirm.heading}">
+            deactivateProperty.confirm.heading
+        </h1>
+        <p class="govuk-body" th:text="#{deactivateProperty.confirm.paragraph.one}">
+            deactivateProperty.confirm.paragraph.one
+        </p>
+        <p class="govuk-body" th:text="#{deactivateProperty.confirm.paragraph.two}">
+            deactivateProperty.confirm.paragraph.two
+        </p>
+        <details id="details" th:replace="~{fragments/details :: details(#{deactivateProperty.confirm.contactUs.summary}, ~{::#details/content()})}">
+            <div class="govuk-details__text">
+                <p th:replace="~{fragments/contactDetails :: contactDetails}"></p>
+            </div>
+        </details>
+        <h2 class="govuk-heading-m" th:text="#{deactivateProperty.confirm.whatHappens.heading}">
+            deactivateProperty.confirm.whatHappens.heading
+        </h2>
+        <p class="govuk-body" th:text="#{deactivateProperty.confirm.whatHappens.paragraph.one}">
+            deactivateProperty.confirm.whatHappens.paragraph.one
+        </p>
+        <p class="govuk-body" th:text="#{deactivateProperty.confirm.whatHappens.paragraph.two}">
+            deactivateProperty.confirm.whatHappens.paragraph.two
+        </p>
+        <th:block th:if="${showLandlordAccountSection}">
+            <h3 class="govuk-heading-s" th:text="#{deactivateProperty.confirm.landlordAccount.heading}">
+                deactivateProperty.confirm.landlordAccount.heading
+            </h3>
+            <p class="govuk-body" th:text="#{deactivateProperty.confirm.landlordAccount.body}">
+                deactivateProperty.confirm.landlordAccount.body
+            </p>
+        </th:block>
+        <form th:action="@{''}" method="post" novalidate>
+            <div class="govuk-button-group">
+                <button th:replace="~{fragments/buttons/transactionWarningButton :: transactionWarningButton(#{deactivateProperty.confirm.confirmButton})}"></button>
+                <a th:href="@{${cancelLinkUrl}}" class="govuk-link" th:text="#{deactivateProperty.confirm.cancelLink}">
+                    deactivateProperty.confirm.cancelLink
+                </a>
+            </div>
+        </form>
+    </div>
+</main>
+</html>

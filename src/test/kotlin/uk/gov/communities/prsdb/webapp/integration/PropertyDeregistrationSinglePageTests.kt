@@ -2,13 +2,21 @@ package uk.gov.communities.prsdb.webapp.integration
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import uk.gov.communities.prsdb.webapp.constants.ACTIVE_INACTIVE
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.PropertyDetailsPageLandlordView
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
 
 class PropertyDeregistrationSinglePageTests : IntegrationTestWithImmutableData("data-local.sql") {
+    // TODO PDJB-2149: Remove these tests along with the property deregistration journey when the ACTIVE_INACTIVE flag is removed
+    @BeforeEach
+    fun disableActiveInactive() {
+        featureFlagManager.disable(ACTIVE_INACTIVE)
+    }
+
     @Nested
     inner class HasPendingInvitationsStep {
         @Test

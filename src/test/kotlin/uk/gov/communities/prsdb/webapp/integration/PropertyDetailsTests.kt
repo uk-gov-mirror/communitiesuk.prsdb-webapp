@@ -4,12 +4,14 @@ import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import uk.gov.communities.prsdb.webapp.constants.ACTIVE_INACTIVE
 import uk.gov.communities.prsdb.webapp.constants.COMPLIANCE_INFO_FRAGMENT
 import uk.gov.communities.prsdb.webapp.constants.PROVIDE_LATER_DEADLINE_DAYS
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.components.BaseComponent.Companion.assertThat
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LandlordDashboardPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.LocalCouncilDashboardPage
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.basePages.BasePage.Companion.assertPageIs
+import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDeactivationJourneyPages.ConfirmPagePropertyDeactivation
 import uk.gov.communities.prsdb.webapp.integration.pageObjects.pages.propertyDeregistrationJourneyPages.DeregisterPropertyInfoPage
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -75,14 +77,30 @@ class PropertyDetailsTests : IntegrationTestWithImmutableData("data-local.sql") 
             assertPageIs(page, LandlordDashboardPage::class)
         }
 
+        // TODO PDJB-2149: Remove this test when the ACTIVE_INACTIVE flag is removed
         @Test
         fun `the delete button redirects to the delete record page`(page: Page) {
+            featureFlagManager.disable(ACTIVE_INACTIVE)
             val propertyOwnershipId = 1
             val detailsPage = navigator.goToPropertyDetailsLandlordView(propertyOwnershipId.toLong())
+            assertThat(detailsPage.deactivatePropertyLink).isHidden()
             detailsPage.deregisterPropertyLink.clickAndWait()
             assertPageIs(
                 page,
                 DeregisterPropertyInfoPage::class,
+                mapOf("propertyOwnershipId" to propertyOwnershipId.toString()),
+            )
+        }
+
+        @Test
+        fun `the deactivate link redirects to the deactivation confirm page`(page: Page) {
+            val propertyOwnershipId = 1
+            val detailsPage = navigator.goToPropertyDetailsLandlordView(propertyOwnershipId.toLong())
+            assertThat(detailsPage.deregisterPropertyLink).isHidden()
+            detailsPage.deactivatePropertyLink.clickAndWait()
+            assertPageIs(
+                page,
+                ConfirmPagePropertyDeactivation::class,
                 mapOf("propertyOwnershipId" to propertyOwnershipId.toString()),
             )
         }
